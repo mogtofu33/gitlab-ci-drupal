@@ -1,5 +1,7 @@
 # Gitlab CI with Drupal
 
+[![pipeline status](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
+
 Gitlab CI samples for Drupal / Php project, code quality with Phpqa.
 
 ## Prerequisites
