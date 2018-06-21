@@ -114,7 +114,7 @@ codequality:
     # - master
   # Optional allow failure to not block the pipeline.
   # allow_failure: true
-    when: manual
+  when: manual
 
 # Drupal coding standard best practices report (can not be included in
 # codequality as we are already running Drupal coding standard).
