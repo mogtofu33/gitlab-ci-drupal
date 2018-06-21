@@ -110,10 +110,11 @@ codequality:
     - phpqa ${REPORT} ${TOOLS} ${CODE}
   # Limit to branch master, for more options see
   # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
-  only:
-    - master
+  # only:
+    # - master
   # Optional allow failure to not block the pipeline.
   # allow_failure: true
+    when: manual
 
 # Drupal coding standard best practices report (can not be included in
 # codequality as we are already running Drupal coding standard).
@@ -124,10 +125,11 @@ phpcs_bp:
   script:
     - mkdir -p ${REPORT_DIR}
     - phpqa ${REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs ${CODE}
-  only:
-    - master
+  # only:
+    # - master
   # Allow failure to produce report and alert.
   allow_failure: true
+  when: manual
 
 # Sample for Drupal coding standard report alone.
 phpcs:
@@ -159,8 +161,9 @@ phpmetrics:
     - phpqa ${REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${CODE}
   # Limit to branch master, for more options see
   # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
-  only:
-    - master
+  # only:
+    # - master
+  when: manual
 
 # This is a manual job to get phpqa results in the job ui on Gitlab instead of files.
 codequality cli:
@@ -188,6 +191,7 @@ eslint:
   <<: *report
   script:
     - apk --no-cache add curl
+    - curl https://cgit.drupalcode.org/drupal/plain/.eslintrc.json?h=8.5.x -o web/.eslintrc.json -s
     - mkdir -p web/core
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x -o web/core/.eslintrc.json -s
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0 eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
@@ -203,19 +207,19 @@ markdown lint:
   script:
     - gem install mdl
     - mkdir -p ${REPORT_DIR}
-    - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
-  only:
-    - master
+    # - mdl ./
+    - mdl ./ >> ${REPORT_DIR}/markdown_lint.txt
+  allow_failure: true
+  when: manual
 
 # shellcheck:
-  stage: codequality
+  # stage: codequality
   # image: nlknguyen/alpine-shellcheck
   # <<: *report
   # script:
     # - mkdir -p ${REPORT_DIR}
     # - shellcheck -f checkstyle **/*.sh
-  # only:
-    # - master
+  # when: manual
 
 # twig lint:
 #   stage: codequality
@@ -223,6 +227,5 @@ markdown lint:
 #   <<: *report
 #   script:
 #     - console lint:twig templates/
-#   only:
-#     - master
+  # when: manual
 
