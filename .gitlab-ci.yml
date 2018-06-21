@@ -197,6 +197,7 @@ eslint:
 
 # This is a markdown lint sample.
 markdown lint:
+  stage: codequality
   image: ruby:alpine
   <<: *report
   script:
@@ -207,6 +208,7 @@ markdown lint:
     - master
 
 # shellcheck:
+  stage: codequality
   # image: nlknguyen/alpine-shellcheck
   # <<: *report
   # script:
