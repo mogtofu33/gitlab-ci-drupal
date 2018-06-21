@@ -1,0 +1,3 @@
+# Php file extensions to parse, override for phpmetrics which failed on
+# multiple extensions.
+extensions: php

@@ -1,0 +1,168 @@
+###############################################################################
+# For Gilab CI help on this file see
+#   https://docs.gitlab.com/ee/ci/yaml
+#
+# If your commit message contains [ci skip] or [skip ci], using any
+# capitalization, the commit will be created but the pipeline will be skipped.
+#
+# Code quality check is done using Phpqa, a tool that integrate other Php tools
+# to analyse your code, see
+#   https://github.com/EdgedesignCZ/phpqa
+#
+# A .phpqa.yml and .phpmd.xml files must be included at the root of the project
+# for Code sniffer and Php Mess detector to work with Drupal. More options see
+#   https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml
+#   https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml
+#
+# See samples in this project.
+###############################################################################
+variables:
+  # Edit this part to your needs.
+  #
+  # Drupal custom code / theme only. We are checking our code quality, not
+  # Drupal core.
+  # Path is relative to project root, web/ is for Drupal Composer template,
+  # change it if you are using docroot/ or any other web root.
+  IGNORE_DIRS: "--ignoredDirs vendor"
+  IGNORE_FILES: "--ignoredFiles Readme.md"
+  CODE: "--analyzedDirs web/modules/custom,web/themes/custom ${IGNORE_DIRS} ${IGNORE_FILES}"
+  # See Phpqa available tools:
+  #   https://github.com/EdgedesignCZ/phpqa#available-tools
+  # Allow errors as the report will be build and non blocking for next job.
+  TOOLS: "--tools phpcs,phpmd,phpcpd,phploc,security-checker,parallel-lint"
+  # Allow some minimal errors, this will stop the pipeline if there is an error.
+  TOOLS_STRICT: "--tools phpcs:3,phpmd:3,phpcpd:3,phploc:0,security-checker:0,parallel-lint:0"
+###############################################################################
+  # Next part do not need to be edited for a first quick run.
+  #
+  # Phpqa docker image tag and options like code to analyse relative to your 
+  # project root.
+  # https://hub.docker.com/r/zdenekdrahos/phpqa/tags/
+  PHPQA: "v1.19.0"
+  REPORT_DIR: "reports"
+  # Drupal coding standards for Code Sniffer (phpcs) are provided by Coder module.
+  # https://www.drupal.org/project/coder
+  DRUPAL_CODER: "2.12"
+  # Options for Phpqa to build a report to download, need artifacts set on the job,
+  # see '.report' below.
+  REPORT: "--report --verbose --buildDir ${REPORT_DIR}"
+  # Options for Phpqa to show the tools results in Gilab job UI.
+  CLI: "--output cli --execution no-parallel"
+
+# All code quality jobs are in the same satge, add any deploy / build stages if needed.
+# the idea is to run deploy only if check pass.
+stages:
+  # - build
+  - codequality
+  # - deploy
+
+###############################################################################
+# Gitlab ci templates for common jobs, see
+# https://docs.gitlab.com/ee/ci/yaml/#anchors
+###############################################################################
+# Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
+.phpqa: &phpqa
+  stage: codequality
+  image: zdenekdrahos/phpqa:${PHPQA}
+
+# We download the coder project to use the coding standard ruleset for Code_Sniffer.
+.coder:
+  before_script: &coder
+    - curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz -s
+    - tar xzf coder.tar.gz
+
+# Archive template for reports, we use Gitlab artifacts, see
+#   https://docs.gitlab.com/ee/user/project/pipelines/job_artifacts.html
+.report: &report
+  artifacts:
+    # Name will be 'check-NAME_OF_THE_BRANCH'
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    paths:
+      - ${REPORT_DIR}/*
+    # How long do we keep reports files.
+    expire_in: 1 week
+
+# Cache libraries in between jobs by branch, see
+#   https://docs.gitlab.com/ee/ci/caching/#caching-php-dependencies
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - coder/
+    # On composer build we could cache the composer folder.
+    # - vendor/
+
+###############################################################################
+# Jobs definition.
+###############################################################################
+
+# Automated quality check job when something is pushed/merged on master.
+codequality:
+  <<: *phpqa
+  <<: *report
+  before_script: *coder
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} ${TOOLS} ${CODE}
+  # Limit to branch master, for more options see
+  # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
+  only:
+    - master
+  # Optional allow failure to not block the pipeline.
+  # allow_failure: true
+
+# Drupal coding standard best practices report (can not be included in
+# codequality as we are already running Drupal coding standard).
+phpcs_bp:
+  <<: *phpqa
+  <<: *report
+  before_script: *coder
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs ${CODE}
+  only:
+    - master
+  # Allow failure to produce report and alert.
+  allow_failure: true
+
+# Sample for Drupal coding standard report alone.
+phpcs:
+  <<: *phpqa
+  <<: *report
+  before_script: *coder
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} --tools phpcs ${CODE}
+  when: manual
+
+# Sample for Drupal coding standard report in job ui alone.
+# Retrun failure if any error.
+phpcs cli:
+  <<: *phpqa
+  <<: *report
+  before_script: *coder
+  script:
+    - phpqa ${CLI} --tools phpcs:0 ${CODE}
+  when: manual
+
+# Phpmetrics report.
+phpmetrics:
+  <<: *phpqa
+  <<: *report
+  before_script: *coder
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${CODE}
+  # Limit to branch master, for more options see
+  # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
+  only:
+    - master
+
+# This is a manual job to get phpqa results in the job ui on Gitlab instead of files.
+codequality cli:
+  <<: *phpqa
+  before_script: *coder
+  script:
+    - phpqa ${CLI} ${TOOLS_STRICT} ${CODE}
+    # Split Phpcs to include Code standard and best practices.
+    - phpqa ${CLI} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:0 ${CODE}
+  when: manual
