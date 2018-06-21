@@ -1,0 +1,7 @@
+name: Examples for Gitlab CI testing
+type: module
+description: 'Provides example code for testing Gitlab CI.'
+package: Example modules
+core: 8.x
+dependencies:
+  - help
