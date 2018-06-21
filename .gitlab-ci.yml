@@ -65,6 +65,11 @@ stages:
   stage: codequality
   image: zdenekdrahos/phpqa:${PHPQA}
 
+# Use Node docker image for Sass lint.
+.node: &node
+  stage: codequality
+  image: node:alpine
+
 # We download the coder project to use the coding standard ruleset for Code_Sniffer.
 .coder:
   before_script: &coder
@@ -166,3 +171,56 @@ codequality cli:
     # Split Phpcs to include Code standard and best practices.
     - phpqa ${CLI} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:0 ${CODE}
   when: manual
+
+# This is a sass lint sample.
+sass lint:
+  <<: *node
+  <<: *report
+  script:
+    - npm install -g sass-lint
+    - mkdir -p ${REPORT_DIR}
+    - sass-lint 'web/themes/custom/**/*.scss' -v > ${REPORT_DIR}/sass-lint.txt
+  when: manual
+
+# This is a eslint sample.
+eslint:
+  <<: *node
+  <<: *report
+  script:
+    - apk --no-cache add curl
+    - mkdir -p web/core
+    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x -o web/core/.eslintrc.json -s
+    - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0 eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
+    - mkdir -p ${REPORT_DIR}
+    - eslint --quiet --output-file ${REPORT_DIR}/eslint.txt --config ./web/.eslintrc.json web/modules/custom/**/*.js web/themes/custom/**/*.js
+  when: manual
+
+# This is a markdown lint sample.
+markdown lint:
+  image: ruby:alpine
+  <<: *report
+  script:
+    - gem install mdl
+    - mkdir -p ${REPORT_DIR}
+    - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
+  only:
+    - master
+
+# shellcheck:
+  # image: nlknguyen/alpine-shellcheck
+  # <<: *report
+  # script:
+    # - mkdir -p ${REPORT_DIR}
+    # - shellcheck -f checkstyle **/*.sh
+  # only:
+    # - master
+
+# twig lint:
+#   stage: codequality
+#   image: mogtofu33/symfony-console:latest
+#   <<: *report
+#   script:
+#     - console lint:twig templates/
+#   only:
+#     - master
+
