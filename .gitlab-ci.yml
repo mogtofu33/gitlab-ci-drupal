@@ -196,7 +196,7 @@ eslint:
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x -o web/core/.eslintrc.json -s
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0 eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
     - mkdir -p ${REPORT_DIR}
-    - eslint --quiet --output-file ${REPORT_DIR}/eslint.txt --config ./web/.eslintrc.json web/modules/custom/**/*.js web/themes/custom/**/*.js
+    - eslint --output-file ${REPORT_DIR}/eslint.txt --config ./web/.eslintrc.json web/modules/custom/**/*.js web/themes/custom/**/*.js
   when: manual
 
 # This is a markdown lint sample.
@@ -208,7 +208,8 @@ markdown lint:
     - gem install mdl
     - mkdir -p ${REPORT_DIR}
     # - mdl ./
-    - mdl ./ >> ${REPORT_DIR}/markdown_lint.txt
+    - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
+    - exit 0
   allow_failure: true
   when: manual
 
