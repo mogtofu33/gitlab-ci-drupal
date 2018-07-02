@@ -22,17 +22,32 @@
 variables:
   # Edit this part to your needs.
   #
-  # Drupal custom code / theme only. We are checking our code quality, not
-  # Drupal core.
+  # Global settings for all env used for deploy.
+  USER_NAME: "ubuntu"
+  DRUPAL_FOLDER: "/var/www/htdocs/my_drupal"
+  # For Sass when build in case of a Drupal Bootstrap sub theme.
+  THEME: "my_theme"
+  # Testing config
+  TESTING_HOST: "my_host_or_ip.test.com"
+  # Staging config
+  STAGING_HOST: "my_host_or_ip.test.com"
+  # Production config
+  PRODUCTION_HOST: "my_host_or_ip.test.com"
+  #
+  # Drupal custom code / theme / all code. We are checking our code quality,
+  # and optionally Drupal core.
   # Path is relative to project root, web/ is for Drupal Composer template,
   # change it if you are using docroot/ or any other web root.
-  IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
-  IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
-  CODE: "--analyzedDirs web/modules/custom,web/themes/custom ${IGNORE_DIRS} ${IGNORE_FILES}"
+  WEB_ROOT: "web"
+  PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
+  PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
+  JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
+  JS_CODE_IGNORE: "**/bootstrap/**/*"
+  SASS_CODE: "web/themes/custom/**/*.scss,web/themes/custom/**/*.sass"
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:10,phpmd:10,phpcpd:0,security-checker:0,parallel-lint:0"
+  TOOLS: "--tools phpcs:5,phpmd:5,phpcpd:0,security-checker:0,parallel-lint:0"
 ###############################################################################
   # Next part do not need to be edited for a first quick run.
   #
@@ -46,7 +61,9 @@ variables:
   DRUPAL_CODER: "2.12"
   # Options for Phpqa to build a report to download, need artifacts set on the
   # job, see '.report' below.
-  REPORT: "--report --buildDir ${REPORT_DIR}"
+  PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
+  PHPQA_CUTSOM_CODE: "--analyzedDirs ${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  PHPQA_ALL_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
 
 # All code quality jobs are in the same stage, add any deploy / build stages if
 # needed. The idea is to run deploy jobs only if check pass.
@@ -56,7 +73,7 @@ stages:
   - code lint
   - php code metrics
   - deploy to testing
-  - deploy to uat
+  - deploy to staging
   - deploy to production
 
 # Default docker image.
@@ -76,7 +93,7 @@ image: alpine:latest
     paths:
       - ${REPORT_DIR}/*
     # How long do we keep reports files.
-    expire_in: 1 day
+    expire_in: 1 week
     when: always
 
 # Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
@@ -114,10 +131,11 @@ image: alpine:latest
   image: composer:latest
   before_script: *ssh_agent_template
   script:
-    # Install a Drupal with drupal composer template.
-    - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts
-    - mv web drupal/web
-    # Install project libraries and dependencies.
+    # Sample to install a Drupal with drupal composer template.
+    - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts --quiet
+    - cp -r drupal/* .
+    - composer require drupal/bootstrap
+    # Install project libraries and dependencies from a local composer.json file.
     # - composer --ignore-platform-reqs --no-scripts --no-suggest --no-interaction --quiet install
     # Install and use compass.
     # - apk add --update ruby ruby-dev libffi-dev build-base
@@ -125,7 +143,7 @@ image: alpine:latest
     # - compass compile web/themes/custom/${THEME}
     # Sample to send our build somewhere.
     # - ssh -p22 server_user@server_host "mkdir htdocs/_tmp"
-    # - scp -P22 -r build/* server_user@server_host:htdocs/_tmp
+    # - scp -P22 -r ./* server_user@server_host:htdocs/_tmp
     # - ssh -p22 server_user@server_host "mv htdocs/curent htdocs/_old && mv htdocs/_tmp htdocs/current"
     # - ssh -p22 server_user@server_host "rm -rf htdocs/_old"
   artifacts:
@@ -139,11 +157,10 @@ image: alpine:latest
       - ./web
       - .env.example
       - .gitignore
-      - '*.md'
       - LICENSE
-      - 'composer.*'
+      - composer.json
+      - composer.lock
       - load.environment.php
-      - phpunit.xml.dist
     expire_in: 1 day
 
 # Cache libraries in between jobs by branch, see
@@ -151,9 +168,9 @@ image: alpine:latest
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
-    - coder/
+    - coder
     # On composer build we cache the composer folder.
-    - vendor/
+    - vendor
 
 ###############################################################################
 # Jobs definition.
@@ -168,7 +185,7 @@ build:
   cache:
     key: drupal-build-cache
     paths:
-      - web/core
+      - web
 
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
@@ -178,7 +195,7 @@ codequality:
   <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} ${TOOLS} ${CODE}
+    - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_CUTSOM_CODE}
   # Limit to branch push, for more options see
   # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
   only:
@@ -191,7 +208,7 @@ best practices:
   <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:10 ${CODE}
+    - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:10 ${PHPQA_CUTSOM_CODE}
   only:
     - branches
   # Allow failure to produce report and alert.
@@ -203,14 +220,14 @@ es lint:
   <<: *node_template
   script:
     - apk --no-cache add curl
-    - curl https://cgit.drupalcode.org/drupal/plain/.eslintrc.json?h=8.5.x -o web/.eslintrc.json -s
-    - mkdir -p web/core
-    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x -o web/core/.eslintrc.json -s
+    - curl https://cgit.drupalcode.org/drupal/plain/.eslintrc.json?h=8.5.x -o ${WEB_ROOT}/.eslintrc.json -s
+    - mkdir -p ${WEB_ROOT}/core
+    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x -o ${WEB_ROOT}/core/.eslintrc.json -s
     # Drupal 8.5.x specfic rules override.
-    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json?h=8.5.x -o web/core/.eslintrc.passing.json -s
+    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json?h=8.5.x -o ${WEB_ROOT}/core/.eslintrc.passing.json -s
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0 eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
     - mkdir -p ${REPORT_DIR}
-    - eslint --config ./web/core/.eslintrc.passing.json --ignore-pattern '**/bootstrap/**/*' --format html --output-file ${REPORT_DIR}/es-lint-report.html web/modules/custom/**/*.js web/themes/custom/**/*.js
+    - eslint --config ./${WEB_ROOT}/core/.eslintrc.passing.json --format html --output-file ${REPORT_DIR}/es-lint-report.html --ignore-pattern ${JS_CODE_IGNORE} ${JS_CODE}
   allow_failure: true
 
 # This is a sass lint report.
@@ -220,7 +237,7 @@ sass lint:
   script:
     - npm install -g sass-lint
     - mkdir -p ${REPORT_DIR}
-    - sass-lint 'web/themes/custom/**/*.scss' --ignore '**/bootstrap/**/*' --verbose --format html --output ${REPORT_DIR}/sass-lint-report.html
+    - sass-lint ${SASS_CODE} --verbose --format html --output ${REPORT_DIR}/sass-lint-report.html --ignore ${JS_CODE_IGNORE}
   allow_failure: true
 
 # This is a markdown lint report.
@@ -241,7 +258,7 @@ phpmetrics:
   <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${CODE}
+    - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${PHPQA_CUTSOM_CODE}
   when: manual
 
 # Phploc report, no pass or failure as it's just informative.
@@ -250,7 +267,7 @@ phploc:
   <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --tools phploc ${CODE}
+    - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_CUTSOM_CODE}
   when: manual
 
 # Same reports for all Drupal codes including our custom.
@@ -259,7 +276,7 @@ phpmetrics Drupal:
   <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics --analyzedDirs web
+    - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${PHPQA_ALL_CODE}
   cache:
     key: drupal-build-cache
   when: manual
@@ -269,7 +286,7 @@ phploc Drupal:
   <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --tools phploc --analyzedDirs web
+    - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_ALL_CODE}
   cache:
     key: drupal-build-cache
   when: manual
@@ -282,7 +299,7 @@ deploy to testing:
   stage: deploy to testing
   environment:
     name: testing
-    url: http://MY_TESTING_HOST
+    url: http://${TESTING_HOST}
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to testing"
@@ -291,17 +308,17 @@ deploy to testing:
     - testing
     - master
 
-deploy to uat:
-  stage: deploy to uat
+deploy to staging:
+  stage: deploy to staging
   environment:
-    name: uat
-    url: http://MY_UAT_HOST
+    name: staging
+    url: http://${STAGING_HOST}
   before_script: *ssh_agent_template
   script:
-    - echo "Deploy to uat"
+    - echo "Deploy to staging"
     # - ssh $USER_NAME@$TESTING_HOST "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
   only:
-    - uat
+    - staging
     - master
   when: manual
 
@@ -309,7 +326,7 @@ deploy to production:
   stage: deploy to production
   environment:
     name: production
-    url: http://MY_PRODUCTION_HOST
+    url: http://${PRODUCTION_HOST}
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to production"
