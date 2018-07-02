@@ -16,6 +16,9 @@
 #
 # See samples in this project.
 ###############################################################################
+# https://github.com/AcroMedia/commerce-demo/blob/master/.gitlab-ci.yml
+# https://github.com/Lullabot/drupal8ci/blob/master/dist/gitlabci/.gitlab-ci.yml
+# https://bradjonesllc.com/blog/gitlab-ci-script-drupal-8-docker
 variables:
   # Edit this part to your needs.
   #
@@ -23,15 +26,13 @@ variables:
   # Drupal core.
   # Path is relative to project root, web/ is for Drupal Composer template,
   # change it if you are using docroot/ or any other web root.
-  IGNORE_DIRS: "--ignoredDirs vendor"
-  IGNORE_FILES: "--ignoredFiles Readme.md"
+  IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
+  IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
   CODE: "--analyzedDirs web/modules/custom,web/themes/custom ${IGNORE_DIRS} ${IGNORE_FILES}"
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
-  # Allow errors as the report will be build and non blocking for next job.
-  TOOLS: "--tools phpcs,phpmd,phpcpd,phploc,security-checker,parallel-lint"
-  # Allow some minimal errors, this will stop the pipeline if there is an error.
-  TOOLS_STRICT: "--tools phpcs:3,phpmd:3,phpcpd:3,phploc:0,security-checker:0,parallel-lint:0"
+  # Allow some errors, this will stop the pipeline if a limit is reached.
+  TOOLS: "--tools phpcs:10,phpmd:10,phpcpd:0,security-checker:0,parallel-lint:0"
 ###############################################################################
   # Next part do not need to be edited for a first quick run.
   #
@@ -43,48 +44,106 @@ variables:
   # Drupal coding standards for Code Sniffer (phpcs) are provided by Coder module.
   # https://www.drupal.org/project/coder
   DRUPAL_CODER: "2.12"
-  # Options for Phpqa to build a report to download, need artifacts set on the job,
-  # see '.report' below.
-  REPORT: "--report --verbose --buildDir ${REPORT_DIR}"
-  # Options for Phpqa to show the tools results in Gilab job UI.
-  CLI: "--output cli --execution no-parallel"
+  # Options for Phpqa to build a report to download, need artifacts set on the
+  # job, see '.report' below.
+  REPORT: "--report --buildDir ${REPORT_DIR}"
 
-# All code quality jobs are in the same satge, add any deploy / build stages if needed.
-# the idea is to run deploy only if check pass.
+# All code quality jobs are in the same stage, add any deploy / build stages if
+# needed. The idea is to run deploy jobs only if check pass.
 stages:
-  # - build
-  - codequality
-  # - deploy
+  - build
+  - code quality
+  - code lint
+  - php code metrics
+  - deploy to testing
+  - deploy to uat
+  - deploy to production
+
+# Default docker image.
+image: alpine:latest
 
 ###############################################################################
 # Gitlab ci templates for common jobs, see
 # https://docs.gitlab.com/ee/ci/yaml/#anchors
 ###############################################################################
-# Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
-.phpqa: &phpqa
-  stage: codequality
-  image: zdenekdrahos/phpqa:${PHPQA}
-
-# Use Node docker image for Sass lint.
-.node: &node
-  stage: codequality
-  image: node:alpine
-
-# We download the coder project to use the coding standard ruleset for Code_Sniffer.
-.coder:
-  before_script: &coder
-    - curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz -s
-    - tar xzf coder.tar.gz
 
 # Archive template for reports, we use Gitlab artifacts, see
 #   https://docs.gitlab.com/ee/user/project/pipelines/job_artifacts.html
-.report: &report
+.report_template: &report_template
   artifacts:
     # Name will be 'check-NAME_OF_THE_BRANCH'
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     paths:
       - ${REPORT_DIR}/*
     # How long do we keep reports files.
+    expire_in: 1 week
+    when: always
+
+# Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
+# We download the coder project to use the coding standard ruleset for Code_Sniffer.
+.phpqa_template: &phpqa_template
+  image: zdenekdrahos/phpqa:${PHPQA}
+  before_script:
+    - curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz -s
+    - tar xzf coder.tar.gz
+  <<: *report_template
+
+# Use Node docker image for Sass lint.
+.node_template: &node_template
+  image: node:alpine
+  <<: *report_template
+
+# Deploy process need an ssh private key set on the Project settings.
+# We use an alipne docker image to make this lightweight.
+.ssh_agent_template:
+  before_script: &ssh_agent_template
+    - apk add --no-cache openssh-client zip unzip
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # Note this deploy key must be manually added to /home/ubuntu/.ssh/authorized_keys
+    # On the target. Private key value is set on Gitlab settings.
+    - echo -e "${STAGING_PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
+    # Avoid warning on connection.
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+
+# Sample of a build, considering a Drupal 8 with composer, Bootstrap sass and drush.
+# For more samples see
+#   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
+.build_template: &build_template
+  image: composer:latest
+  before_script: *ssh_agent_template
+  script:
+    # Install project libraries and dependencies.
+    - composer --ignore-platform-reqs --no-scripts --no-suggest --no-interaction --quiet install
+    # Install and use compass.
+    - apk add --update ruby ruby-dev libffi-dev build-base
+    - gem install --no-document listen sass compass bootstrap-sass
+    - compass compile web/themes/custom/${THEME}
+    # Sample to send our build somewhere.
+    # - ssh -p22 server_user@server_host "mkdir htdocs/_tmp"
+    # - scp -P22 -r build/* server_user@server_host:htdocs/_tmp
+    # - ssh -p22 server_user@server_host "mv htdocs/curent htdocs/_old && mv htdocs/_tmp htdocs/current"
+    # - ssh -p22 server_user@server_host "rm -rf htdocs/_old"
+  artifacts:
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    paths:
+      - ./bin
+      - ./config
+      - ./docs
+      - ./drush
+      - ./scripts
+      - ./shared
+      - ./vendor
+      - ./web
+      - .env.example
+      - .gitignore
+      - '*.md'
+      - LICENSE
+      - 'composer.*'
+      - '*.doxy'
+      - load.environment.php
+      - phpunit.xml.dist
     expire_in: 1 week
 
 # Cache libraries in between jobs by branch, see
@@ -93,140 +152,169 @@ cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
     - coder/
-    # On composer build we could cache the composer folder.
-    # - vendor/
+    # On composer build we cache the composer folder.
+    - vendor/
 
 ###############################################################################
 # Jobs definition.
 ###############################################################################
 
+build:
+  <<: *build_template
+  stage: build
+  only:
+    - master
+  # On composer build we cache the composer folder.
+  cache:
+    key: drupal-build-cache
+    paths:
+      - web/core
+
 # Automated quality check job when something is pushed/merged on master.
+# We have a limit on errors we accept on the tools, if failed we run a
+# report and stop.
 codequality:
-  <<: *phpqa
-  <<: *report
-  before_script: *coder
+  stage: code quality
+  <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
     - phpqa ${REPORT} ${TOOLS} ${CODE}
-  # Limit to branch master, for more options see
+  # Limit to branch push, for more options see
   # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
-  # only:
-    # - master
-  # Optional allow failure to not block the pipeline.
-  # allow_failure: true
-  when: manual
+  only:
+    - branches
 
 # Drupal coding standard best practices report (can not be included in
 # codequality as we are already running Drupal coding standard).
-phpcs_bp:
-  <<: *phpqa
-  <<: *report
-  before_script: *coder
+best practices:
+  stage: code quality
+  <<: *phpqa_template
   script:
     - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs ${CODE}
-  # only:
-    # - master
+    - phpqa ${REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:10 ${CODE}
+  only:
+    - branches
   # Allow failure to produce report and alert.
   allow_failure: true
-  when: manual
 
-# Sample for Drupal coding standard report alone.
-phpcs:
-  <<: *phpqa
-  <<: *report
-  before_script: *coder
-  script:
-    - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --tools phpcs ${CODE}
-  when: manual
-
-# Sample for Drupal coding standard report in job ui alone.
-# Retrun failure if any error.
-phpcs cli:
-  <<: *phpqa
-  <<: *report
-  before_script: *coder
-  script:
-    - phpqa ${CLI} --tools phpcs:0 ${CODE}
-  when: manual
-
-# Phpmetrics report.
-phpmetrics:
-  <<: *phpqa
-  <<: *report
-  before_script: *coder
-  script:
-    - mkdir -p ${REPORT_DIR}
-    - phpqa ${REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${CODE}
-  # Limit to branch master, for more options see
-  # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
-  # only:
-    # - master
-  when: manual
-
-# This is a manual job to get phpqa results in the job ui on Gitlab instead of files.
-codequality cli:
-  <<: *phpqa
-  before_script: *coder
-  script:
-    - phpqa ${CLI} ${TOOLS_STRICT} ${CODE}
-    # Split Phpcs to include Code standard and best practices.
-    - phpqa ${CLI} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:0 ${CODE}
-  when: manual
-
-# This is a sass lint sample.
-sass lint:
-  <<: *node
-  <<: *report
-  script:
-    - npm install -g sass-lint
-    - mkdir -p ${REPORT_DIR}
-    - sass-lint 'web/themes/custom/**/*.scss' -v > ${REPORT_DIR}/sass-lint.txt
-  when: manual
-
-# This is a eslint sample.
-eslint:
-  <<: *node
-  <<: *report
+# This is a eslint report.
+es lint:
+  stage: code lint
+  <<: *node_template
   script:
     - apk --no-cache add curl
     - curl https://cgit.drupalcode.org/drupal/plain/.eslintrc.json?h=8.5.x -o web/.eslintrc.json -s
     - mkdir -p web/core
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x -o web/core/.eslintrc.json -s
+    # Drupal 8.5.x specfic rules override.
+    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json?h=8.5.x -o web/core/.eslintrc.passing.json -s
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0 eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
     - mkdir -p ${REPORT_DIR}
-    # - eslint --output-file ${REPORT_DIR}/eslint.txt --config ./web/.eslintrc.json web/modules/custom/**/*.js web/themes/custom/**/*.js
-    - eslint --config ./web/.eslintrc.json web/modules/custom/**/*.js web/themes/custom/**/*.js
-  when: manual
+    - eslint --config ./web/core/.eslintrc.passing.json --ignore-pattern '**/bootstrap/**/*' --format html --output-file ${REPORT_DIR}/es-lint-report.html web/modules/custom/**/*.js web/themes/custom/**/*.js
+  allow_failure: true
 
-# This is a markdown lint sample.
+# This is a sass lint report.
+sass lint:
+  stage: code lint
+  <<: *node_template
+  script:
+    - npm install -g sass-lint
+    - mkdir -p ${REPORT_DIR}
+    - sass-lint 'web/themes/custom/**/*.scss' --ignore '**/bootstrap/**/*' --verbose --format html --output ${REPORT_DIR}/sass-lint-report.html
+  allow_failure: true
+
+# This is a markdown lint report.
 markdown lint:
-  stage: codequality
+  stage: code lint
   image: ruby:alpine
-  <<: *report
+  <<: *report_template
   script:
     - gem install mdl
     - mkdir -p ${REPORT_DIR}
-    - mdl ./
-    # - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
+    - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
   allow_failure: true
   when: manual
 
-# shellcheck:
-  # stage: codequality
-  # image: nlknguyen/alpine-shellcheck
-  # <<: *report
-  # script:
-    # - mkdir -p ${REPORT_DIR}
-    # - shellcheck -f checkstyle **/*.sh
-  # when: manual
+# Phpmetrics report, no pass or failure as it's just informative.
+phpmetrics:
+  stage: php code metrics
+  <<: *phpqa_template
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${CODE}
+  when: manual
 
-# twig lint:
-#   stage: codequality
-#   image: mogtofu33/symfony-console:latest
-#   <<: *report
-#   script:
-#     - console lint:twig templates/
-  # when: manual
+# Phploc report, no pass or failure as it's just informative.
+phploc:
+  stage: php code metrics
+  <<: *phpqa_template
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} --tools phploc ${CODE}
+  when: manual
 
+# Same reports for all Drupal codes including our custom.
+phpmetrics Drupal:
+  stage: php code metrics
+  <<: *phpqa_template
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics --analyzedDirs web
+  cache:
+    key: drupal-build-cache
+  when: manual
+
+phploc Drupal:
+  stage: php code metrics
+  <<: *phpqa_template
+  script:
+    - mkdir -p ${REPORT_DIR}
+    - phpqa ${REPORT} --tools phploc --analyzedDirs web
+  cache:
+    key: drupal-build-cache
+  when: manual
+
+###############################################################################
+# Deploy jobs definition.
+###############################################################################
+
+deploy to testing:
+  stage: deploy to testing
+  environment:
+    name: testing
+    url: http://MY_TESTING_HOST
+  before_script: *ssh_agent_template
+  script:
+    - echo "Deploy to testing"
+    # - ssh $USER_NAME@$TESTING_HOST "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
+  only:
+    - testing
+    - master
+
+deploy to uat:
+  stage: deploy to uat
+  environment:
+    name: uat
+    url: http://MY_UAT_HOST
+  before_script: *ssh_agent_template
+  script:
+    - echo "Deploy to uat"
+    # - ssh $USER_NAME@$TESTING_HOST "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
+  only:
+    - uat
+    - master
+  when: manual
+
+deploy to production:
+  stage: deploy to production
+  environment:
+    name: production
+    url: http://MY_PRODUCTION_HOST
+  before_script: *ssh_agent_template
+  script:
+    - echo "Deploy to production"
+    # - ssh $USER_NAME@$TESTING_HOST "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
+  only:
+    - production
+    - master
+  when: manual
