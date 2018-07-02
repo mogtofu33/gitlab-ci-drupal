@@ -20,6 +20,7 @@ variables:
   PHPQA_ALL_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
 stages:
   - build
+  - test
   - code quality
   - code lint
   - php code metrics
@@ -80,6 +81,27 @@ image: alpine:latest
       - composer.lock
       - load.environment.php
     expire_in: 1 day
+.drupal8ci_template: &drupal8ci_template
+  except:
+    - master
+  image: juampynr/drupal8ci:latest
+  services:
+    - mariadb:10.3
+  before_script:
+    - mkdir -p /var/www/html
+    - ln -s $CI_PROJECT_DIR/web /var/www/html/web
+    - apache2-foreground&
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    DB_URL: "mysql://root@mariadb/drupal8"
+    SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
+    SIMPLETEST_BASE_URL: "http://localhost"
+    BROWSERTEST_OUTPUT_DIRECTORY: "$CI_PROJECT_DIR/web/sites/simpletest"
+.drupal8ci_test_template: &drupal8ci_test_template
+  <<: *drupal8ci_template
+  stage: test
+  dependencies:
+    - drupal8ci:build
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
@@ -94,6 +116,77 @@ build:
     key: drupal-build-cache
     paths:
       - web
+drupal8ci:build:
+  <<: *drupal8ci_template
+  stage: build
+  script:
+    - composer install
+    - robo install:dependencies
+  services:
+    - mariadb:10.3
+    - selenium/standalone-chrome-debug:3.7.1-beryllium
+  artifacts:
+    paths:
+      - vendor
+      - web
+  except:
+    - master
+drupal8ci:unit_kernel_tests:
+  <<: *drupal8ci_test_template
+  script:
+    - robo setup:drupal || true
+    - cp .gitlab-ci/phpunit.xml web/core/
+    - mkdir -p artifacts/phpunit
+    - chmod -R 777 artifacts
+    - cd web
+    - sudo -E -u www-data
+        ../vendor/bin/phpunit -c core
+        --debug --verbose --log-junit
+        ../artifacts/phpunit/phpunit.xml
+        core/modules/node
+  artifacts:
+    paths:
+      - artifacts/phpunit
+  when: manual
+drupal8ci:code_coverage:
+  <<: *drupal8ci_test_template
+  script:
+    - robo setup:drupal || true
+    - cp .gitlab-ci/phpunit.xml web/core/
+    - mkdir -p artifacts/coverage-xml
+    - mkdir -p artifacts/coverage-html
+    - chmod -R 777 artifacts
+    - cd web
+    - timeout 60m sudo -E -u www-data
+        ../vendor/bin/phpunit
+        --verbose --debug
+        -c core
+        --coverage-xml ../artifacts/coverage-xml
+        --coverage-html ../artifacts/coverage-html
+        --testsuite nonfunctional
+        core/modules/node
+  artifacts:
+    paths:
+      - artifacts
+  when: manual
+code_quality:
+  image: docker:stable
+  stage: code quality
+  variables:
+    DOCKER_DRIVER: overlay2
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+    - docker run
+        --env SOURCE_CODE="$PWD/web"
+        --volume "$PWD/web":/code
+        --volume /var/run/docker.sock:/var/run/docker.sock
+        "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
+  artifacts:
+    paths: [gl-code-quality-report.json]
+  when: manual
 codequality:
   stage: code quality
   <<: *phpqa_template
