@@ -1,16 +1,16 @@
 variables:
   USER_NAME: "ubuntu"
-  DRUPAL_FOLDER: "/var/www/htdocs/my_drupal"
-  THEME: "my_theme"
-  TESTING_HOST: "my_host_or_ip.test.com"
-  STAGING_HOST: "my_host_or_ip.test.com"
-  PRODUCTION_HOST: "my_host_or_ip.test.com"
+  DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
+  THEME: "MY_THEME_NAME"
+  TESTING_HOST: "MY_HOST_OR_IP"
+  STAGING_HOST: "MY_HOST_OR_IP"
+  PRODUCTION_HOST: "MY_HOST_OR_IP"
   WEB_ROOT: "web"
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
   PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
   JS_CODE_IGNORE: "**/bootstrap/**/*"
-  SASS_CODE: "web/themes/custom/**/*.scss,web/themes/custom/**/*.sass"
+  SASS_CODE: "${WEB_ROOT}/themes/custom/**/*.scss,${WEB_ROOT}/themes/custom/**/*.sass"
   TOOLS: "--tools phpcs:5,phpmd:5,phpcpd:0,security-checker:0,parallel-lint:0"
   PHPQA: "v1.19.0"
   REPORT_DIR: "reports"
@@ -37,15 +37,21 @@ image: alpine:latest
 .phpqa_template: &phpqa_template
   image: zdenekdrahos/phpqa:${PHPQA}
   before_script:
-    - curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz -s
-    - tar xzf coder.tar.gz
+    - if [ ! -d ./coder/coder_sniffer ]; then curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz -s; fi
+    - if [ -f coder.tar.gz ]; then tar xzf coder.tar.gz; fi
+    - mkdir -p ${REPORT_DIR}
+  after_script:
+    - if [ -d ./${REPORT_DIR} ]; then rm -f ./${REPORT_DIR}/*.xml; fi
   <<: *report_template
 .node_template: &node_template
-  image: node:alpine
+  image: node:8-alpine
+  <<: *report_template
+.ruby_template: &ruby_template
+  image: ruby:2-alpine
   <<: *report_template
 .ssh_agent_template:
   before_script: &ssh_agent_template
-    - apk add --no-cache openssh-client zip unzip
+    - apk add --no-cache openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo -e "${STAGING_PRIVATE_KEY}" > ~/.ssh/id_rsa
@@ -92,7 +98,6 @@ codequality:
   stage: code quality
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_CUTSOM_CODE}
   only:
     - branches
@@ -100,7 +105,6 @@ best practices:
   stage: code quality
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:10 ${PHPQA_CUTSOM_CODE}
   only:
     - branches
@@ -115,7 +119,6 @@ es lint:
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x -o ${WEB_ROOT}/core/.eslintrc.json -s
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json?h=8.5.x -o ${WEB_ROOT}/core/.eslintrc.passing.json -s
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0 eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
-    - mkdir -p ${REPORT_DIR}
     - eslint --config ./${WEB_ROOT}/core/.eslintrc.passing.json --format html --output-file ${REPORT_DIR}/es-lint-report.html --ignore-pattern ${JS_CODE_IGNORE} ${JS_CODE}
   allow_failure: true
 sass lint:
@@ -123,16 +126,13 @@ sass lint:
   <<: *node_template
   script:
     - npm install -g sass-lint
-    - mkdir -p ${REPORT_DIR}
     - sass-lint ${SASS_CODE} --verbose --format html --output ${REPORT_DIR}/sass-lint-report.html --ignore ${JS_CODE_IGNORE}
   allow_failure: true
 markdown lint:
   stage: code lint
-  image: ruby:alpine
-  <<: *report_template
+  <<: *ruby_template
   script:
     - gem install mdl
-    - mkdir -p ${REPORT_DIR}
     - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
   allow_failure: true
   when: manual
@@ -140,21 +140,18 @@ phpmetrics:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${PHPQA_CUTSOM_CODE}
   when: manual
 phploc:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_CUTSOM_CODE}
   when: manual
 phpmetrics Drupal:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${PHPQA_ALL_CODE}
   cache:
     key: drupal-build-cache
@@ -163,7 +160,6 @@ phploc Drupal:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_ALL_CODE}
   cache:
     key: drupal-build-cache

@@ -24,15 +24,15 @@ variables:
   #
   # Global settings for all env used for deploy.
   USER_NAME: "ubuntu"
-  DRUPAL_FOLDER: "/var/www/htdocs/my_drupal"
+  DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
   # For Sass when build in case of a Drupal Bootstrap sub theme.
-  THEME: "my_theme"
+  THEME: "MY_THEME_NAME"
   # Testing config
-  TESTING_HOST: "my_host_or_ip.test.com"
+  TESTING_HOST: "MY_HOST_OR_IP"
   # Staging config
-  STAGING_HOST: "my_host_or_ip.test.com"
+  STAGING_HOST: "MY_HOST_OR_IP"
   # Production config
-  PRODUCTION_HOST: "my_host_or_ip.test.com"
+  PRODUCTION_HOST: "MY_HOST_OR_IP"
   #
   # Drupal custom code / theme / all code. We are checking our code quality,
   # and optionally Drupal core.
@@ -43,7 +43,7 @@ variables:
   PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
   JS_CODE_IGNORE: "**/bootstrap/**/*"
-  SASS_CODE: "web/themes/custom/**/*.scss,web/themes/custom/**/*.sass"
+  SASS_CODE: "${WEB_ROOT}/themes/custom/**/*.scss,${WEB_ROOT}/themes/custom/**/*.sass"
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
@@ -88,12 +88,13 @@ image: alpine:latest
 #   https://docs.gitlab.com/ee/user/project/pipelines/job_artifacts.html
 .report_template: &report_template
   artifacts:
-    # Name will be 'check-NAME_OF_THE_BRANCH'
+    # Name will be based on job and branch.
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     paths:
       - ${REPORT_DIR}/*
     # How long do we keep reports files.
     expire_in: 1 week
+    # Force artifacts even if the job fail.
     when: always
 
 # Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
@@ -101,20 +102,30 @@ image: alpine:latest
 .phpqa_template: &phpqa_template
   image: zdenekdrahos/phpqa:${PHPQA}
   before_script:
-    - curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz -s
-    - tar xzf coder.tar.gz
+    - if [ ! -d ./coder/coder_sniffer ]; then curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz -s; fi
+    - if [ -f coder.tar.gz ]; then tar xzf coder.tar.gz; fi
+    - mkdir -p ${REPORT_DIR}
+  # We don't need phpqa xml files, uncomment if needed.
+  after_script:
+    - if [ -d ./${REPORT_DIR} ]; then rm -f ./${REPORT_DIR}/*.xml; fi
   <<: *report_template
 
-# Use Node docker image for Sass lint.
+# Use Node docker image for Eslint and Sass lint.
 .node_template: &node_template
-  image: node:alpine
+  image: node:8-alpine
+  <<: *report_template
+
+# Use Ruby docker image for Markdown lint.
+.ruby_template: &ruby_template
+  image: ruby:2-alpine
   <<: *report_template
 
 # Deploy process need an ssh private key set on the Project settings.
-# We use an alipne docker image to make this lightweight.
+# We use an alipne docker image to make this lightweight, all images
+# used with this must be based on Alpine Linux.
 .ssh_agent_template:
   before_script: &ssh_agent_template
-    - apk add --no-cache openssh-client zip unzip
+    - apk add --no-cache openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     # Note this deploy key must be manually added to /home/ubuntu/.ssh/authorized_keys
@@ -124,14 +135,14 @@ image: alpine:latest
     # Avoid warning on connection.
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
-# Sample of a build, considering a Drupal 8 with composer, Bootstrap sass and drush.
+# Sample of a build, considering a Drupal 8 with composer, Bootstrap Sass and drush.
 # For more samples see
 #   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
 .build_template: &build_template
   image: composer:latest
   before_script: *ssh_agent_template
   script:
-    # Sample to install a Drupal with drupal composer template.
+    # Sample to install a Drupal 8 with drupal composer template.
     - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts --quiet
     - cp -r drupal/* .
     - composer require drupal/bootstrap --ignore-platform-reqs --no-scripts --quiet
@@ -149,6 +160,7 @@ image: alpine:latest
   artifacts:
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     paths:
+      # Folders from Drupal template, add any folders/files you need.
       - ./bin
       - ./config
       - ./drush
@@ -168,6 +180,7 @@ image: alpine:latest
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
+    # If we can avoid downloading coder.
     - coder
     # On composer build we cache the composer folder.
     - vendor
@@ -194,7 +207,6 @@ codequality:
   stage: code quality
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_CUTSOM_CODE}
   # Limit to branch push, for more options see
   # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
@@ -207,7 +219,6 @@ best practices:
   stage: code quality
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpcs_drupal_best_practices --tools phpcs:10 ${PHPQA_CUTSOM_CODE}
   only:
     - branches
@@ -219,6 +230,7 @@ es lint:
   stage: code lint
   <<: *node_template
   script:
+    # If there is a build this part is not needed.
     - apk --no-cache add curl
     - curl https://cgit.drupalcode.org/drupal/plain/.eslintrc.json?h=8.5.x -o ${WEB_ROOT}/.eslintrc.json -s
     - mkdir -p ${WEB_ROOT}/core
@@ -226,7 +238,7 @@ es lint:
     # Drupal 8.5.x specfic rules override.
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json?h=8.5.x -o ${WEB_ROOT}/core/.eslintrc.passing.json -s
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0 eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
-    - mkdir -p ${REPORT_DIR}
+    # Run the eslint command to generate a report.
     - eslint --config ./${WEB_ROOT}/core/.eslintrc.passing.json --format html --output-file ${REPORT_DIR}/es-lint-report.html --ignore-pattern ${JS_CODE_IGNORE} ${JS_CODE}
   allow_failure: true
 
@@ -236,18 +248,15 @@ sass lint:
   <<: *node_template
   script:
     - npm install -g sass-lint
-    - mkdir -p ${REPORT_DIR}
     - sass-lint ${SASS_CODE} --verbose --format html --output ${REPORT_DIR}/sass-lint-report.html --ignore ${JS_CODE_IGNORE}
   allow_failure: true
 
 # This is a markdown lint report.
 markdown lint:
   stage: code lint
-  image: ruby:alpine
-  <<: *report_template
+  <<: *ruby_template
   script:
     - gem install mdl
-    - mkdir -p ${REPORT_DIR}
     - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
   allow_failure: true
   when: manual
@@ -257,7 +266,6 @@ phpmetrics:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${PHPQA_CUTSOM_CODE}
   when: manual
 
@@ -266,16 +274,15 @@ phploc:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_CUTSOM_CODE}
   when: manual
 
 # Same reports for all Drupal codes including our custom.
+# Those commands require enough resources from the runner.
 phpmetrics Drupal:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --config ./phpqa_config/phpmetrics --tools phpmetrics ${PHPQA_ALL_CODE}
   cache:
     key: drupal-build-cache
@@ -285,7 +292,6 @@ phploc Drupal:
   stage: php code metrics
   <<: *phpqa_template
   script:
-    - mkdir -p ${REPORT_DIR}
     - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_ALL_CODE}
   cache:
     key: drupal-build-cache
@@ -293,6 +299,10 @@ phploc Drupal:
 
 ###############################################################################
 # Deploy jobs definition.
+# This is a sample workflow, testing is run on master and teting branches
+# pushes or merge, other deploy are manual.
+# You need to be sure we can ssh to the machine, see .ssh_agent_template above,
+# adapt your deploy script.
 ###############################################################################
 
 deploy to testing:
