@@ -134,7 +134,7 @@ image: alpine:latest
     # Sample to install a Drupal with drupal composer template.
     - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts --quiet
     - cp -r drupal/* .
-    - composer require drupal/bootstrap
+    - composer require drupal/bootstrap --ignore-platform-reqs --no-scripts --quiet
     # Install project libraries and dependencies from a local composer.json file.
     # - composer --ignore-platform-reqs --no-scripts --no-suggest --no-interaction --quiet install
     # Install and use compass.
