@@ -76,7 +76,7 @@ image: alpine:latest
     paths:
       - ${REPORT_DIR}/*
     # How long do we keep reports files.
-    expire_in: 1 week
+    expire_in: 1 day
     when: always
 
 # Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
@@ -114,12 +114,15 @@ image: alpine:latest
   image: composer:latest
   before_script: *ssh_agent_template
   script:
+    # Install a Drupal with drupal composer template.
+    - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction
+    - mv web drupal/web
     # Install project libraries and dependencies.
-    - composer --ignore-platform-reqs --no-scripts --no-suggest --no-interaction --quiet install
+    # - composer --ignore-platform-reqs --no-scripts --no-suggest --no-interaction --quiet install
     # Install and use compass.
-    - apk add --update ruby ruby-dev libffi-dev build-base
-    - gem install --no-document listen sass compass bootstrap-sass
-    - compass compile web/themes/custom/${THEME}
+    # - apk add --update ruby ruby-dev libffi-dev build-base
+    # - gem install --no-document listen sass compass bootstrap-sass
+    # - compass compile web/themes/custom/${THEME}
     # Sample to send our build somewhere.
     # - ssh -p22 server_user@server_host "mkdir htdocs/_tmp"
     # - scp -P22 -r build/* server_user@server_host:htdocs/_tmp
@@ -130,10 +133,8 @@ image: alpine:latest
     paths:
       - ./bin
       - ./config
-      - ./docs
       - ./drush
       - ./scripts
-      - ./shared
       - ./vendor
       - ./web
       - .env.example
@@ -141,10 +142,9 @@ image: alpine:latest
       - '*.md'
       - LICENSE
       - 'composer.*'
-      - '*.doxy'
       - load.environment.php
       - phpunit.xml.dist
-    expire_in: 1 week
+    expire_in: 1 day
 
 # Cache libraries in between jobs by branch, see
 #   https://docs.gitlab.com/ee/ci/caching/#caching-php-dependencies
