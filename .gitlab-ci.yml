@@ -115,7 +115,7 @@ image: alpine:latest
   before_script: *ssh_agent_template
   script:
     # Install a Drupal with drupal composer template.
-    - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts --no-suggest
+    - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts
     - mv web drupal/web
     # Install project libraries and dependencies.
     # - composer --ignore-platform-reqs --no-scripts --no-suggest --no-interaction --quiet install
