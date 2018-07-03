@@ -38,7 +38,7 @@ variables:
   # and optionally Drupal core.
   # Path is relative to project root, web/ is for Drupal Composer template,
   # change it if you are using docroot/ or any other web root.
-  WEB_ROOT: "web"
+  WEB_ROOT: "$CI_PROJECT_DIR/drupal/web"
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
   PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
@@ -186,7 +186,7 @@ image: alpine:latest
     #- selenium/standalone-chrome-debug:3.7.1-beryllium
   before_script:
     - mkdir -p /var/www/html
-    - ln -s $CI_PROJECT_DIR/web /var/www/html/web
+    - ln -s ${WEB_ROOT} /var/www/html/web
     - apache2-foreground&
   variables:
     #CI_DEBUG_TRACE: 1
@@ -194,7 +194,7 @@ image: alpine:latest
     DB_URL: "mysql://root@mariadb/drupal8"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
     SIMPLETEST_BASE_URL: "http://localhost"
-    BROWSERTEST_OUTPUT_DIRECTORY: "$CI_PROJECT_DIR/web/sites/simpletest"
+    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
 
 ## The shared template for Drupal8CI tests.
 .drupal8ci_test_template: &drupal8ci_test_template
@@ -226,14 +226,16 @@ build:
   cache:
     key: drupal-build-cache
     paths:
-      - web
+      - ${WEB_ROOT}
 
 ## Build the testing environment.
 drupal8ci:build:
   <<: *drupal8ci_template
   stage: build
   script:
-    - composer install
+    # - composer install
+    - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts --quiet
+    - cp -r drupal/* .
     - robo install:dependencies
   services:
     - mariadb:10.3

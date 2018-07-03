@@ -89,14 +89,14 @@ image: alpine:latest
     - mariadb:10.3
   before_script:
     - mkdir -p /var/www/html
-    - ln -s $CI_PROJECT_DIR/web /var/www/html/web
+    - ln -s ${WEB_ROOT} /var/www/html/web
     - apache2-foreground&
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: 1
     DB_URL: "mysql://root@mariadb/drupal8"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
     SIMPLETEST_BASE_URL: "http://localhost"
-    BROWSERTEST_OUTPUT_DIRECTORY: "$CI_PROJECT_DIR/web/sites/simpletest"
+    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
 .drupal8ci_test_template: &drupal8ci_test_template
   <<: *drupal8ci_template
   stage: test
@@ -115,12 +115,13 @@ build:
   cache:
     key: drupal-build-cache
     paths:
-      - web
+      - ${WEB_ROOT}
 drupal8ci:build:
   <<: *drupal8ci_template
   stage: build
   script:
-    - composer install
+    - composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs --no-scripts --quiet
+    - cp -r drupal/* .
     - robo install:dependencies
   services:
     - mariadb:10.3
