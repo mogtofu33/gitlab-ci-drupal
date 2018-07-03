@@ -93,8 +93,6 @@ image: alpine:latest
       - ./scripts
       - ./vendor
       - ./${WEB_ROOT}
-      - .env.example
-      - .gitignore
       - LICENSE
       - README.md
       - composer.json
@@ -135,14 +133,14 @@ build:
   except:
     - master
   after_script:
-    - ./${WEB_ROOT}/vendor/bin/drush site:install
+    - ./vendor/bin/drush site:install
       --yes
       --root "/var/www/html/web"
       --db-url ${DB_URL}
     - mkdir -p dump
     - if [ ! -f $CI_PROJECT_DIR/dump/db_dump.sql ];
       then
-        ./${WEB_ROOT}/vendor/bin/drush sql-dump
+        ./vendor/bin/drush sql-dump
         --gzip
         --result-file=${CI_PROJECT_DIR}/dump/db_dump.sql;
       fi
@@ -268,26 +266,32 @@ markdown lint:
   when: manual
 phpmetrics:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqmetrics_template
   script:
-    - phpmetrics
+    - ./phpmetrics
       --report-html=${REPORT_DIR}/metrics
       --extensions=php,inc,module
       ${PHP_CODE}
   when: manual
 phploc:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
       --tools phploc
       ${PHPQA_PHP_CODE}
   when: manual
-phpmetrics Drupal:
+phpmetrics All:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqmetrics_template
   script:
-    - phpmetrics
+    - ./phpmetrics
       --report-html=${REPORT_DIR}/metrics
       --extensions=php,inc,module
       ${WEB_ROOT}
@@ -296,8 +300,10 @@ phpmetrics Drupal:
   dependencies:
     - build
   when: manual
-phploc Drupal:
+phploc All:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_ALL_CODE}

@@ -80,6 +80,26 @@ variables:
 
 # All code quality jobs are in the same stage, add any deploy / build stages if
 # needed. The idea is to run deploy jobs only if check pass.
+# Current workflow is:
+# Testing
+#   build
+#   test
+#   code quality
+#   code lint
+#   deploy to testing
+# Staging
+#   code quality
+#   code lint
+#   Php code metrics
+#   deploy to testing
+#   manual deploy to staging
+# Production
+#   code quality
+#   code lint
+#   Php code metrics
+#   deploy to testing
+#   manual deploy to staging
+#   manual deploy to production
 stages:
   - build
   - test
@@ -197,8 +217,6 @@ image: alpine:latest
       - ./scripts
       - ./vendor
       - ./${WEB_ROOT}
-      - .env.example
-      - .gitignore
       - LICENSE
       - README.md
       - composer.json
@@ -253,14 +271,14 @@ build:
   except:
     - master
   after_script:
-    - ./${WEB_ROOT}/vendor/bin/drush site:install
+    - ./vendor/bin/drush site:install
       --yes
       --root "/var/www/html/web"
       --db-url ${DB_URL}
     - mkdir -p dump
     - if [ ! -f $CI_PROJECT_DIR/dump/db_dump.sql ];
       then
-        ./${WEB_ROOT}/vendor/bin/drush sql-dump
+        ./vendor/bin/drush sql-dump
         --gzip
         --result-file=${CI_PROJECT_DIR}/dump/db_dump.sql;
       fi
@@ -418,9 +436,11 @@ markdown lint:
 # Phpmetrics report, no pass or failure as it's just informative.
 phpmetrics:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqmetrics_template
   script:
-    - phpmetrics
+    - ./phpmetrics
       --report-html=${REPORT_DIR}/metrics
       --extensions=php,inc,module
       ${PHP_CODE}
@@ -429,6 +449,8 @@ phpmetrics:
 # Phploc report, no pass or failure as it's just informative.
 phploc:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -438,11 +460,13 @@ phploc:
 
 # Same reports for all Drupal codes including our custom.
 # Those commands require enough resources from the runner.
-phpmetrics Drupal:
+phpmetrics All:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqmetrics_template
   script:
-    - phpmetrics
+    - ./phpmetrics
       --report-html=${REPORT_DIR}/metrics
       --extensions=php,inc,module
       ${WEB_ROOT}
@@ -452,8 +476,10 @@ phpmetrics Drupal:
     - build
   when: manual
 
-phploc Drupal:
+phploc All:
   stage: php code metrics
+  except:
+    - master
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_ALL_CODE}
@@ -465,7 +491,7 @@ phploc Drupal:
 
 ###############################################################################
 # Deploy jobs definition.
-# This is a sample workflow, testing is run on master and teting branches
+# This is a sample workflow, testing is run on master and testing branches
 # pushes or merge, other deploy are manual.
 # You need to be sure we can ssh to the machine, see .ssh_agent_template above,
 # adapt your deploy script.
