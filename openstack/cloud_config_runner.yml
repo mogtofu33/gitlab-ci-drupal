@@ -1,16 +1,12 @@
 #cloud-config
-
 package_update: true
 package_upgrade: true
 runcmd:
+  # Adjust timezone.
+  - cp /usr/share/zoneinfo/Pacific/Auckland /etc/localtime
   # Add Docker recommended packages and add user to Docker group, should not be
   # edited. this is required for Docker.
   - usermod -aG docker ubuntu
-  - wget -q -O /usr/local/bin/docker-compose "https://github.com/docker/compose/releases/download/1.21.2/docker-compose-Linux-x86_64"
-  - chown "ubuntu:ubuntu" /usr/local/bin/docker-compose
-  - chmod +x /usr/local/bin/docker-compose
-  # Adjust timezone
-  - cp /usr/share/zoneinfo/Pacific/Auckland /etc/localtime
   # Install Gitlab runner.
   - curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
   - sudo apt-get install gitlab-runner
@@ -29,13 +25,11 @@ packages:
   - curl
   - docker-ce
 # Set-up Docker for Ubuntu, see doc at:
-# https://docs.docker.com/install/linux/docker-ce/ubuntu
-# Note: currently bionic repo is not working.
+#   https://docs.docker.com/install/linux/docker-ce/ubuntu
 apt_sources:
-#  - source: deb https://download.docker.com/linux/ubuntu bionic stable
- - source: deb https://download.docker.com/linux/ubuntu xenial stable
-   filename: docker.list
-   key: |
+  - source: deb https://download.docker.com/linux/ubuntu bionic stable
+    filename: docker.list
+    key: |
       -----BEGIN PGP PUBLIC KEY BLOCK-----
 
       mQINBFit2ioBEADhWpZ8/wvZ6hUTiXOwQHXMAlaFHcPH9hAtr4F1y2+OYdbtMuth
