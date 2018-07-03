@@ -90,13 +90,13 @@ variables:
 # Staging
 #   code quality
 #   code lint
-#   Php code metrics
+#   php code metrics
 #   deploy to testing
 #   manual deploy to staging
 # Production
 #   code quality
 #   code lint
-#   Php code metrics
+#   php code metrics
 #   deploy to testing
 #   manual deploy to staging
 #   manual deploy to production
@@ -229,6 +229,8 @@ image: alpine:latest
   stage: test
   except:
     - master
+  only:
+    - testing
   image: juampynr/drupal8ci:latest
   services:
     - mariadb:10.3
@@ -294,6 +296,7 @@ build:
 unit_kernel_tests:
   <<: *test_template
   script:
+    - cd ${WEB_ROOT}
     - sudo -E -u www-data
       ../vendor/bin/phpunit
         --debug --verbose
@@ -302,11 +305,11 @@ unit_kernel_tests:
         --testdox-html ../${REPORT_DIR}/phpunit.html
         --testsuite=unit
         ${UNIT_TEST_ROOT}
-  when: manual
 
 web_tests:
   <<: *test_template
   script:
+    - cd ${WEB_ROOT}
     - sudo -E -u www-data
       ../vendor/bin/phpunit
         --debug --verbose
@@ -315,7 +318,6 @@ web_tests:
         --testdox-html ../${REPORT_DIR}/phpunit.html
         --group Drupal
         ${UNIT_TEST_ROOT}
-  when: manual
 
 # Unit tests nonfunctional.
 code_coverage:
@@ -324,6 +326,7 @@ code_coverage:
     - mkdir -p ${REPORT_DIR}/coverage-xml
     - mkdir -p ${REPORT_DIR}/coverage-html
     - chmod -R 777 ${REPORT_DIR}
+    - cd ${WEB_ROOT}
     - timeout 60m sudo -E -u www-data
       ../vendor/bin/phpunit
         --verbose --debug
@@ -332,7 +335,6 @@ code_coverage:
         --coverage-html ../${REPORT_DIR}/coverage-html
         --testsuite nonfunctional
         ${UNIT_TEST_ROOT}
-  when: manual
 
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
@@ -436,7 +438,8 @@ markdown lint:
 # Phpmetrics report, no pass or failure as it's just informative.
 phpmetrics:
   stage: php code metrics
-  except:
+  only:
+    - staging
     - master
   <<: *phpqmetrics_template
   script:
@@ -449,7 +452,8 @@ phpmetrics:
 # Phploc report, no pass or failure as it's just informative.
 phploc:
   stage: php code metrics
-  except:
+  only:
+    - staging
     - master
   <<: *phpqa_template
   script:
@@ -462,7 +466,8 @@ phploc:
 # Those commands require enough resources from the runner.
 phpmetrics All:
   stage: php code metrics
-  except:
+  only:
+    - staging
     - master
   <<: *phpqmetrics_template
   script:
@@ -478,7 +483,8 @@ phpmetrics All:
 
 phploc All:
   stage: php code metrics
-  except:
+  only:
+    - staging
     - master
   <<: *phpqa_template
   script:
