@@ -46,7 +46,7 @@ variables:
   WEB_ROOT: "web"
   # Test unit folder.
   UNIT_UNIT_TEST_ROOT: "core/modules/node"
-  # Comma separated for phpqa.
+  # Comma separated for phpqa and phpmetrics.
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
@@ -58,7 +58,7 @@ variables:
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:5,phpmd:5,phpcpd:0,security-checker:0,parallel-lint:0"
+  TOOLS: "--tools phpcs:5,phpmd:5,phpcpd:0,security-checker,parallel-lint"
 ###############################################################################
   # Next part do not need to be edited for a first quick run.
   #
@@ -66,6 +66,8 @@ variables:
   # project root.
   #   https://hub.docker.com/r/zdenekdrahos/phpqa/tags/
   PHPQA: "v1.19.0"
+  # Phpmetrics use the last phar release.
+  PHPMETRICS: "v2.3.2"
   REPORT_DIR: "reports"
   # Drupal coding standards for Code Sniffer (phpcs) are provided by Coder module.
   #   https://www.drupal.org/project/coder
@@ -129,6 +131,17 @@ image: alpine:latest
     - if [ -d ./${REPORT_DIR} ];
       then rm -f ./${REPORT_DIR}/*.xml;
       fi
+  <<: *report_template
+
+# We use Phpmetrics for metrics report.
+# Is included in phpqa but standalone provide the last version.
+.phpqmetrics_template: &phpqmetrics_template
+  image: composer:latest
+  before_script:
+    - curl -L https://github.com/phpmetrics/PhpMetrics/releases/download/${PHPMETRICS}/phpmetrics.phar
+      -o phpmetrics -s
+    - chmod +x phpmetrics
+    - mkdir -p ${REPORT_DIR}/metrics
   <<: *report_template
 
 # Use Node docker image for Eslint and Sass lint.
@@ -207,7 +220,7 @@ image: alpine:latest
     - apache2-foreground&
     - mkdir -p ${REPORT_DIR}
     - chmod -R 777 ${REPORT_DIR}
-    - cp config/phpunit.xml.dist ${WEB_ROOT}/core/
+    - cp config/phpunit.xml ${WEB_ROOT}/core/
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: drupal8
@@ -405,12 +418,12 @@ markdown lint:
 # Phpmetrics report, no pass or failure as it's just informative.
 phpmetrics:
   stage: php code metrics
-  <<: *phpqa_template
+  <<: *phpqmetrics_template
   script:
-    - phpqa ${PHPQA_REPORT}
-      --config ./phpqa_config/phpmetrics
-      --tools phpmetrics
-      ${PHPQA_PHP_CODE}
+    - phpmetrics
+      --report-html=${REPORT_DIR}/metrics
+      --extensions=php,inc,module
+      ${PHP_CODE}
   when: manual
 
 # Phploc report, no pass or failure as it's just informative.
@@ -427,12 +440,12 @@ phploc:
 # Those commands require enough resources from the runner.
 phpmetrics Drupal:
   stage: php code metrics
-  <<: *phpqa_template
+  <<: *phpqmetrics_template
   script:
-    - phpqa ${PHPQA_REPORT}
-      --config ./phpqa_config/phpmetrics
-      --tools phpmetrics
-      ${PHPQA_ALL_CODE}
+    - phpmetrics
+      --report-html=${REPORT_DIR}/metrics
+      --extensions=php,inc,module
+      ${WEB_ROOT}
   cache:
     key: drupal-build-cache
   dependencies:
