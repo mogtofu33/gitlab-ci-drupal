@@ -63,6 +63,7 @@ image: alpine:latest
       -o phpmetrics -s
     - chmod +x phpmetrics
     - mkdir -p ${REPORT_DIR}/metrics
+    - mkdir -p ${REPORT_DIR}/metrics-all
   <<: *report_template
 .node_template: &node_template
   image: node:8-alpine
@@ -75,18 +76,15 @@ image: alpine:latest
     - apk add --no-cache openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo -e "${STAGING_PRIVATE_KEY}" > ~/.ssh/id_rsa
-    - chmod 400 ~/.ssh/id_rsa
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 .build_template: &build_template
   image: composer:latest
   script:
-    - if [ ! -f ${WEB_ROOT}/index.php ];
-      then
-        composer create-project drupal-composer/drupal-project:8.x-dev drupal
-          --stability dev --no-interaction --ignore-platform-reqs --quiet;
-        cp -r drupal/* .;
-      fi
+    - composer global require hirak/prestissimo
+        --no-progress --no-suggest --ignore-platform-reqs
+    - composer create-project drupal-composer/drupal-project:8.x-dev drupal
+        --stability dev --no-interaction --ignore-platform-reqs --quiet
+    - cp -r drupal/* .
   artifacts:
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     paths:
@@ -111,7 +109,6 @@ image: alpine:latest
   image: juampynr/drupal8ci:latest
   services:
     - mariadb:10.3
-    - selenium/standalone-chrome-debug:3.7.1-beryllium
   before_script:
     - mkdir -p /var/www/html
     - ln -s ${WEB_ROOT} /var/www/html/web
@@ -269,7 +266,6 @@ sass lint:
         --output ${REPORT_DIR}/sass-lint-report.html
         --ignore ${JS_CODE_IGNORE}
   allow_failure: true
-
 markdown lint:
   stage: code lint
   <<: *ruby_template
@@ -309,7 +305,7 @@ phpmetrics All:
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
-        --report-html=${REPORT_DIR}/metrics
+        --report-html=${REPORT_DIR}/metrics-all
         --extensions=php,inc,module
         ${WEB_ROOT}
   cache:
@@ -340,6 +336,8 @@ deploy to testing:
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to testing"
+    - echo -e "${TESTING_PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
   only:
     - testing
     - master
@@ -351,6 +349,8 @@ deploy to staging:
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to staging"
+    - echo -e "${STAGING_PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
   only:
     - staging
     - master
@@ -363,6 +363,8 @@ deploy to production:
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to production"
+    - echo -e "${PRODUCTION_PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
   only:
     - production
     - master

@@ -162,6 +162,7 @@ image: alpine:latest
       -o phpmetrics -s
     - chmod +x phpmetrics
     - mkdir -p ${REPORT_DIR}/metrics
+    - mkdir -p ${REPORT_DIR}/metrics-all
   <<: *report_template
 
 # Use Node docker image for Eslint and Sass lint.
@@ -197,12 +198,11 @@ image: alpine:latest
   image: composer:latest
   script:
     # Sample to install a Drupal 8 with drupal composer template.
-    - if [ ! -f ${WEB_ROOT}/index.php ];
-      then
-        composer create-project drupal-composer/drupal-project:8.x-dev drupal
-          --stability dev --no-interaction --ignore-platform-reqs --quiet;
-        cp -r drupal/* .;
-      fi
+    - composer global require hirak/prestissimo
+        --no-progress --no-suggest --ignore-platform-reqs
+    - composer create-project drupal-composer/drupal-project:8.x-dev drupal
+        --stability dev --no-interaction --ignore-platform-reqs --quiet
+    - cp -r drupal/* .
     # Install project libraries and dependencies from a composer.json
     # - composer install
     #   --dev --ignore-platform-reqs --no-suggest --no-interaction --quiet
@@ -237,7 +237,7 @@ image: alpine:latest
   image: juampynr/drupal8ci:latest
   services:
     - mariadb:10.3
-    - selenium/standalone-chrome-debug:3.7.1-beryllium
+    # - selenium/standalone-chrome-debug:3.7.1-beryllium
   before_script:
     - mkdir -p /var/www/html
     - ln -s ${WEB_ROOT} /var/www/html/web
@@ -485,7 +485,7 @@ phpmetrics All:
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
-        --report-html=${REPORT_DIR}/metrics
+        --report-html=${REPORT_DIR}/metrics-all
         --extensions=php,inc,module
         ${WEB_ROOT}
   cache:
@@ -526,6 +526,8 @@ deploy to testing:
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to testing"
+    - echo -e "${TESTING_PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
     # - ssh $USER_NAME@$TESTING_HOST
     #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
   only:
@@ -540,6 +542,8 @@ deploy to staging:
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to staging"
+    - echo -e "${STAGING_PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
     # - ssh $USER_NAME@$TESTING_HOST
     #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
   only:
@@ -555,6 +559,8 @@ deploy to production:
   before_script: *ssh_agent_template
   script:
     - echo "Deploy to production"
+    - echo -e "${PRODUCTION_PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
     # - ssh $USER_NAME@$TESTING_HOST
     #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
   only:
