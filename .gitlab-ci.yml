@@ -117,13 +117,13 @@ image: alpine:latest
     - chmod -R 777 ${REPORT_DIR}
     - cp config/phpunit.xml ${WEB_ROOT}/core/
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
-    - chmod 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
-    MYSQL_DATABASE: drupal8
+    # MYSQL_DATABASE: drupal8
     SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
     SIMPLETEST_BASE_URL: "http://localhost"
-    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/default/simpletest"
+    BROWSERTEST_OUTPUT_DIRECTORY: "${CI_PROJECT_DIR}/${WEB_ROOT}/sites/simpletest"
   <<: *report_template
 cache:
   key: coder
@@ -173,6 +173,8 @@ Unit and kernel tests:
 Web tests:
   <<: *test_template
   script:
+    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
     - cd ${WEB_ROOT}
     - sudo -E -u www-data
       ../vendor/bin/phpunit
@@ -186,6 +188,8 @@ Web tests:
 code coverage:
   <<: *test_template
   script:
+    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
     - mkdir -p ${REPORT_DIR}/coverage-xml
     - mkdir -p ${REPORT_DIR}/coverage-html
     - chmod -R 777 ${REPORT_DIR}
