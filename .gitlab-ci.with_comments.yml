@@ -197,14 +197,15 @@ image: alpine:latest
   image: composer:latest
   script:
     # Sample to install a Drupal 8 with drupal composer template.
-    - composer create-project drupal-composer/drupal-project:8.x-dev drupal
-      --stability dev --no-interaction --ignore-platform-reqs --quiet
-    - cp -r drupal/* .
-    - composer require drupal/bootstrap
-      --ignore-platform-reqs --no-scripts --quiet
+    - if [ ! -f ${WEB_ROOT}/index.php ];
+      then
+        composer create-project drupal-composer/drupal-project:8.x-dev drupal
+          --stability dev --no-interaction --ignore-platform-reqs --quiet;
+        cp -r drupal/* .;
+      fi
     # Install project libraries and dependencies from a composer.json
     # - composer install
-    #   --ignore-platform-reqs --no-suggest --no-interaction --quiet
+    #   --dev --ignore-platform-reqs --no-suggest --no-interaction --quiet
     # Install and use compass if using Sass file in the theme.
     # - apk add --update ruby ruby-dev libffi-dev build-base
     # - gem install --no-document listen sass compass bootstrap-sass
@@ -223,6 +224,8 @@ image: alpine:latest
       - composer.lock
       - load.environment.php
     expire_in: 1 day
+  variables:
+    DB_URL: "mysql://root@mariadb/drupal8"
 
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
@@ -234,6 +237,7 @@ image: alpine:latest
   image: juampynr/drupal8ci:latest
   services:
     - mariadb:10.3
+    - selenium/standalone-chrome-debug:3.7.1-beryllium
   before_script:
     - mkdir -p /var/www/html
     - ln -s ${WEB_ROOT} /var/www/html/web
@@ -241,16 +245,15 @@ image: alpine:latest
     - mkdir -p ${REPORT_DIR}
     - chmod -R 777 ${REPORT_DIR}
     - cp config/phpunit.xml ${WEB_ROOT}/core/
+    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - chmod 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: drupal8
-    DB_URL: "mysql://root@mariadb/drupal8"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
     SIMPLETEST_BASE_URL: "http://localhost"
-    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/default/simpletest"
   <<: *report_template
-  dependencies:
-    - build
 
 ###############################################################################
 # Cache libraries in between jobs by branch, see
@@ -273,16 +276,26 @@ build:
   except:
     - master
   after_script:
-    - ./vendor/bin/drush site:install
-      --yes
-      --root "/var/www/html/web"
-      --db-url ${DB_URL}
-    - mkdir -p dump
-    - if [ ! -f $CI_PROJECT_DIR/dump/db_dump.sql ];
+    # If a dump exist from the cache of build, use it.
+    - if [ -f ${CI_PROJECT_DIR}/dump/db_dump.sql ];
       then
-        ./vendor/bin/drush sql-dump
-        --gzip
-        --result-file=${CI_PROJECT_DIR}/dump/db_dump.sql;
+        ./vendor/bin/drush sql:cli
+          --yes
+          --root "/var/www/html/web"
+          --db-url ${DB_URL}
+          < ${CI_PROJECT_DIR}/dump/db_dump.sql;
+      else
+        ./vendor/bin/drush site:install
+          --yes
+          --root "/var/www/html/web"
+          --db-url ${DB_URL}; 
+      fi
+    # Create a db dump for next build.
+    - if [ ! -f ${CI_PROJECT_DIR}/dump/db_dump.sql ];
+      then
+        mkdir -p dump;
+        ./vendor/bin/drush sql:dump
+          --result-file=${CI_PROJECT_DIR}/dump/db_dump.sql;
       fi
   # On composer build we cache the composer folders.
   cache:
@@ -292,8 +305,8 @@ build:
       - vendor
       - dump
 
-# Unit tests.
-unit_kernel_tests:
+# Job to run Unit and Kernel tests.
+Unit and kernel tests:
   <<: *test_template
   script:
     - cd ${WEB_ROOT}
@@ -302,10 +315,9 @@ unit_kernel_tests:
         -c core
         --log-junit ../${REPORT_DIR}/phpunit.xml
         --testdox-html ../${REPORT_DIR}/phpunit.html
-        --testsuite=unit
         ${UNIT_TEST_ROOT}
 
-web_tests:
+Web tests:
   <<: *test_template
   script:
     - cd ${WEB_ROOT}
@@ -316,9 +328,11 @@ web_tests:
         --testdox-html ../${REPORT_DIR}/phpunit.html
         --group Drupal
         ${UNIT_TEST_ROOT}
+  dependencies:
+    - build
 
-# Unit tests nonfunctional.
-code_coverage:
+# # Job to check test coverage.
+code coverage:
   <<: *test_template
   script:
     - mkdir -p ${REPORT_DIR}/coverage-xml
@@ -332,6 +346,8 @@ code_coverage:
         --coverage-html ../${REPORT_DIR}/coverage-html
         --testsuite nonfunctional
         ${UNIT_TEST_ROOT}
+  dependencies:
+    - build
 
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
@@ -353,9 +369,9 @@ best practices:
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
-      --config ./phpqa_config/phpcs_drupal_best_practices
-      --tools phpcs:10
-      ${PHPQA_PHP_CODE}
+        --config ./phpqa_config/phpcs_drupal_best_practices
+        --tools phpcs:10
+        ${PHPQA_PHP_CODE}
   only:
     - branches
   # Allow failure to produce report and alert.
@@ -392,21 +408,21 @@ es lint:
     # If there is a build this part is not needed.
     - apk --no-cache add curl
     - curl https://cgit.drupalcode.org/drupal/plain/.eslintrc.json?h=8.5.x
-      -o ${WEB_ROOT}/.eslintrc.json -s
+        -o ${WEB_ROOT}/.eslintrc.json -s
     - mkdir -p ${WEB_ROOT}/core
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x
-      -o ${WEB_ROOT}/core/.eslintrc.json -s
+        -o ${WEB_ROOT}/core/.eslintrc.json -s
     # Drupal 8.5.x specfic rules override.
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json?h=8.5.x
-      -o ${WEB_ROOT}/core/.eslintrc.passing.json -s
+        -o ${WEB_ROOT}/core/.eslintrc.passing.json -s
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0
-     eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
+        eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
     # Run the eslint command to generate a report.
     - eslint --config ./${WEB_ROOT}/core/.eslintrc.passing.json
-      --format html
-      --output-file ${REPORT_DIR}/es-lint-report.html
-      --ignore-pattern ${JS_CODE_IGNORE}
-      ${JS_CODE}
+        --format html
+        --output-file ${REPORT_DIR}/es-lint-report.html
+        --ignore-pattern ${JS_CODE_IGNORE}
+        ${JS_CODE}
   allow_failure: true
 
 # This is a sass lint report.
@@ -416,10 +432,10 @@ sass lint:
   script:
     - npm install -g sass-lint
     - sass-lint ${SASS_CODE}
-      --verbose
-      --format html
-      --output ${REPORT_DIR}/sass-lint-report.html
-      --ignore ${JS_CODE_IGNORE}
+        --verbose
+        --format html
+        --output ${REPORT_DIR}/sass-lint-report.html
+        --ignore ${JS_CODE_IGNORE}
   allow_failure: true
 
 # This is a markdown lint report.
@@ -441,9 +457,9 @@ phpmetrics:
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
-      --report-html=${REPORT_DIR}/metrics
-      --extensions=php,inc,module
-      ${PHP_CODE}
+        --report-html=${REPORT_DIR}/metrics
+        --extensions=php,inc,module
+        ${PHP_CODE}
   when: manual
 
 # Phploc report, no pass or failure as it's just informative.
@@ -455,8 +471,8 @@ phploc:
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
-      --tools phploc
-      ${PHPQA_PHP_CODE}
+        --tools phploc
+        ${PHPQA_PHP_CODE}
   when: manual
 
 # Same reports for all Drupal codes including our custom.
@@ -469,9 +485,9 @@ phpmetrics All:
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
-      --report-html=${REPORT_DIR}/metrics
-      --extensions=php,inc,module
-      ${WEB_ROOT}
+        --report-html=${REPORT_DIR}/metrics
+        --extensions=php,inc,module
+        ${WEB_ROOT}
   cache:
     key: drupal-build-cache
   dependencies:
@@ -485,7 +501,9 @@ phploc All:
     - master
   <<: *phpqa_template
   script:
-    - phpqa ${PHPQA_REPORT} --tools phploc ${PHPQA_ALL_CODE}
+    - phpqa ${PHPQA_REPORT}
+        --tools phploc
+        ${PHPQA_ALL_CODE}
   cache:
     key: drupal-build-cache
   dependencies:
@@ -509,7 +527,7 @@ deploy to testing:
   script:
     - echo "Deploy to testing"
     # - ssh $USER_NAME@$TESTING_HOST
-    #   "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
+    #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
   only:
     - testing
     - master
@@ -523,7 +541,7 @@ deploy to staging:
   script:
     - echo "Deploy to staging"
     # - ssh $USER_NAME@$TESTING_HOST
-    #   "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
+    #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
   only:
     - staging
     - master
@@ -538,7 +556,7 @@ deploy to production:
   script:
     - echo "Deploy to production"
     # - ssh $USER_NAME@$TESTING_HOST
-    #   "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
+    #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
   only:
     - production
     - master
