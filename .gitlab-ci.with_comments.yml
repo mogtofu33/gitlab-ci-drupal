@@ -45,7 +45,7 @@ variables:
   # change it if you are using docroot/ or any other web root.
   WEB_ROOT: "web"
   # Test unit folder.
-  UNIT_UNIT_TEST_ROOT: "core/modules/node"
+  UNIT_TEST_ROOT: "core/modules/node"
   # Comma separated for phpqa and phpmetrics.
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.

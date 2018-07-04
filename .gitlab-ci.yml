@@ -6,7 +6,7 @@ variables:
   STAGING_HOST: "MY_HOST_OR_IP"
   PRODUCTION_HOST: "MY_HOST_OR_IP"
   WEB_ROOT: "web"
-  UNIT_UNIT_TEST_ROOT: "core/modules/node"
+  UNIT_TEST_ROOT: "core/modules/node"
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
   JS_CODE_IGNORE: "**/bootstrap/**/*"
