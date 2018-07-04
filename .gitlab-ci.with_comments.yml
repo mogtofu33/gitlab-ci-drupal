@@ -299,7 +299,6 @@ unit_kernel_tests:
     - cd ${WEB_ROOT}
     - sudo -E -u www-data
       ../vendor/bin/phpunit
-        --debug --verbose
         -c core
         --log-junit ../${REPORT_DIR}/phpunit.xml
         --testdox-html ../${REPORT_DIR}/phpunit.html
@@ -312,7 +311,6 @@ web_tests:
     - cd ${WEB_ROOT}
     - sudo -E -u www-data
       ../vendor/bin/phpunit
-        --debug --verbose
         -c core
         --log-junit ../${REPORT_DIR}/phpunit.xml
         --testdox-html ../${REPORT_DIR}/phpunit.html
@@ -329,7 +327,6 @@ code_coverage:
     - cd ${WEB_ROOT}
     - timeout 60m sudo -E -u www-data
       ../vendor/bin/phpunit
-        --verbose --debug
         -c core
         --coverage-xml ../${REPORT_DIR}/coverage-xml
         --coverage-html ../${REPORT_DIR}/coverage-html
