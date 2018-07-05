@@ -167,9 +167,12 @@ stages:
     # Sample to install a Drupal 8 with drupal composer template.
     - composer global require hirak/prestissimo
         --no-progress --no-suggest --ignore-platform-reqs
-    - composer create-project drupal-composer/drupal-project:8.x-dev drupal
+    - mkdir -p build
+    - rm -rf build/*
+    - composer create-project drupal-composer/drupal-project:8.x-dev build
         --stability dev --no-interaction --ignore-platform-reqs --quiet
-    - cp -r drupal/* .
+    - cp -r build/* .
+    - rm -rf build
     # Install project libraries and dependencies from a local composer.json
     # - composer install
     #   --dev --ignore-platform-reqs --no-suggest --no-interaction --quiet
