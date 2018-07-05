@@ -464,7 +464,7 @@ phpmetrics All:
   cache:
     key: drupal-build-cache
   dependencies:
-    - build
+    - Build
   when: manual
 
 phploc All:
@@ -480,7 +480,7 @@ phploc All:
   cache:
     key: drupal-build-cache
   dependencies:
-    - build
+    - Build
   when: manual
 
 ################################################################################
