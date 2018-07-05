@@ -234,26 +234,17 @@ stages:
 ################################################################################
 
 # Build only when not on master.
-build:
+Build:
   stage: build
   <<: *build_template
   except:
     - master
   after_script:
     # If a dump exist from the cache of a previous build, we try to use it.
-    - if [ -f ${CI_PROJECT_DIR}/dump/db_dump.sql ];
-      then
-        cp ${CI_PROJECT_DIR}/config/settings.local.php ${WEB_ROOT}/sites/default/;
-        ./vendor/bin/drush sql:cli
-          --yes
-          --root "/var/www/html/web"
-          < ${CI_PROJECT_DIR}/dump/db_dump.sql;
-      else
-        ./vendor/bin/drush site:install
-          --yes
-          --root "/var/www/html/web"
-          --db-url ${DB_URL};
-      fi
+    - ./vendor/bin/drush site:install
+        --yes
+        --root "/var/www/html/web"
+        --db-url ${DB_URL};
     # Create a db dump for next build.
     - if [ ! -f ${CI_PROJECT_DIR}/dump/db_dump.sql ];
       then
@@ -299,7 +290,7 @@ Web tests:
         ${UNIT_TEST_ROOT}
 
 # Job to check test coverage, need a build.
-code coverage:
+Code coverage:
   stage: test
   dependencies:
     - build
@@ -350,7 +341,7 @@ code_quality:
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
-code quality:
+Code quality:
   stage: code quality
   <<: *phpqa_template
   script:
@@ -362,7 +353,7 @@ code quality:
 
 # Drupal coding standard best practices report (can not be included in
 # codequality as we are already running Drupal coding standard).
-best practices:
+Best practices:
   stage: code quality
   <<: *phpqa_template
   script:
@@ -376,7 +367,7 @@ best practices:
   allow_failure: true
 
 # This is a eslint report based on Drupal 8.5.x standards.
-es lint:
+Eslint:
   stage: code lint
   <<: *node_template
   script:
@@ -404,7 +395,7 @@ es lint:
 
 # This is a sass lint report, default rules used here.
 # TODO: add specific Bootstrap rules.
-sass lint:
+Sass lint:
   stage: code lint
   <<: *node_template
   script:
@@ -417,7 +408,7 @@ sass lint:
   allow_failure: true
 
 # This is a markdown lint report, based on generic default rules.
-markdown lint:
+Markdown lint:
   stage: code lint
   <<: *ruby_template
   script:
@@ -505,7 +496,7 @@ phploc All:
 #   Settings > CI / CD > Variables
 ################################################################################
 
-deploy to testing:
+Deploy to testing:
   stage: deploy to testing
   environment:
     name: testing
@@ -522,7 +513,7 @@ deploy to testing:
     - testing
     - master
 
-deploy to staging:
+Deploy to staging:
   stage: deploy to staging
   environment:
     name: staging
@@ -540,7 +531,7 @@ deploy to staging:
     - master
   when: manual
 
-deploy to production:
+Deploy to production:
   stage: deploy to production
   environment:
     name: production
