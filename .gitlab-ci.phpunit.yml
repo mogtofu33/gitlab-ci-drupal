@@ -1,0 +1,85 @@
+variables:
+  ROOT: "drupal"
+  WEB_ROOT: "${ROOT}/web"
+  TEST_ROOT: "core/modules/node"
+stages:
+  - build
+  - test
+.drupal8ci_template: &drupal8ci_template
+  except:
+    - master
+  image: juampynr/drupal8ci:latest
+  services:
+    - mariadb:10.3
+  before_script:
+    - mkdir -p /var/www/html
+    - ln -s ${WEB_ROOT} /var/www/html/web
+    - apache2-foreground&
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+    DB_URL: "mysql://root@mariadb/drupal8"
+    SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
+    SIMPLETEST_BASE_URL: "http://localhost"
+    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+.drupal8ci_test_template: &drupal8ci_test_template
+  <<: *drupal8ci_template
+  stage: test
+  dependencies:
+    - drupal8ci:build
+drupal8ci:build:
+  <<: *drupal8ci_template
+  stage: build
+  script:
+    - composer global require hirak/prestissimo --no-interaction --quiet
+    - if [ ! -f ${WEB_ROOT}/index.php ]; then composer create-project drupal-composer/drupal-project:8.x-dev ${ROOT} --stability dev --no-interaction --ignore-platform-reqs --quiet; fi
+    - cp -r web/* ${ROOT}/
+  artifacts:
+    paths:
+      - ./${ROOT}
+  except:
+    - master
+drupal8ci:unit_kernel_tests:
+  <<: *drupal8ci_test_template
+  script:
+    - cd ${WEB_ROOT}
+    - ./../vendor/bin/drush site:install --yes --root "/var/www/html/web" --db-url ${DB_URL}
+    - cp core/phpunit.xml.dist core/phpunit.xml
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p artifacts
+    - chmod -R 777 artifacts
+    - cd ${WEB_ROOT}
+    - sudo -E -u www-data
+      ../vendor/bin/phpunit
+      --debug --verbose
+       -c core
+      --testdox-html ../artifacts/phpunit.html
+      ${TEST_ROOT}
+  artifacts:
+    paths:
+      - artifacts
+    when: always
+  # when: manual
+drupal8ci:code_coverage:
+  <<: *drupal8ci_test_template
+  script:
+    - cd ${WEB_ROOT}
+    - ./../vendor/bin/drush site:install --yes --root "/var/www/html/web" --db-url ${DB_URL}
+    - cp core/phpunit.xml.dist core/phpunit.xml
+    - cd ${CI_PROJECT_DIR}
+    - mkdir -p artifacts/coverage-xml
+    - mkdir -p artifacts/coverage-html
+    - chmod -R 777 artifacts
+    - cd web
+    - timeout 60m sudo -E -u www-data
+       ../vendor/bin/phpunit
+       --verbose --debug
+       -c core
+       --coverage-xml ../artifacts/coverage-xml
+       --coverage-html ../artifacts/coverage-html
+       --testsuite nonfunctional
+       ${TEST_ROOT}
+  artifacts:
+    paths:
+      - artifacts
+    when: always
+  # when: manual
