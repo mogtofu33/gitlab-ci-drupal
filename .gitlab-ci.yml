@@ -244,7 +244,7 @@ Build:
     - ./vendor/bin/drush site:install
         --yes
         --root "/var/www/html/web"
-        --db-url ${DB_URL};
+        --db-url ${DB_URL}
     # Create a db dump for next build.
     - if [ ! -f ${CI_PROJECT_DIR}/dump/db_dump.sql ];
       then
@@ -277,7 +277,7 @@ Unit and kernel tests:
 Web tests:
   stage: test
   dependencies:
-    - build
+    - Build
   <<: *test_template
   script:
     - cd ${WEB_ROOT}
@@ -293,7 +293,7 @@ Web tests:
 Code coverage:
   stage: test
   dependencies:
-    - build
+    - Build
   <<: *test_template
   script:
     # Create the needed folders.
