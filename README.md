@@ -6,9 +6,9 @@ Gitlab CI samples for a Drupal / Php project. Include Build, Unit testing, Code
 quality, metrics and deploy.
 
 A lot of help and inspiration from those wonderful projects:
-* https://github.com/AcroMedia/commerce-demo/blob/master/.gitlab-ci.yml
-* https://github.com/Lullabot/drupal8ci/blob/master/dist/gitlabci/.gitlab-ci.yml
-* https://github.com/manumilou/gitlab-ci-example-drupal/blob/master/.gitlab-ci.yml
+* https://github.com/AcroMedia/commerce-demo
+* https://github.com/Lullabot/drupal8ci
+* https://github.com/manumilou/gitlab-ci-example-drupal
 
 ## Prerequisites
 

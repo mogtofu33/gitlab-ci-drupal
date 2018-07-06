@@ -256,7 +256,8 @@ Build:
     # We import the dump, faster than a site install.
     - if [ -f ${CI_PROJECT_DIR}/dump/dump.sql ];
       then
-        mysql -hmariadb -uroot -proot drupal8 < ${CI_PROJECT_DIR}/dump/dump.sql;
+        apt install -y mysql-client;
+        mysql -hmariadb -uroot drupal8 < ${CI_PROJECT_DIR}/dump/dump.sql;
       else
         echo "Missing database dump";
         exit 1;
