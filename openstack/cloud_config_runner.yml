@@ -1,4 +1,6 @@
 #cloud-config
+# Install Gitlab runner with Docker.
+#   https://docs.gitlab.com/runner/install/linux-repository.html
 package_update: true
 package_upgrade: true
 runcmd:
