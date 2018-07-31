@@ -63,7 +63,8 @@ variables:
   #   https://hub.docker.com/r/zdenekdrahos/phpqa/tags/
   PHPQA: "v1.19.0"
   # Phpmetrics use the last phar release.
-  PHPMETRICS: "v2.3.2"
+  #   https://github.com/phpmetrics/PhpMetrics/releases
+  PHPMETRICS: "v2.4.1"
   # All reports will be available in artifacts from this folder.
   REPORT_DIR: "reports"
   # Drupal coding standards for Code Sniffer (phpcs) are provided by Coder module.
@@ -345,7 +346,9 @@ code_quality:
         --volume /var/run/docker.sock:/var/run/docker.sock
         "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code/${WEB_ROOT}/modules/custom
   artifacts:
-    paths: [gl-code-quality-report.json]
+    # paths: [gl-code-quality-report.json]
+    paths:
+      - ./
   when: manual
 
 # Automated quality check job when something is pushed/merged on master.
