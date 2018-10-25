@@ -97,16 +97,6 @@ stages:
 #   https://docs.gitlab.com/ee/ci/yaml/#anchors
 ################################################################################
 
-# Archive template for reports, we use Gitlab artifacts, see
-#   https://docs.gitlab.com/ee/user/project/pipelines/job_artifacts.html
-.artifacts_template: &artifacts_template
-  # Name will be based on job and branch.
-  name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-  # How long do we keep reports files?
-  expire_in: 1 week
-  # Force artifacts even if the job fail.
-  when: always
-
 # Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
 # We download the coder project to use the coding standard ruleset for
 # Code_Sniffer, composer install is slow.
@@ -124,9 +114,15 @@ stages:
       fi
     - mkdir -p ${REPORT_DIR}
     - chmod -R 777 ${REPORT_DIR}
-  artifacts: *artifacts_template
+  artifacts:
     paths:
-    - ${REPORT_DIR}/*.html
+      - ${REPORT_DIR}/*.html
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
 
 # We use Phpmetrics for metrics report.
 # Is included in phpqa but standalone provide the last version with more
@@ -137,11 +133,16 @@ stages:
     - curl -L https://github.com/phpmetrics/PhpMetrics/releases/download/${PHPMETRICS}/phpmetrics.phar
       -o phpmetrics -s
     - chmod +x phpmetrics
-    - mkdir -p ${REPORT_DIR}/metrics
-    - mkdir -p ${REPORT_DIR}/metrics-all
-  artifacts: *artifacts_template
+    - mkdir -p ${REPORT_DIR}
+  artifacts:
     paths:
-    - ${REPORT_DIR}/*.html
+      - ${REPORT_DIR}/*.html
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
 
 # Use Node docker image for Eslint and Sass lint.
 .node_template: &node_template
@@ -226,9 +227,9 @@ stages:
     SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
     SIMPLETEST_BASE_URL: "http://localhost"
     BROWSERTEST_OUTPUT_DIRECTORY: "${CI_PROJECT_DIR}/${WEB_ROOT}/sites/simpletest"
-  artifacts: *artifacts_template
+  artifacts:
     paths:
-    - ${REPORT_DIR}/*
+      - ${REPORT_DIR}/*
 
 ################################################################################
 # Jobs definition.
@@ -383,9 +384,15 @@ Best practices:
 Eslint:
   stage: code lint
   <<: *node_template
-  artifacts: *artifacts_template
+  artifacts:
     paths:
-    - ${REPORT_DIR}/es-lint-report.html
+      - ${REPORT_DIR}/es-lint-report.html
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
   script:
     # We grab the standards, not needed if after a build.
     - apk --no-cache add curl
@@ -414,9 +421,15 @@ Eslint:
 Sass lint:
   stage: code lint
   <<: *node_template
-  artifacts: *artifacts_template
+  artifacts:
     paths:
-    - ${REPORT_DIR}/sass-lint-report.html
+      - ${REPORT_DIR}/sass-lint-report.html
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
   script:
     - npm install -g sass-lint
     - 'sass-lint ${SASS_CODE}
@@ -430,9 +443,15 @@ Sass lint:
 Markdown lint:
   stage: code lint
   <<: *ruby_template
-  artifacts: *artifacts_template
+  artifacts:
     paths:
-    - ${REPORT_DIR}/markdown_lint.txt
+      - ${REPORT_DIR}/markdown_lint.txt
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
   script:
     - gem install mdl
     - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
@@ -452,7 +471,7 @@ phpmetrics:
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
-        --report-html=${REPORT_DIR}/metrics
+        --report-html=${REPORT_DIR}
         --extensions=php,inc,module
         ${PHP_CODE}
   when: manual
@@ -480,7 +499,7 @@ phpmetrics All:
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
-        --report-html=${REPORT_DIR}/metrics-all
+        --report-html=${REPORT_DIR}
         --extensions=php,inc,module
         ${WEB_ROOT}
   cache:
