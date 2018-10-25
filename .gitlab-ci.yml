@@ -20,17 +20,17 @@ variables:
   #CI_DEBUG_TRACE: "1"
   #
   # Global settings for all env used for deploy.
-  USER_NAME: "ubuntu"
-  DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
+  # USER_NAME: "ubuntu"
+  # DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
   # For Sass support when build in case of a Drupal Bootstrap sub theme.
-  THEME: "MY_THEME_NAME"
+  # THEME: "MY_THEME_NAME"
   # Deploy environments configuration, add or remove depending deploy jobs.
-  # Testing config
-  TESTING_HOST: "MY_HOST_OR_IP"
-  # Staging config
-  STAGING_HOST: "MY_HOST_OR_IP"
-  # Production config
-  PRODUCTION_HOST: "MY_HOST_OR_IP"
+  # Testing config, set host or ip
+  TESTING_HOST: "localhost"
+  # Staging config, set host or ip
+  STAGING_HOST: "localhost"
+  # Production config, set host or ip
+  PRODUCTION_HOST: "localhost"
   #
   # Drupal custom code / theme / all code. We are checking our code quality,
   # and optionally Drupal core.
@@ -466,8 +466,7 @@ Markdown lint:
 phpmetrics:
   stage: php code metrics
   only:
-    - staging
-    - master
+    - branches
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
@@ -480,8 +479,7 @@ phpmetrics:
 phploc:
   stage: php code metrics
   only:
-    - staging
-    - master
+    - branches
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -494,8 +492,7 @@ phploc:
 phpmetrics All:
   stage: php code metrics
   only:
-    - staging
-    - master
+    - branches
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
@@ -511,8 +508,7 @@ phpmetrics All:
 phploc All:
   stage: php code metrics
   only:
-    - staging
-    - master
+    - branches
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
