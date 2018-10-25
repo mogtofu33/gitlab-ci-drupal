@@ -54,7 +54,7 @@ variables:
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:5,phpmd:5,phpcpd:0,security-checker,parallel-lint"
+  TOOLS: "--tools phpcs:5,phpmd,phpcpd,security-checker:0,parallel-lint"
 ################################################################################
   # Next part do not need to be edited for a first quick run.
   #
