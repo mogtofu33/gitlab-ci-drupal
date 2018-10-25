@@ -47,7 +47,7 @@ variables:
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
   JS_CODE_IGNORE: "**/bootstrap/**/*"
-  SASS_CODE: "${WEB_ROOT}/themes/custom/**/*.scss,${WEB_ROOT}/themes/custom/**/*.sass"
+  SASS_CODE: "${WEB_ROOT}/themes/custom/**/*.scss"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
@@ -397,8 +397,6 @@ Eslint:
   script:
     # We grab the standards, not needed if after a build.
     - apk --no-cache add curl
-    - curl https://cgit.drupalcode.org/drupal/plain/.eslintrc.json?h=8.5.x
-        -o ${WEB_ROOT}/.eslintrc.json -s
     - mkdir -p ${WEB_ROOT}/core
     - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x
         -o ${WEB_ROOT}/core/.eslintrc.json -s
@@ -434,12 +432,11 @@ Sass lint:
     when: always
   script:
     - npm install -g sass-lint
-    - 'sass-lint
+    - 'sass-lint ${SASS_CODE}
         --config ${SASS_CONFIG}
         --verbose
         --format html
-        --output ${REPORT_DIR}/sass-lint-report.html
-        ${SASS_CODE}'
+        --output ${REPORT_DIR}/sass-lint-report.html'
   allow_failure: true
 
 # This is a markdown lint report, based on generic default rules.
@@ -448,7 +445,7 @@ Markdown lint:
   <<: *ruby_template
   artifacts:
     paths:
-      - ${REPORT_DIR}/markdown_lint.txt
+      - ${REPORT_DIR}/markdown_lint.html
     # Name will be based on job and branch.
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     # How long do we keep reports files?
@@ -457,7 +454,7 @@ Markdown lint:
     when: always
   script:
     - gem install mdl
-    - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
+    - mdl ./ > ${REPORT_DIR}/markdown_lint.html
   allow_failure: true
   when: manual
 
