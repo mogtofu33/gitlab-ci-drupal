@@ -48,6 +48,7 @@ variables:
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
   JS_CODE_IGNORE: "**/bootstrap/**/*"
   SASS_CODE: "${WEB_ROOT}/themes/custom/**/*.scss,${WEB_ROOT}/themes/custom/**/*.sass"
+  SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
   PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
@@ -98,16 +99,13 @@ stages:
 
 # Archive template for reports, we use Gitlab artifacts, see
 #   https://docs.gitlab.com/ee/user/project/pipelines/job_artifacts.html
-.report_template: &report_template
-  artifacts:
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    paths:
-      - ${REPORT_DIR}/*
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
+.artifacts_template: &artifacts_template
+  # Name will be based on job and branch.
+  name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+  # How long do we keep reports files?
+  expire_in: 1 week
+  # Force artifacts even if the job fail.
+  when: always
 
 # Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
 # We download the coder project to use the coding standard ruleset for
@@ -126,7 +124,9 @@ stages:
       fi
     - mkdir -p ${REPORT_DIR}
     - chmod -R 777 ${REPORT_DIR}
-  <<: *report_template
+  artifacts: *artifacts_template
+    paths:
+    - ${REPORT_DIR}/*.html
 
 # We use Phpmetrics for metrics report.
 # Is included in phpqa but standalone provide the last version with more
@@ -139,17 +139,17 @@ stages:
     - chmod +x phpmetrics
     - mkdir -p ${REPORT_DIR}/metrics
     - mkdir -p ${REPORT_DIR}/metrics-all
-  <<: *report_template
+  artifacts: *artifacts_template
+    paths:
+    - ${REPORT_DIR}/*.html
 
 # Use Node docker image for Eslint and Sass lint.
 .node_template: &node_template
   image: node:8-alpine
-  <<: *report_template
 
 # Use Ruby docker image for Markdown lint.
 .ruby_template: &ruby_template
   image: ruby:2-alpine
-  <<: *report_template
 
 # Basic docker image with ssh to be able to access a remote.
 # Each access must add a ssh key, see samples below.
@@ -226,7 +226,9 @@ stages:
     SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
     SIMPLETEST_BASE_URL: "http://localhost"
     BROWSERTEST_OUTPUT_DIRECTORY: "${CI_PROJECT_DIR}/${WEB_ROOT}/sites/simpletest"
-  <<: *report_template
+  artifacts: *artifacts_template
+    paths:
+    - ${REPORT_DIR}/*
 
 ################################################################################
 # Jobs definition.
@@ -346,9 +348,7 @@ code_quality:
         --volume /var/run/docker.sock:/var/run/docker.sock
         "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code/${WEB_ROOT}/modules/custom
   artifacts:
-    # paths: [gl-code-quality-report.json]
-    paths:
-      - ./
+    paths: [gl-code-quality-report.json]
   when: manual
 
 # Automated quality check job when something is pushed/merged on master.
@@ -383,6 +383,9 @@ Best practices:
 Eslint:
   stage: code lint
   <<: *node_template
+  artifacts: *artifacts_template
+    paths:
+    - ${REPORT_DIR}/es-lint-report.html
   script:
     # We grab the standards, not needed if after a build.
     - apk --no-cache add curl
@@ -411,19 +414,25 @@ Eslint:
 Sass lint:
   stage: code lint
   <<: *node_template
+  artifacts: *artifacts_template
+    paths:
+    - ${REPORT_DIR}/sass-lint-report.html
   script:
     - npm install -g sass-lint
-    - sass-lint ${SASS_CODE}
+    - 'sass-lint ${SASS_CODE}
+        --config ${SASS_CONFIG}
         --verbose
         --format html
-        --output ${REPORT_DIR}/sass-lint-report.html
-        --ignore ${JS_CODE_IGNORE}
+        --output ${REPORT_DIR}/sass-lint-report.html'
   allow_failure: true
 
 # This is a markdown lint report, based on generic default rules.
 Markdown lint:
   stage: code lint
   <<: *ruby_template
+  artifacts: *artifacts_template
+    paths:
+    - ${REPORT_DIR}/markdown_lint.txt
   script:
     - gem install mdl
     - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
