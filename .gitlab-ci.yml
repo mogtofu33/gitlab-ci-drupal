@@ -406,6 +406,8 @@ Eslint:
     # Install eslint standards.
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0
         eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
+    # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
+    - npm config set unsafe-perm true
     # Run the eslint command to generate a report.
     - eslint
         --config ./${WEB_ROOT}/core/.eslintrc.passing.json
@@ -432,6 +434,8 @@ Sass lint:
     when: always
   script:
     - npm install -g sass-lint
+    # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
+    - npm config set unsafe-perm true
     - 'sass-lint ${SASS_CODE}
         --config ${SASS_CONFIG}
         --verbose
