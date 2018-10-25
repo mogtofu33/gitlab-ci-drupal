@@ -349,7 +349,8 @@ code_quality:
         --volume /var/run/docker.sock:/var/run/docker.sock
         "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code/${WEB_ROOT}/modules/custom
   artifacts:
-    paths: [gl-code-quality-report.json]
+    reports:
+      codequality: [gl-code-quality-report.json]
   when: manual
 
 # Automated quality check job when something is pushed/merged on master.
@@ -408,7 +409,8 @@ Eslint:
     - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0
         eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
     # Run the eslint command to generate a report.
-    - eslint --config ./${WEB_ROOT}/core/.eslintrc.passing.json
+    - eslint
+        --config ./${WEB_ROOT}/core/.eslintrc.passing.json
         --format html
         --output-file ${REPORT_DIR}/es-lint-report.html
         --ignore-pattern ${JS_CODE_IGNORE}
@@ -432,11 +434,12 @@ Sass lint:
     when: always
   script:
     - npm install -g sass-lint
-    - 'sass-lint ${SASS_CODE}
+    - 'sass-lint
         --config ${SASS_CONFIG}
         --verbose
         --format html
-        --output ${REPORT_DIR}/sass-lint-report.html'
+        --output ${REPORT_DIR}/sass-lint-report.html
+        ${SASS_CODE}'
   allow_failure: true
 
 # This is a markdown lint report, based on generic default rules.
