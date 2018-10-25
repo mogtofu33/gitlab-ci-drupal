@@ -349,8 +349,11 @@ code_quality:
         --volume /var/run/docker.sock:/var/run/docker.sock
         "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code/${WEB_ROOT}/modules/custom
   artifacts:
+    # Gilab > 11.4
     reports:
       codequality: [gl-code-quality-report.json]
+    # paths:
+    #   - ./*.json
   when: manual
 
 # Automated quality check job when something is pushed/merged on master.
@@ -449,7 +452,7 @@ Markdown lint:
   <<: *ruby_template
   artifacts:
     paths:
-      - ${REPORT_DIR}/markdown_lint.html
+      - ${REPORT_DIR}/markdown_lint.txt
     # Name will be based on job and branch.
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     # How long do we keep reports files?
@@ -458,7 +461,7 @@ Markdown lint:
     when: always
   script:
     - gem install mdl
-    - mdl ./ > ${REPORT_DIR}/markdown_lint.html
+    - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
   allow_failure: true
   when: manual
 
