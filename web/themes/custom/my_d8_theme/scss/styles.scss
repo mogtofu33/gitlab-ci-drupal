@@ -1,7 +1,18 @@
-$font-stack:    Helvetica, sans-serif;
+/**
+ * @file
+ * Dummy styles for test.
+ */
+
+$font-stack: Helvetica, sans-serif;
 $primary-color: #333;
+$alert: #FFF;
 
 body {
   font: 100% $font-stack;
   color: $primary-color;
+}
+
+.test {
+     background-color: $alert;
+  fail: lint;
 }

@@ -2,20 +2,21 @@
  * @file
  * Sample testing.
  */
-(function ($, Drupal) {
-    function init(i, e) {
-        console.log('init');
-    }
+(($, Drupal) => {
+  function init(i, e) {
+    const sum = i + 1;
+    return sum + e;
+  }
 
-    /**
-     * Initialise the JS.
-     */
-    Drupal.behaviors.testing = {
-        attach(context, settings) {
-            const $a = $(context).find('a');
-            if ($a.length) {
-                $a.once('processed').each(init);
-            }
-        },
-    };
-}(jQuery, Drupal));
+  /**
+   * Initialise the JS.
+   */
+  Drupal.behaviors.testing = {
+    attach(context) {
+      const $a = $(context).find("a");
+      if ($a.length) {
+        $a.once("processed").each(init);
+      }
+    }
+  };
+})(jQuery, Drupal);
