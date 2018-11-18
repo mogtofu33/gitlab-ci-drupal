@@ -17,12 +17,12 @@ variables:
   # Common variables for all jobs, edit this part to your needs.
   #
   # Make CI more verbose in case of problem.
-  #CI_DEBUG_TRACE: "1"
+  CI_DEBUG_TRACE: "1"
   #
   # Global settings for all env used for deploy.
   # USER_NAME: "ubuntu"
   # DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
-  # For Sass support when build in case of a Drupal Bootstrap sub theme.
+  # For Scss support when build in case of a Drupal Bootstrap sub theme.
   # THEME: "MY_THEME_NAME"
   # Deploy environments configuration, add or remove depending deploy jobs.
   # Testing config, set host or ip
@@ -47,7 +47,8 @@ variables:
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
   JS_CODE_IGNORE: "**/bootstrap/**/*"
-  SASS_CODE: "${WEB_ROOT}/themes/custom/**/*.scss"
+  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/*.css"
+  SCSS_FILES: "${WEB_ROOT}/themes/custom/**/scss/*.scss"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
@@ -70,7 +71,7 @@ variables:
   REPORT_DIR: "reports"
   # Drupal coding standards for Code Sniffer (phpcs) are provided by Coder module.
   #   https://www.drupal.org/project/coder
-  DRUPAL_CODER: "2.12"
+  DRUPAL_CODER: "3.1"
   # Options for Phpqa to build a report to download, need artifacts set on the
   # job, see '.report' below.
   PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
@@ -105,8 +106,7 @@ stages:
   before_script:
     - if [ ! -d ./coder/coder_sniffer ];
       then
-        curl https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz
-        -o coder.tar.gz -s;
+        curl -fsSL https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz;
       fi
     - if [ -f coder.tar.gz ];
       then
@@ -130,8 +130,7 @@ stages:
 .phpqmetrics_template: &phpqmetrics_template
   image: composer:latest
   before_script:
-    - curl -L https://github.com/phpmetrics/PhpMetrics/releases/download/${PHPMETRICS}/phpmetrics.phar
-      -o phpmetrics -s
+    - curl -fSL https://github.com/phpmetrics/PhpMetrics/releases/download/${PHPMETRICS}/phpmetrics.phar -o phpmetrics
     - chmod +x phpmetrics
     - mkdir -p ${REPORT_DIR}
   artifacts:
@@ -144,13 +143,19 @@ stages:
     # Force artifacts even if the job fail.
     when: always
 
-# Use Node docker image for Eslint and Sass lint.
+# Use Node docker image for Eslint.
 .node_template: &node_template
   image: node:8-alpine
+  before_script:
+    - mkdir -p ${REPORT_DIR}
+    - chmod -R 777 ${REPORT_DIR}
 
 # Use Ruby docker image for Markdown lint.
 .ruby_template: &ruby_template
   image: ruby:2-alpine
+  before_script:
+    - mkdir -p ${REPORT_DIR}
+    - chmod -R 777 ${REPORT_DIR}
 
 # Basic docker image with ssh to be able to access a remote.
 # Each access must add a ssh key, see samples below.
@@ -254,7 +259,7 @@ Build:
     - if [ ! -f ${CI_PROJECT_DIR}/dump/dump.sql ];
       then
         mkdir -p dump;
-        curl -L ${UNIT_TEST_DUMP} -o dump/dump.tar.xz -s;
+        curl -fsSL ${UNIT_TEST_DUMP} -o dump/dump.tar.xz;
         tar xf dump/dump.tar.xz -C dump;
       fi
     # We import the dump, faster than a site install.
@@ -329,33 +334,6 @@ Code coverage:
 # Code quality and code lint jobs.
 ################################################################################
 
-# Gitlab code quality tool using codeclimate, can be a long job and need GitLab
-# Runner with docker-in-docker executor, see
-#   https://docs.gitlab.com/ee/ci/examples/code_climate.html
-#   https://docs.gitlab.com/ee/user/project/merge_requests/code_quality_diff.html
-code_quality:
-  image: docker:stable
-  stage: code quality
-  variables:
-    DOCKER_DRIVER: overlay2
-  allow_failure: true
-  services:
-    - docker:stable-dind
-  script:
-    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-    - docker run
-        --env SOURCE_CODE="$PWD"
-        --volume "$PWD":/code
-        --volume /var/run/docker.sock:/var/run/docker.sock
-        "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code/${WEB_ROOT}/modules/custom
-  artifacts:
-    # Gilab > 11.4
-    reports:
-      codequality: [gl-code-quality-report.json]
-    # paths:
-    #   - ./*.json
-  when: manual
-
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
@@ -401,14 +379,14 @@ Eslint:
     # We grab the standards, not needed if after a build.
     - apk --no-cache add curl
     - mkdir -p ${WEB_ROOT}/core
-    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json?h=8.5.x
-        -o ${WEB_ROOT}/core/.eslintrc.json -s
-    # Drupal 8.5.x specfic rules override.
-    - curl https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json?h=8.5.x
-        -o ${WEB_ROOT}/core/.eslintrc.passing.json -s
-    # Install eslint standards.
-    - npm install -g eslint eslint-config-airbnb eslint-plugin-import@^2.7.0
-        eslint-plugin-jsx-a11y@^6.0.2 eslint-plugin-react@^7.4.0
+    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json -o ${WEB_ROOT}/core/.eslintrc.json
+    # Drupal 8.6.x specfic rules override for passing.
+    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json -o ${WEB_ROOT}/core/.eslintrc.passing.json
+    # Install eslint airbnb standard.
+    - npm install -g eslint@^5.9.0 eslint-config-airbnb@^17.1.0
+        eslint-plugin-import@^2.14.0 eslint-plugin-jsx-a11y@^6.1.1
+        eslint-plugin-react@^7.11.0 eslint-plugin-prettier@^3.0.0
+        eslint-config-prettier@^3.3.0 prettier@^1.15.2
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
     - npm config set unsafe-perm true
     # Run the eslint command to generate a report.
@@ -421,8 +399,53 @@ Eslint:
   # Allow failure to produce report and warning.
   allow_failure: true
 
+# Drupal 8.6+ rules used here for css lint.
+Css lint:
+  stage: code lint
+  <<: *node_template
+  artifacts:
+    paths:
+      - ${REPORT_DIR}/css-lint-report.txt
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
+  script:
+    # We grab the Drupal standards, not needed if after a build.
+    - apk --no-cache add curl
+    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json -o ${WEB_ROOT}/.stylelintrc.json
+    - npm install -g stylelint stylelint-config-standard stylelint-no-browser-hacks
+    # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
+    - npm config set unsafe-perm true
+    - stylelint "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+  allow_failure: true
+
+# This is a scss lint report, Drupal 8.6+ rules used here.
+Scss lint:
+  stage: code lint
+  <<: *node_template
+  artifacts:
+    paths:
+      - ${REPORT_DIR}/scss-lint-report.txt
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
+  script:
+    # We grab the Drupal standards, not needed if after a build.
+    - apk --no-cache add curl
+    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json -o ${WEB_ROOT}/.stylelintrc.json
+    - npm install -g stylelint stylelint-scss stylelint-order stylelint-config-standard stylelint-config-recommended-scss
+    # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
+    - npm config set unsafe-perm true
+    - stylelint "./${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
+  allow_failure: true
+
 # This is a sass lint report, default rules used here.
-# TODO: add specific Bootstrap rules.
 Sass lint:
   stage: code lint
   <<: *node_template
@@ -436,12 +459,13 @@ Sass lint:
     # Force artifacts even if the job fail.
     when: always
   script:
-    - npm install -g sass-lint
+    # Project seems a bit outdated, an ongoing tag is currently more up to date.
+    - npm install -g git://github.com/sasstools/sass-lint.git#1.13.0
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
     - npm config set unsafe-perm true
-    - 'sass-lint ${SASS_CODE}
-        --config ${SASS_CONFIG}
+    - 'sass-lint --config ${SASS_CONFIG}
         --verbose
+        --no-exit
         --format html
         --output ${REPORT_DIR}/sass-lint-report.html'
   allow_failure: true
