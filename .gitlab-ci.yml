@@ -17,7 +17,7 @@ variables:
   # Common variables for all jobs, edit this part to your needs.
   #
   # Make CI more verbose in case of problem.
-  CI_DEBUG_TRACE: "1"
+  # CI_DEBUG_TRACE: "1"
   #
   # Global settings for all env used for deploy.
   # USER_NAME: "ubuntu"
@@ -71,7 +71,7 @@ variables:
   REPORT_DIR: "reports"
   # Drupal coding standards for Code Sniffer (phpcs) are provided by Coder module.
   #   https://www.drupal.org/project/coder
-  DRUPAL_CODER: "3.1"
+  DRUPAL_CODER: "2.12"
   # Options for Phpqa to build a report to download, need artifacts set on the
   # job, see '.report' below.
   PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
