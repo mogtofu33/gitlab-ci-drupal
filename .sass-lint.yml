@@ -20,7 +20,7 @@ rules:
   hex-length: 2
   hex-notation:
     - 2
-    - style: uppercase
+    - style: lowercase
   indentation: 4
   leading-zero:
     - 2

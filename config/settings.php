@@ -9,11 +9,10 @@ $settings['file_scan_ignore_directories'] = [
 ];
 $settings['entity_update_batch_size'] = 50;
 
-$settings['install_profile'] = 'standard';
 $config_directories['sync'] = '../config/sync';
 
 $databases['default']['default'] = array (
-  'database' => 'drupal8',
+  'database' => 'drupal',
   'username' => 'root',
   'password' => '',
   'prefix' => '',

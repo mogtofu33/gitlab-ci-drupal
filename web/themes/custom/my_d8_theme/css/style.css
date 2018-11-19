@@ -1,12 +1,5 @@
-/**
- * @file
- * Dummy styles for test.
- */
+/* Dummy styles for test. */
 
 .node--unpublished {
   background-color: #fff4f4;
 }
-
-.this {
-    will: fail lint;
-  }
