@@ -1,7 +1,0 @@
-my_d8_module.form:
-  path: '/simple-form'
-  defaults:
-    _title: 'Simple form'
-    _form: '\Drupal\my_d8_module\Form\SimpleForm'
-  requirements:
-    _permission: 'access content'

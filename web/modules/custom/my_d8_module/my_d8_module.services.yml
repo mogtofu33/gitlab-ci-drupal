@@ -1,0 +1,4 @@
+services:
+  my_d8_module.example_service:
+    class: Drupal\my_d8_module\DemoModuleExampleService
+    arguments: ['@entity_type.manager']

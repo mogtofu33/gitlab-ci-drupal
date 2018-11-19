@@ -56,7 +56,9 @@ variables:
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:1,phpmd,phpcpd,security-checker:0,parallel-lint"
+  TOOLS: "--tools phpcs:0,phpmd,phpcpd,security-checker:0,parallel-lint"
+  # Coding best practices limit, ~20 could be reasonable, to adapt for your project.
+  BEST_PRACTICES: "--tools phpcs:0"
 ################################################################################
   # Next part do not need to be edited for a first quick run.
   #
@@ -167,32 +169,36 @@ stages:
     # Avoid warning on connection.
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
-# Sample of a build, considering a Drupal 8 with composer, Bootstrap Sass.
+# Sample of a build, considering a Drupal 8 with composer.
 # For more samples see
 #   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
 .build_template: &build_template
   image: composer:latest
-  services:
-    - mariadb:10.3
   script:
-    - composer global require hirak/prestissimo
-        --no-progress --no-suggest --ignore-platform-reqs
-    # Install project libraries and dependencies from a local composer.json
-    # Remove the lock used for testing.
-    - rm -f composer.lock
-    - composer install
-      --dev --ignore-platform-reqs --no-suggest --no-interaction -v
-    # Cleanup to remove not needed folders.
-    - rm -rf .git
+    - composer global require hirak/prestissimo --no-progress
+    # Install Drupal project.
+    - if ! [ -f drupal/web/index.php ]; then
+        composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs;
+      fi
+    - cp -rf drupal/* ${CI_PROJECT_DIR}
+    - cp -f drupal/.editorconfig ${CI_PROJECT_DIR}
+    - cp -f drupal/.env.example ${CI_PROJECT_DIR}
+    - cp -f drupal/.gitattributes ${CI_PROJECT_DIR}
+    - cp -f drupal/.gitignore ${CI_PROJECT_DIR}
   artifacts:
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     paths:
       # Build files for deploy.
-      - ${CI_PROJECT_DIR}
+      - vendor
+      - web
+      - drush
+      - scripts
+      - .editorconfig
+      - .env.example
+      - .gitattributes
+      - .gitignore
+      - load.environment.php
     expire_in: 1 day
-  variables:
-    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
-    DB_URL: "mysql://root@mariadb/drupal8"
 
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
@@ -203,26 +209,37 @@ stages:
     - testing
   image: juampynr/drupal8ci:latest
   services:
-    - mariadb:10.3
-    # - selenium/standalone-chrome-debug:3.7.1-beryllium
+    - mariadb:latest
   before_script:
+    - cp config/phpunit.xml ${WEB_ROOT}/core/
     - mkdir -p /var/www/html
     - ln -s ${CI_PROJECT_DIR}/${WEB_ROOT} /var/www/html/web
     - apache2-foreground&
     - mkdir -p ${REPORT_DIR}
     - chmod -R 777 ${REPORT_DIR}
-    - cp config/phpunit.xml ${WEB_ROOT}/core/
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
     - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
+    # We import the dump, faster than a site install.
+    - if [ -f ${CI_PROJECT_DIR}/dump/dump.sql ];
+      then
+        mysql -hmariadb -uroot drupal < ${CI_PROJECT_DIR}/dump/dump.sql;
+      else
+        ${CI_PROJECT_DIR}/vendor/bin/drush --root="/var/www/html/web" si -y minimal;
+      fi
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
-    DB_URL: "mysql://root@mariadb/drupal8"
-    SIMPLETEST_DB: "mysql://root@mariadb/drupal8"
+    MYSQL_DATABASE: "drupal"
+    MYSQL_USER: "drupal"
+    MYSQL_PASSWORD: "drupal"
+    DB_URL: "mysql://root@mariadb/drupal"
+    SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     SIMPLETEST_BASE_URL: "http://localhost"
     BROWSERTEST_OUTPUT_DIRECTORY: "${CI_PROJECT_DIR}/${WEB_ROOT}/sites/simpletest"
   artifacts:
     paths:
       - ${REPORT_DIR}/*
+    # Force artifacts even if the job fail.
+    when: always
 
 ################################################################################
 # Jobs definition.
@@ -251,22 +268,11 @@ Build:
         curl -fsSL ${UNIT_TEST_DUMP} -o dump/dump.tar.xz;
         tar xf dump/dump.tar.xz -C dump;
       fi
-    # We import the dump, faster than a site install.
-    - if [ -f ${CI_PROJECT_DIR}/dump/dump.sql ];
-      then
-        apk --no-cache add mysql-client;
-        mysql -hmariadb -uroot -e "CREATE DATABASE drupal8 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-        mysql -hmariadb -uroot drupal8 < ${CI_PROJECT_DIR}/dump/dump.sql;
-      else
-        echo "Missing database dump!";
-      fi
   # On build we cache the composer, web and dump folders.
   cache:
     key: drupal-build-cache
     paths:
-      - bin
-      - vendor
-      - ${WEB_ROOT}
+      - drupal
       - dump
 
 # Job to run Unit and Kernel tests, do not require a build.
@@ -306,8 +312,6 @@ Code coverage:
   <<: *test_template
   script:
     # Create the needed folders.
-    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
-    - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
     - mkdir -p ${REPORT_DIR}/coverage-xml
     - mkdir -p ${REPORT_DIR}/coverage-html
     - chmod -R 777 ${REPORT_DIR}
@@ -345,7 +349,7 @@ Best practices:
   script:
     - phpqa ${PHPQA_REPORT}
         --config ./phpqa_config/phpcs_drupal_best_practices
-        --tools phpcs:1
+        ${BEST_PRACTICES}
         ${PHPQA_PHP_CODE}
   only:
     - branches
@@ -432,7 +436,7 @@ Scss lint:
     - npm install -g stylelint stylelint-scss stylelint-no-browser-hacks stylelint-order stylelint-config-standard stylelint-config-recommended-scss
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
     - npm config set unsafe-perm true
-    - stylelint "./${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
+    - stylelint "./${SCSS_FILES}" --syntax scss > ${REPORT_DIR}/scss-lint-report.txt
   allow_failure: true
 
 # This is a sass lint report, default rules used here.
@@ -476,7 +480,7 @@ Markdown lint:
     when: always
   script:
     - gem install mdl
-    - mdl ./ > ${REPORT_DIR}/markdown_lint.txt
+    - mdl ${WEB_ROOT}/modules/custom/ > ${REPORT_DIR}/markdown_lint.txt
   allow_failure: true
   when: manual
 

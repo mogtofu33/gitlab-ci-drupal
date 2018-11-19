@@ -4,4 +4,4 @@ description: 'Provides example code for testing Gitlab CI.'
 package: Example modules
 core: 8.x
 dependencies:
-  - help
+  - drupal:help
