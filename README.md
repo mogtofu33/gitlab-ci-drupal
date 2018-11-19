@@ -49,7 +49,7 @@ master. Other branches are testing and staging.
 
   **X** = include jobs that can stop the pipeline if fail.
 
-  **M* = Manual jobs.
+  **M** = Manual jobs.
 
 - testing
   - build - **X**
