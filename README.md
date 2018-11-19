@@ -1,6 +1,6 @@
 # Gitlab CI with Drupal
 
-[![pipeline status](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master) [![coverage report](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/coverage.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
+[![pipeline status](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master) [![coverage report](https://gitlab.com/mog33/gitlab-ci-drupal/badges/testing/coverage.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing)
 
 Gitlab CI samples for a Drupal / Php project. Include Build, Unit testing, Code
 quality, metrics and deploy.
