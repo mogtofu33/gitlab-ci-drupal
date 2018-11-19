@@ -1,6 +1,6 @@
 # Gitlab CI with Drupal
 
-[![pipeline status](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
+[![pipeline status](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master) [![coverage report](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/coverage.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
 
 Gitlab CI samples for a Drupal / Php project. Include Build, Unit testing, Code
 quality, metrics and deploy.
@@ -31,7 +31,7 @@ Run a pipeline from Gitlab UI or push to master!
 this is just a commented example of working jobs for Drupal 8, feel free to
 cherry pick what you need.
 
-If your commit message contains **[ci skip]*- or **[skip ci]**, using any
+If your commit message contains **[ci skip]** or **[skip ci]**, using any
 capitalization, the commit will be created but the pipeline will be skipped.
 
 To adapt Code sniffer and Php Mess detector for a Drupal project, use the
@@ -47,9 +47,9 @@ More options see
 Sample workflow used in this file, based on Git branches where production is
 master. Other branches are testing and staging.
 
-  **X*- = include jobs that can stop the pipeline if fail.
+  **X** = include jobs that can stop the pipeline if fail.
 
-  **M*- = Manual jobs.
+  **M* = Manual jobs.
 
 - testing
   - build - **X**
