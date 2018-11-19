@@ -334,6 +334,26 @@ Code coverage:
 # Code quality and code lint jobs.
 ################################################################################
 
+codequality:
+  # It won't make sense to run codequality on deploy branches, because we
+  # # are assuming that the developer has already addressed the problems.
+  except:
+    - uat
+    - master
+  image: docker:stable
+  variables:
+    DOCKER_DRIVER: overlay2
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  before_script:
+    - docker info
+  script:
+    - docker pull codeclimate/codeclimate
+    - docker run --env CODECLIMATE_CODE="$PWD" --volume "$PWD":/code --volume /var/run/docker.sock:/var/run/docker.sock --volume /tmp/cc:/tmp/cc codeclimate/codeclimate analyze -f json > codeclimate.json
+  artifacts:
+    paths: [codeclimate.json]
+
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
@@ -439,7 +459,7 @@ Scss lint:
     # We grab the Drupal standards, not needed if after a build.
     - apk --no-cache add curl
     - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json -o ${WEB_ROOT}/.stylelintrc.json
-    - npm install -g stylelint stylelint-scss stylelint-order stylelint-config-standard stylelint-config-recommended-scss
+    - npm install -g stylelint stylelint-scss stylelint-no-browser-hacks stylelint-order stylelint-config-standard stylelint-config-recommended-scss
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
     - npm config set unsafe-perm true
     - stylelint "./${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
@@ -459,6 +479,7 @@ Sass lint:
     # Force artifacts even if the job fail.
     when: always
   script:
+    - apk --no-cache add git
     # Project seems a bit outdated, an ongoing tag is currently more up to date.
     - npm install -g git://github.com/sasstools/sass-lint.git#1.13.0
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
