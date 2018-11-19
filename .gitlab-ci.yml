@@ -161,7 +161,7 @@ stages:
 # Each access must add a ssh key, see samples below.
 .ssh_agent_template:
   before_script: &ssh_agent_template
-    - apk add --no-cache openssh-client
+    - apk --no-cache add openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     # Avoid warning on connection.
@@ -186,7 +186,7 @@ stages:
     # - composer install
     #   --dev --ignore-platform-reqs --no-suggest --no-interaction --quiet
     # Install and use compass if using Sass file in the theme.
-    # - apk add --update ruby ruby-dev libffi-dev build-base
+    # - apk --no-cache add ruby ruby-dev libffi-dev build-base
     # - gem install --no-document listen sass compass bootstrap-sass
     # - compass compile ${WEB_ROOT}/themes/custom/${THEME}
   artifacts:
@@ -265,7 +265,7 @@ Build:
     # We import the dump, faster than a site install.
     - if [ -f ${CI_PROJECT_DIR}/dump/dump.sql ];
       then
-        apt install -y mysql-client;
+        apk --no-cache add mysql-client;
         mysql -hmariadb -uroot drupal8 < ${CI_PROJECT_DIR}/dump/dump.sql;
       else
         echo "Missing database dump";
@@ -348,7 +348,7 @@ codequality:
   services:
     - docker:stable-dind
   before_script:
-    - docker info
+    - sudo docker info
   script:
     - docker pull codeclimate/codeclimate
     - docker run --env CODECLIMATE_CODE="$PWD" --volume "$PWD":/code --volume /var/run/docker.sock:/var/run/docker.sock --volume /tmp/cc:/tmp/cc codeclimate/codeclimate analyze -f json > codeclimate.json
