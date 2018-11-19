@@ -56,7 +56,7 @@ variables:
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:5,phpmd,phpcpd,security-checker:0,parallel-lint"
+  TOOLS: "--tools phpcs:1,phpmd,phpcpd,security-checker:0,parallel-lint"
 ################################################################################
   # Next part do not need to be edited for a first quick run.
   #
@@ -172,38 +172,26 @@ stages:
 #   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
 .build_template: &build_template
   image: composer:latest
+  services:
+    - mariadb:10.3
   script:
-    # Sample to install a Drupal 8 with drupal composer template.
     - composer global require hirak/prestissimo
         --no-progress --no-suggest --ignore-platform-reqs
-    - mkdir -p build
-    - rm -rf build/*
-    - composer create-project drupal-composer/drupal-project:8.x-dev build
-        --stability dev --no-interaction --ignore-platform-reqs --quiet
-    - cp -r build/* .
-    - rm -rf build
     # Install project libraries and dependencies from a local composer.json
-    # - composer install
-    #   --dev --ignore-platform-reqs --no-suggest --no-interaction --quiet
-    # Install and use compass if using Sass file in the theme.
-    # - apk --no-cache add ruby ruby-dev libffi-dev build-base
-    # - gem install --no-document listen sass compass bootstrap-sass
-    # - compass compile ${WEB_ROOT}/themes/custom/${THEME}
+    # Remove the lock used for testing.
+    - rm -f composer.lock
+    - composer install
+      --dev --ignore-platform-reqs --no-suggest --no-interaction -v
+    # Cleanup to remove not needed folders.
+    - rm -rf .git
   artifacts:
     name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     paths:
-      # Folders from Drupal template, add any folders/files you need.
-      - ./drush
-      - ./scripts
-      - ./vendor
-      - ./${WEB_ROOT}
-      - LICENSE
-      - README.md
-      - composer.json
-      - composer.lock
-      - load.environment.php
+      # Build files for deploy.
+      - ${CI_PROJECT_DIR}
     expire_in: 1 day
   variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     DB_URL: "mysql://root@mariadb/drupal8"
 
 # Testing template for phpunit, this provide Apache / Php.
@@ -219,7 +207,7 @@ stages:
     # - selenium/standalone-chrome-debug:3.7.1-beryllium
   before_script:
     - mkdir -p /var/www/html
-    - ln -s ${WEB_ROOT} /var/www/html/web
+    - ln -s ${CI_PROJECT_DIR}/${WEB_ROOT} /var/www/html/web
     - apache2-foreground&
     - mkdir -p ${REPORT_DIR}
     - chmod -R 777 ${REPORT_DIR}
@@ -254,6 +242,7 @@ Build:
   except:
     - master
   after_script:
+    - mkdir -p ${WEB_ROOT}/sites/default/files
     - cp ${CI_PROJECT_DIR}/config/settings.php ${WEB_ROOT}/sites/default/
     # If a dump exist from the cache of a previous build, we try to use it.
     - if [ ! -f ${CI_PROJECT_DIR}/dump/dump.sql ];
@@ -266,17 +255,18 @@ Build:
     - if [ -f ${CI_PROJECT_DIR}/dump/dump.sql ];
       then
         apk --no-cache add mysql-client;
+        mysql -hmariadb -uroot -e "CREATE DATABASE drupal8 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
         mysql -hmariadb -uroot drupal8 < ${CI_PROJECT_DIR}/dump/dump.sql;
       else
-        echo "Missing database dump";
-        exit 1;
+        echo "Missing database dump!";
       fi
   # On build we cache the composer, web and dump folders.
   cache:
     key: drupal-build-cache
     paths:
-      - ${WEB_ROOT}
+      - bin
       - vendor
+      - ${WEB_ROOT}
       - dump
 
 # Job to run Unit and Kernel tests, do not require a build.
@@ -334,28 +324,6 @@ Code coverage:
 # Code quality and code lint jobs.
 ################################################################################
 
-codequality:
-  stage: code quality
-  # It won't make sense to run codequality on deploy branches, because we
-  # # are assuming that the developer has already addressed the problems.
-  except:
-    - uat
-    - master
-  image: docker:stable
-  variables:
-    DOCKER_DRIVER: overlay2
-  allow_failure: true
-  services:
-    - docker:stable-dind
-  before_script:
-    - docker info
-  script:
-    - docker pull codeclimate/codeclimate
-    - docker run --env CODECLIMATE_CODE="$PWD" --volume "$PWD":/code --volume /var/run/docker.sock:/var/run/docker.sock --volume /tmp/cc:/tmp/cc codeclimate/codeclimate analyze -f json > codeclimate.json
-  artifacts:
-    paths: [codeclimate.json]
-  when: manual
-
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
@@ -377,7 +345,7 @@ Best practices:
   script:
     - phpqa ${PHPQA_REPORT}
         --config ./phpqa_config/phpcs_drupal_best_practices
-        --tools phpcs:0
+        --tools phpcs:1
         ${PHPQA_PHP_CODE}
   only:
     - branches
