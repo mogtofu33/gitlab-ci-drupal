@@ -335,6 +335,7 @@ Code coverage:
 ################################################################################
 
 codequality:
+  stage: code quality
   # It won't make sense to run codequality on deploy branches, because we
   # # are assuming that the developer has already addressed the problems.
   except:
@@ -353,6 +354,7 @@ codequality:
     - docker run --env CODECLIMATE_CODE="$PWD" --volume "$PWD":/code --volume /var/run/docker.sock:/var/run/docker.sock --volume /tmp/cc:/tmp/cc codeclimate/codeclimate analyze -f json > codeclimate.json
   artifacts:
     paths: [codeclimate.json]
+  when: manual
 
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
