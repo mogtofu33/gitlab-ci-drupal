@@ -321,6 +321,7 @@ Code coverage:
         -c core
         --coverage-xml ../${REPORT_DIR}/coverage-xml
         --coverage-html ../${REPORT_DIR}/coverage-html
+        --coverage-text
         --testsuite nonfunctional
         ${UNIT_TEST_ROOT}
 
