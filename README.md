@@ -39,37 +39,13 @@ _.phpqa.yml_ and _.phpmd.xml_ files with _.gitlab-ci.yml_.
 
 More options see
 
-- [https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
-- [https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
+- [Phpqa configuration](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
+- [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
 
 ## Workflow
 
-Sample workflow used in this file, based on Git branches where production is
-master. Other branches are testing and staging.
-
-  **X** = include jobs that can stop the pipeline if fail.
-
-  **M** = Manual jobs.
-
-- testing
-  - build - **X**
-  - test - **X**
-  - code quality - **X**
-  - code lint
-  - deploy to testing
-- staging
-  - code quality - **X**
-  - code lint
-  - php code metrics
-  - deploy to testing - **X**
-  - manual deploy to staging- **M**
-- production
-  - code quality - **X**
-  - code lint
-  - php code metrics
-  - deploy to testing - **X**
-  - manual deploy to staging - **M**
-  - manual deploy to production- **M**
+Sample workflow used in this file, based on Git branches or tags.
+Adapt _only_ and _except_ for your own workflow, see [Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
 
 ## Tools
 
@@ -78,25 +54,25 @@ Nothing could be done without a bunch of awsome humans building awsome tools.
 Code quality check is done using the wonderful Phpqa, a tool that integrate
 other Php tools to analyse your code:
 
-- [https://github.com/EdgedesignCZ/phpqa](https://github.com/EdgedesignCZ/phpqa)
-  - [https://github.com/sebastianbergmann/phploc](https://github.com/sebastianbergmann/phploc)
-  - [https://github.com/sebastianbergmann/phpcpd](https://github.com/sebastianbergmann/phpcpd)
-  - [https://github.com/squizlabs/PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
-  - [https://github.com/pdepend/pdepend](https://github.com/pdepend/pdepend)
-  - [https://github.com/phpmd/phpmd](https://github.com/phpmd/phpmd)
-  - [https://github.com/JakubOnderka/PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
-  - [https://github.com/sensiolabs/security-checker](https://github.com/sensiolabs/security-checker)
-  - [https://phpunit.de](https://phpunit.de)
+- [Phpqa](https://github.com/EdgedesignCZ/phpqa)
+  - [Phploc](https://github.com/sebastianbergmann/phploc)
+  - [Phpcpd](https://github.com/sebastianbergmann/phpcpd)
+  - [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
+  - [Phpmd](https://github.com/phpmd/phpmd)
+  - [PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
+  - [Security-checker](https://github.com/sensiolabs/security-checker)
+  - [Phpunit](https://phpunit.de)
 
 Other amazing tools are Eslint, Sass lint, Markdown lint:
 
-- [https://eslint.org/](https://eslint.org/)
-- [https://github.com/sasstools/sass-lint](https://github.com/sasstools/sass-lint)
-- [https://github.com/markdownlint/markdownlint](https://github.com/markdownlint/markdownlint)
+- [Eslint](https://eslint.org/)
+- [Sass-lint](https://github.com/sasstools/sass-lint)
+- [Stylelint](https://github.com/stylelint/stylelint)
+- [Markdownlint](https://github.com/markdownlint/markdownlint)
 
 We use the fantastic Phpmetrics for some metrics on the project:
 
-- [https://www.phpmetrics.org](https://www.phpmetrics.org)
+- [Phpmetrics](https://www.phpmetrics.org)
 
 ## Openstack
 
@@ -108,12 +84,12 @@ Create the instance on openstack, ssh and run:
 
 ```shell
 sudo gitlab-runner register -n \
-  --url https://MY_GITLAB_URL \
-  --registration-token YOUR_RUNNER_TOKEN_ON_GITLAB \
   --executor docker \
   --description "My first runner" \
   --docker-image "docker:stable" \
-  --docker-privileged
+  --docker-privileged \
+  --url https://MY_GITLAB_URL \
+  --registration-token YOUR_RUNNER_TOKEN_ON_GITLAB
 ```
 
 ## Testing your jobs
@@ -126,6 +102,6 @@ sudo gitlab-runner exec docker 'code quality'
 
 More information on the documentation:
 
-- [https://docs.gitlab.com/runner/commands/#gitlab-runner-exec](https://docs.gitlab.com/runner/commands/#gitlab-runner-exec)
+- [Gitlab-runner-exec](https://docs.gitlab.com/runner/commands/#gitlab-runner-exec)
 
-In the same time using the variable _CI_DEBUG_TRACE_ in any job can help you.
+In the same time using the variable __CI_DEBUG_TRACE__ in any job can help you.

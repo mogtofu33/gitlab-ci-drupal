@@ -14,9 +14,6 @@
 #
 ################################################################################
 
-# Default docker image when not overriden.
-image: alpine:latest
-
 variables:
   ##############################################################################
   # Common variables for all jobs, edit this part to your needs.
@@ -200,11 +197,6 @@ stages:
 
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
-  # Build is not for master but only some other branches.
-  except:
-    - master
-  only:
-    - testing
   image: juampynr/drupal8ci:latest
   services:
     - mariadb:latest
@@ -297,6 +289,11 @@ Build:
 # Job to run Unit and Kernel tests, do not require a build.
 Unit and kernel tests:
   stage: test
+  # Build is not for master but only some other branches.
+  except:
+    - master
+  only:
+    - testing
   <<: *test_template
   script:
     - cd ${WEB_ROOT}
@@ -310,6 +307,11 @@ Unit and kernel tests:
 # Job to check test coverage, need a build.
 Code coverage:
   stage: test
+  # Build is not for master but only some other branches.
+  except:
+    - master
+  only:
+    - testing
   dependencies:
     - Build
   <<: *test_template
@@ -331,7 +333,7 @@ Code coverage:
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
 ################################################################################
-# Code quality and code lint jobs.
+# Code quality jobs for Drupal 8+
 ################################################################################
 
 # Automated quality check job when something is pushed/merged on master.
@@ -339,32 +341,38 @@ Code coverage:
 # report and stop.
 Code quality:
   stage: code quality
-  <<: *phpqa_template
-  script:
-    - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
   # Limit to branch push, for more options see
   # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
   only:
     - branches
+  <<: *phpqa_template
+  script:
+    - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
 
 # Drupal coding standard best practices report (can not be included in
 # codequality as we are already running Drupal coding standard).
 Best practices:
   stage: code quality
+  only:
+    - branches
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
         --config ./phpqa_config/phpcs_drupal_best_practices
         ${BEST_PRACTICES}
         ${PHPQA_PHP_CODE}
-  only:
-    - branches
   # Allow failure to produce report and warning.
   allow_failure: true
+
+################################################################################
+# Code  lint jobs for Drupal 8+
+################################################################################
 
 # This is a eslint report based on Drupal 8 standards.
 Eslint:
   stage: code lint
+  only:
+    - branches
   <<: *node_template
   artifacts:
     <<: *default_artifacts
@@ -400,6 +408,8 @@ Eslint:
 # Drupal 8.6+ rules used here for css stylelint.
 Css lint:
   stage: code lint
+  only:
+    - branches
   <<: *node_template
   artifacts:
     <<: *default_artifacts
@@ -420,6 +430,8 @@ Css lint:
 # This is a sass lint report, default rules used here.
 Sass lint:
   stage: code lint
+  only:
+    - branches
   <<: *node_template
   artifacts:
     <<: *default_artifacts
@@ -442,6 +454,8 @@ Sass lint:
 # This is a markdown lint report, based on generic default rules.
 Markdown lint:
   stage: code lint
+  only:
+    - branches
   <<: *ruby_template
   artifacts:
     <<: *default_artifacts
@@ -525,6 +539,9 @@ phploc All:
 
 Deploy to testing:
   stage: deploy to testing
+  only:
+    - testing
+    - master
   environment:
     name: testing
     url: http://${TESTING_HOST}
@@ -535,13 +552,13 @@ Deploy to testing:
     - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
     # - ssh $USER_NAME@$TESTING_HOST
-    #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
-  only:
-    - testing
-    - master
+    #     "cd ${DRUPAL_FOLDER}; ./scripts/my_deploy_script.sh;"
 
 Deploy to staging:
   stage: deploy to staging
+  only:
+    - staging
+    - master
   environment:
     name: staging
     url: http://${STAGING_HOST}
@@ -552,14 +569,14 @@ Deploy to staging:
     - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
     # - ssh $USER_NAME@$TESTING_HOST
-    #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
-  only:
-    - staging
-    - master
+    #     "cd ${DRUPAL_FOLDER}; ./scripts/my_deploy_script.sh;"
   when: manual
 
 Deploy to production:
   stage: deploy to production
+  only:
+    - production
+    - master
   environment:
     name: production
     url: http://${PRODUCTION_HOST}
@@ -570,8 +587,8 @@ Deploy to production:
     - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
     # - ssh $USER_NAME@$TESTING_HOST
-    #     "cd ${DRUPAL_FOLDER}; ./scripts/deploy_script.sh;"
-  only:
-    - production
-    - master
+    #     "cd ${DRUPAL_FOLDER}; ./scripts/my_deploy_script.sh;"
   when: manual
+
+# Default docker image when not overriden.
+image: alpine:latest

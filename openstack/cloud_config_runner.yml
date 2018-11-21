@@ -17,7 +17,7 @@ runcmd:
   - docker pull docker:stable-dind
   - echo "\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"
   - echo "Setup complete, please register the runner after ssh this VM:\n"
-  - echo "sudo gitlab-runner register -n --url https://MY_GITLAB_URL --registration-token YOUR_RUNNER_TOKEN_ON_GITLAB --executor docker --description \"My Runner\" --docker-image \"docker:stable\" --docker-privileged\n"
+  - echo "sudo gitlab-runner register -n --url https://MY_GITLAB_URL --registration-token YOUR_RUNNER_TOKEN_ON_GITLAB --executor docker --docker-image \"docker:stable\" --docker-privileged\n"
   - echo "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
 packages:
   - software-properties-common

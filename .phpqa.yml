@@ -28,7 +28,3 @@ extensions:
     - test
     - profile
     - theme
-
-# tool:
-    # phpmetrics: [Edge\QA\Tools\Analyzer\PhpMetrics, Edge\QA\Tools\Analyzer\PhpMetricsV2]
-    # phpcs: [Edge\QA\Tools\Analyzer\Phpcs, Edge\QA\Tools\Analyzer\PhpcsV3]
