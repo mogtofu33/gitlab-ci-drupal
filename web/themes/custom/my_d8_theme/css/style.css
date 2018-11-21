@@ -1,5 +1,69 @@
-/* Dummy styles for test. */
+html,
+body,
+ul,
+ol {
+  border: 5px solid grey;
+}
 
-.node--unpublished {
-  background-color: #fff4f4;
+body {
+  font-family: Helvetica, Arial, Verdana, Tahoma, sans-serif;
+  color: #333;
+}
+
+body > #container {
+  text-align: left;
+  margin: 0 auto;
+  width: 500px;
+}
+
+nav {
+  background-color: #fff;
+}
+
+nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav li {
+  display: inline-block;
+}
+
+nav a {
+  display: block;
+  padding: 6px 12px;
+  text-decoration: none;
+}
+
+.box {
+  -webkit-transform: rotate(30deg);
+  -ms-transform: rotate(30deg);
+  transform: rotate(30deg);
+}
+
+article[role="main"] {
+  float: left;
+  width: 62.5%;
+}
+
+.message,
+.success,
+.error,
+.warning {
+  border: 1px solid #ccc;
+  padding: 10px;
+  color: #333;
+}
+
+.success {
+  border-color: green;
+}
+
+.error {
+  border-color: red;
+}
+
+.warning {
+  border-color: yellow;
 }

@@ -64,6 +64,6 @@
         <directory suffix="Test.php">./</directory>
         <directory suffix="TestBase.php">./</directory>
       </exclude>
-     </whitelist>
+    </whitelist>
   </filter>
 </phpunit>

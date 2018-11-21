@@ -13,35 +13,37 @@
 #   https://docs.gitlab.com/ee/ci/yaml
 #
 ################################################################################
+
+# Default docker image when not overriden.
+image: alpine:latest
+
 variables:
+  ##############################################################################
   # Common variables for all jobs, edit this part to your needs.
   #
   # Make CI more verbose in case of problem.
   # CI_DEBUG_TRACE: "1"
   #
-  # Global settings for all env used for deploy.
-  # USER_NAME: "ubuntu"
-  # DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
-  # For Scss support when build in case of a Drupal Bootstrap sub theme.
-  # THEME: "MY_THEME_NAME"
-  # Deploy environments configuration, add or remove depending deploy jobs.
-  # Testing config, set host or ip
-  TESTING_HOST: "localhost"
-  # Staging config, set host or ip
-  STAGING_HOST: "localhost"
-  # Production config, set host or ip
-  PRODUCTION_HOST: "localhost"
-  #
-  # Drupal custom code / theme / all code. We are checking our code quality,
-  # and optionally Drupal core.
-  #
   # Path is relative to project root, web/ is for Drupal Composer template,
   # change it if you are using docroot/ or any other web root.
   WEB_ROOT: "web"
+
+  # See Phpqa available tools:
+  #   https://github.com/EdgedesignCZ/phpqa#available-tools
+  # Allow some errors, this will stop the pipeline if a limit is reached.
+  TOOLS: "--tools phpcs:0,phpmd,phpcpd,security-checker:0,parallel-lint"
+  # Coding best practices limit, ~20 could be reasonable, to adapt for your project.
+  BEST_PRACTICES: "--tools phpcs:0"
+
+  ##############################################################################
+  # Drupal custom code / theme / all code. We are checking our code quality,
+  # and optionally Drupal core.
+  #
   # Test unit folder relative to web root.
   UNIT_TEST_ROOT: "modules/custom"
   # If you have a MySQL dump for testing to avoid installing.
   UNIT_TEST_DUMP: "https://gitlab.com/mog33/gitlab-ci-drupal/uploads/13ca902a6988548f45b276389cbd3d42/dump.tar.xz"
+
   # Comma separated for phpqa and phpmetrics.
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
@@ -53,14 +55,26 @@ variables:
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
   PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
-  # See Phpqa available tools:
-  #   https://github.com/EdgedesignCZ/phpqa#available-tools
-  # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:0,phpmd,phpcpd,security-checker:0,parallel-lint"
-  # Coding best practices limit, ~20 could be reasonable, to adapt for your project.
-  BEST_PRACTICES: "--tools phpcs:0"
-################################################################################
+
+  ##############################################################################
+  # Global settings for all env used for deploy.
+  ##############################################################################
+  # 
+  # USER_NAME: "ubuntu"
+  # DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
+  # For Scss support when build in case of a Drupal Bootstrap sub theme.
+  # THEME: "MY_THEME_NAME"
+  # Deploy environments configuration, add or remove depending deploy jobs.
+  # Testing config, set host or ip
+  TESTING_HOST: "localhost"
+  # Staging config, set host or ip
+  STAGING_HOST: "localhost"
+  # Production config, set host or ip
+  PRODUCTION_HOST: "localhost"
+
+  ##############################################################################
   # Next part do not need to be edited for a first quick run.
+  ##############################################################################
   #
   # Phpqa docker image tag and options like code to analyse relative to your 
   # project root.
@@ -100,6 +114,21 @@ stages:
 #   https://docs.gitlab.com/ee/ci/yaml/#anchors
 ################################################################################
 
+# Small repetitive tasks.
+.ensure_report:
+  - &ensure_report
+    mkdir -p ${REPORT_DIR} && chmod -R 777 ${REPORT_DIR}
+
+.default_artifacts: &default_artifacts
+  paths:
+    - ${REPORT_DIR}/*.html
+  # Name will be based on job and branch.
+  name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+  # How long do we keep reports files?
+  expire_in: 1 day
+  # Force artifacts even if the job fail.
+  when: always
+
 # Use Phpqa docker image, see https://github.com/EdgedesignCZ/phpqa#docker
 # We download the coder project to use the coding standard ruleset for
 # Code_Sniffer, composer install is slow.
@@ -109,22 +138,15 @@ stages:
     - if [ ! -d ./coder/coder_sniffer ];
       then
         curl -fsSL https://ftp.drupal.org/files/projects/coder-8.x-${DRUPAL_CODER}.tar.gz -o coder.tar.gz;
-      fi
-    - if [ -f coder.tar.gz ];
-      then
         tar xzf coder.tar.gz;
       fi
-    - mkdir -p ${REPORT_DIR}
-    - chmod -R 777 ${REPORT_DIR}
+    - *ensure_report
   artifacts:
+    <<: *default_artifacts
+  cache:
+    key: coder-${DRUPAL_CODER}
     paths:
-      - ${REPORT_DIR}/*.html
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
+      - coder
 
 # We use Phpmetrics for metrics report.
 # Is included in phpqa but standalone provide the last version with more
@@ -132,32 +154,34 @@ stages:
 .phpqmetrics_template: &phpqmetrics_template
   image: composer:latest
   before_script:
-    - curl -fSL https://github.com/phpmetrics/PhpMetrics/releases/download/${PHPMETRICS}/phpmetrics.phar -o phpmetrics
+    - if [ ! -f ./phpmetrics ];
+      then
+        curl -fSL https://github.com/phpmetrics/PhpMetrics/releases/download/${PHPMETRICS}/phpmetrics.phar -o phpmetrics;
+      fi
     - chmod +x phpmetrics
-    - mkdir -p ${REPORT_DIR}
+    - *ensure_report
   artifacts:
+    <<: *default_artifacts
     paths:
-      - ${REPORT_DIR}/*.html
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
+      - ${REPORT_DIR}/
+  cache:
+    paths:
+    - phpmetrics
 
 # Use Node docker image for Eslint.
 .node_template: &node_template
   image: node:8-alpine
   before_script:
-    - mkdir -p ${REPORT_DIR}
-    - chmod -R 777 ${REPORT_DIR}
+    - *ensure_report
+  cache:
+    paths:
+    - node_modules/
 
 # Use Ruby docker image for Markdown lint.
 .ruby_template: &ruby_template
   image: ruby:2-alpine
   before_script:
-    - mkdir -p ${REPORT_DIR}
-    - chmod -R 777 ${REPORT_DIR}
+    - *ensure_report
 
 # Basic docker image with ssh to be able to access a remote.
 # Each access must add a ssh key, see samples below.
@@ -168,37 +192,6 @@ stages:
     - chmod 700 ~/.ssh
     # Avoid warning on connection.
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
-
-# Sample of a build, considering a Drupal 8 with composer.
-# For more samples see
-#   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
-.build_template: &build_template
-  image: composer:latest
-  script:
-    - composer global require hirak/prestissimo --no-progress
-    # Install Drupal project.
-    - if ! [ -f drupal/web/index.php ]; then
-        composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs;
-      fi
-    - cp -rf drupal/* ${CI_PROJECT_DIR}
-    - cp -f drupal/.editorconfig ${CI_PROJECT_DIR}
-    - cp -f drupal/.env.example ${CI_PROJECT_DIR}
-    - cp -f drupal/.gitattributes ${CI_PROJECT_DIR}
-    - cp -f drupal/.gitignore ${CI_PROJECT_DIR}
-  artifacts:
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    paths:
-      # Build files for deploy.
-      - vendor
-      - web
-      - drush
-      - scripts
-      - .editorconfig
-      - .env.example
-      - .gitattributes
-      - .gitignore
-      - load.environment.php
-    expire_in: 1 day
 
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
@@ -211,14 +204,23 @@ stages:
   services:
     - mariadb:latest
   before_script:
+    - *ensure_report
     - cp config/phpunit.xml ${WEB_ROOT}/core/
     - mkdir -p /var/www/html
     - ln -s ${CI_PROJECT_DIR}/${WEB_ROOT} /var/www/html/web
     - apache2-foreground&
-    - mkdir -p ${REPORT_DIR}
-    - chmod -R 777 ${REPORT_DIR}
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
     - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
+    # Prepare Drupal installation for Tests.
+    - mkdir -p ${WEB_ROOT}/sites/default/files
+    - cp ${CI_PROJECT_DIR}/config/settings.php ${WEB_ROOT}/sites/default/
+    # If a dump exist from the cache of a previous build, we try to use it.
+    - if [ ! -f ${CI_PROJECT_DIR}/dump/dump.sql ];
+      then
+        mkdir -p dump;
+        curl -fsSL ${UNIT_TEST_DUMP} -o dump/dump.tar.xz;
+        tar xf dump/dump.tar.xz -C dump;
+      fi
     # We import the dump, faster than a site install.
     - if [ -f ${CI_PROJECT_DIR}/dump/dump.sql ];
       then
@@ -236,10 +238,11 @@ stages:
     SIMPLETEST_BASE_URL: "http://localhost"
     BROWSERTEST_OUTPUT_DIRECTORY: "${CI_PROJECT_DIR}/${WEB_ROOT}/sites/simpletest"
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/*
-    # Force artifacts even if the job fail.
-    when: always
+  cache:
+    key: drupal-build-cache
 
 ################################################################################
 # Jobs definition.
@@ -252,28 +255,39 @@ stages:
 # Build and tests jobs, not for master.
 ################################################################################
 
-# Build only when not on master.
+# Sample of a build, considering a Drupal 8 with composer.
+# For more samples see
+#   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
 Build:
   stage: build
-  <<: *build_template
-  except:
-    - master
-  after_script:
-    - mkdir -p ${WEB_ROOT}/sites/default/files
-    - cp ${CI_PROJECT_DIR}/config/settings.php ${WEB_ROOT}/sites/default/
-    # If a dump exist from the cache of a previous build, we try to use it.
-    - if [ ! -f ${CI_PROJECT_DIR}/dump/dump.sql ];
-      then
-        mkdir -p dump;
-        curl -fsSL ${UNIT_TEST_DUMP} -o dump/dump.tar.xz;
-        tar xf dump/dump.tar.xz -C dump;
+  image: composer:latest
+  script:
+    # Download Drupal project, change with composer install if needed.
+    - if ! [ -f drupal/web/index.php ]; then
+        composer global require hirak/prestissimo --no-progress;
+        composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs;
       fi
+    # Because create-project need an empty folder we copy the downloaded drupal.
+    - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR};
+  artifacts:
+    paths:
+      # Build files for deploy.
+      - vendor
+      - web
+      - drush
+      - scripts
+      - .editorconfig
+      - .gitattributes
+      - .gitignore
+      # Specific to drupal-composer/drupal-project.
+      - .env.example
+      - load.environment.php
+    expire_in: 1 day
   # On build we cache the composer, web and dump folders.
   cache:
     key: drupal-build-cache
     paths:
       - drupal
-      - dump
 
 # Job to run Unit and Kernel tests, do not require a build.
 Unit and kernel tests:
@@ -283,25 +297,9 @@ Unit and kernel tests:
     - cd ${WEB_ROOT}
     - sudo -E -u www-data
       ../vendor/bin/phpunit
-        -c core
+        -c core --verbose
         --log-junit ../${REPORT_DIR}/phpunit.xml
         --testdox-html ../${REPORT_DIR}/phpunit.html
-        ${UNIT_TEST_ROOT}
-
-# Job to run Web tests, need a build.
-Web tests:
-  stage: test
-  dependencies:
-    - Build
-  <<: *test_template
-  script:
-    - cd ${WEB_ROOT}
-    - sudo -E -u www-data
-      ../vendor/bin/phpunit
-        -c core
-        --log-junit ../${REPORT_DIR}/phpunit.xml
-        --testdox-html ../${REPORT_DIR}/phpunit.html
-        --group Drupal
         ${UNIT_TEST_ROOT}
 
 # Job to check test coverage, need a build.
@@ -324,6 +322,8 @@ Code coverage:
         --coverage-text --colors=never
         --testsuite nonfunctional
         ${UNIT_TEST_ROOT}
+  # https://docs.gitlab.com/ee/ci/yaml/#coverage
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
 ################################################################################
 # Code quality and code lint jobs.
@@ -357,35 +357,33 @@ Best practices:
   # Allow failure to produce report and warning.
   allow_failure: true
 
-# This is a eslint report based on Drupal 8.5.x standards.
+# This is a eslint report based on Drupal 8 standards.
 Eslint:
   stage: code lint
   <<: *node_template
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/es-lint-report.html
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
   script:
-    # We grab the standards, not needed if after a build.
+    # We grab the latest eslint rules for Drupal 8.
     - apk --no-cache add curl
     - mkdir -p ${WEB_ROOT}/core
-    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json -o ${WEB_ROOT}/core/.eslintrc.json
+    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.json
+      -o ${WEB_ROOT}/core/.eslintrc.json
     # Drupal 8.6.x specfic rules override for passing.
-    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json -o ${WEB_ROOT}/core/.eslintrc.passing.json
-    # Install eslint airbnb standard.
-    - npm install -g eslint@^5.9.0 eslint-config-airbnb@^17.1.0
-        eslint-plugin-import@^2.14.0 eslint-plugin-jsx-a11y@^6.1.1
-        eslint-plugin-react@^7.11.0 eslint-plugin-prettier@^3.0.0
-        eslint-config-prettier@^3.3.0 prettier@^1.15.2
+    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.eslintrc.passing.json
+      -o ${WEB_ROOT}/core/.eslintrc.passing.json
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
+    - npm config set user 0
     - npm config set unsafe-perm true
+    # Install eslint airbnb standard + prettier.
+    - npm install --no-audit --silent eslint eslint-config-airbnb
+        eslint-plugin-import eslint-plugin-jsx-a11y
+        eslint-plugin-react eslint-plugin-prettier
+        eslint-config-prettier prettier
     # Run the eslint command to generate a report.
-    - eslint
+    - node_modules/.bin/eslint
         --config ./${WEB_ROOT}/core/.eslintrc.passing.json
         --format html
         --output-file ${REPORT_DIR}/es-lint-report.html
@@ -394,50 +392,25 @@ Eslint:
   # Allow failure to produce report and warning.
   allow_failure: true
 
-# Drupal 8.6+ rules used here for css lint.
+# Drupal 8.6+ rules used here for css stylelint.
 Css lint:
   stage: code lint
   <<: *node_template
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/css-lint-report.txt
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
   script:
     # We grab the Drupal standards, not needed if after a build.
     - apk --no-cache add curl
-    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json -o ${WEB_ROOT}/.stylelintrc.json
-    - npm install -g stylelint stylelint-config-standard stylelint-no-browser-hacks
+    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json
+      -o ${WEB_ROOT}/.stylelintrc.json
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
+    - npm config set user 0
     - npm config set unsafe-perm true
-    - stylelint "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
-  allow_failure: true
-
-# This is a scss lint report, Drupal 8.6+ rules used here.
-Scss lint:
-  stage: code lint
-  <<: *node_template
-  artifacts:
-    paths:
-      - ${REPORT_DIR}/scss-lint-report.txt
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
-  script:
-    # We grab the Drupal standards, not needed if after a build.
-    - apk --no-cache add curl
-    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json -o ${WEB_ROOT}/.stylelintrc.json
-    - npm install -g stylelint stylelint-scss stylelint-no-browser-hacks stylelint-order stylelint-config-standard stylelint-config-recommended-scss
-    # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
-    - npm config set unsafe-perm true
-    - stylelint "./${SCSS_FILES}" --syntax scss > ${REPORT_DIR}/scss-lint-report.txt
+    - npm install --no-audit --silent stylelint stylelint-config-standard stylelint-no-browser-hacks
+    - node_modules/.bin/stylelint "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+    - cat ${REPORT_DIR}/css-lint-report.txt
   allow_failure: true
 
 # This is a sass lint report, default rules used here.
@@ -445,25 +418,26 @@ Sass lint:
   stage: code lint
   <<: *node_template
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/sass-lint-report.html
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
   script:
     - apk --no-cache add git
-    # Project seems a bit outdated, an ongoing tag is currently more up to date.
-    - npm install -g git://github.com/sasstools/sass-lint.git#1.13.0
     # Fix Error https://github.com/npm/uid-number/issues/3#issuecomment-291362937
+    - npm config set user 0
     - npm config set unsafe-perm true
-    - 'sass-lint --config ${SASS_CONFIG}
+    # Project seems a bit outdated, an ongoing tag is currently more up to date.
+    - npm install --no-audit --silent git://github.com/sasstools/sass-lint.git#1.13.0
+    - 'node_modules/.bin/sass-lint --config ${SASS_CONFIG}
         --verbose
         --no-exit
         --format html
         --output ${REPORT_DIR}/sass-lint-report.html'
+    # Sass lint do not provide result on success.
+    # see https://github.com/sasstools/sass-lint/pull/1159
+    - if ! [ -f  ${REPORT_DIR}/sass-lint-report.html ]; then
+        echo "No errors!" > ${REPORT_DIR}/sass-lint-report.html; echo -e "No errors!"; exit 0;
+      fi
   allow_failure: true
 
 # This is a markdown lint report, based on generic default rules.
@@ -471,17 +445,12 @@ Markdown lint:
   stage: code lint
   <<: *ruby_template
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/markdown_lint.txt
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 1 week
-    # Force artifacts even if the job fail.
-    when: always
   script:
     - gem install mdl
-    - mdl ${WEB_ROOT}/modules/custom/ > ${REPORT_DIR}/markdown_lint.txt
+    - mdl ${WEB_ROOT}/modules/custom > ${REPORT_DIR}/markdown_lint.txt
   allow_failure: true
   when: manual
 
@@ -612,16 +581,3 @@ Deploy to production:
     - production
     - master
   when: manual
-
-################################################################################
-# Cache libraries common to all jobs, see
-#   https://docs.gitlab.com/ee/ci/caching/#caching-php-dependencies
-################################################################################
-cache:
-  key: coder
-  paths:
-    # If we can avoid downloading coder each time.
-    - coder
-
-# Default docker image when not overriden.
-image: alpine:latest

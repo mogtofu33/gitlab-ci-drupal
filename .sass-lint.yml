@@ -1,7 +1,11 @@
+# This lint rules is a mix for Bootstrap and Drupal 8+.
+# https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml
 files:
   include:
     - 'web/themes/custom/**/scss/*.scss'
     - 'web/themes/custom/**/**/scss/*.scss'
+  ignore:
+    - 'web/themes/custom/**/bootstrap/**/*.scss'
 rules:
   border-zero: 2
   brace-style: 2
@@ -33,7 +37,9 @@ rules:
     - 2
     - max-depth: 5
   no-color-keywords: 2
-  no-color-literals: 2
+  no-color-literals:
+    - 1
+    - allow-rgba: 1
   no-css-comments: 2
   no-debug: 2
   no-duplicate-properties: 2
@@ -43,6 +49,7 @@ rules:
   no-invalid-hex: 2
   no-mergeable-selectors: 2
   no-misspelled-properties: 2
+  no-qualifying-elements: 0
   no-trailing-zero: 2
   no-warn: 2
   one-declaration-per-line: 2

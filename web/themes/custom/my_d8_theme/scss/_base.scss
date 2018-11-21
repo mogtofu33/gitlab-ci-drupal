@@ -1,0 +1,10 @@
+// _base.scss
+
+$base: rgba(155, 155, 155, 0.26);
+
+html,
+body,
+ul,
+ol {
+  border: 5px solid $base;
+}
