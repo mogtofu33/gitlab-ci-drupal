@@ -101,12 +101,17 @@ variables:
 
 stages:
   - build
+  # only on branch testing
   - test
   - code quality
   - code lint
+  # Only on tag, when released
   - php code metrics
+  # Branch testing or master
   - deploy to testing
+  # Manual if branch staging or master
   - deploy to staging
+  # Manual if branch production or master
   - deploy to production
 
 ################################################################################
@@ -410,7 +415,6 @@ Css lint:
     - npm config set unsafe-perm true
     - npm install --no-audit --silent stylelint stylelint-config-standard stylelint-no-browser-hacks
     - node_modules/.bin/stylelint "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
-    - cat ${REPORT_DIR}/css-lint-report.txt
   allow_failure: true
 
 # This is a sass lint report, default rules used here.
@@ -433,11 +437,6 @@ Sass lint:
         --no-exit
         --format html
         --output ${REPORT_DIR}/sass-lint-report.html'
-    # Sass lint do not provide result on success.
-    # see https://github.com/sasstools/sass-lint/pull/1159
-    - if ! [ -f  ${REPORT_DIR}/sass-lint-report.html ]; then
-        echo "No errors!" > ${REPORT_DIR}/sass-lint-report.html; echo -e "No errors!"; exit 0;
-      fi
   allow_failure: true
 
 # This is a markdown lint report, based on generic default rules.
@@ -452,43 +451,40 @@ Markdown lint:
     - gem install mdl
     - mdl ${WEB_ROOT}/modules/custom > ${REPORT_DIR}/markdown_lint.txt
   allow_failure: true
-  when: manual
 
 ################################################################################
-# Code metrics, only manual on staging/master.
+# Code metrics, only on tag for a release.
 ################################################################################
 
 # Phpmetrics report, no pass or failure as it's just informative.
 phpmetrics:
   stage: php code metrics
   only:
-    - branches
+    - tags
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
         --report-html=${REPORT_DIR}
         --extensions=php,inc,module
         ${PHP_CODE}
-  when: manual
 
 # Phploc report, no pass or failure as it's just informative.
 phploc:
   stage: php code metrics
   only:
-    - branches
+    - tags
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phploc
         ${PHPQA_PHP_CODE}
-  when: manual
 
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
 phpmetrics All:
   stage: php code metrics
   only:
-    - branches
+    - tags
   <<: *phpqmetrics_template
   script:
     - ./phpmetrics
@@ -499,12 +495,11 @@ phpmetrics All:
     key: drupal-build-cache
   dependencies:
     - Build
-  when: manual
 
 phploc All:
   stage: php code metrics
   only:
-    - branches
+    - tags
   <<: *phpqa_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -514,7 +509,6 @@ phploc All:
     key: drupal-build-cache
   dependencies:
     - Build
-  when: manual
 
 ################################################################################
 # Deploy jobs definition.
