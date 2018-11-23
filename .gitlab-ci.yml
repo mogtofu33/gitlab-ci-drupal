@@ -202,15 +202,15 @@ stages:
     - mariadb:latest
   before_script:
     - *ensure_report
-    - cp config/phpunit.xml ${WEB_ROOT}/core/
+    - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/
+    # Prepare Drupal installation for Tests.
+    - mkdir -p ${WEB_ROOT}/sites/default/files
+    - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php
     - mkdir -p /var/www/html
     - ln -s ${CI_PROJECT_DIR}/${WEB_ROOT} /var/www/html/web
     - apache2-foreground&
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
     - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
-    # Prepare Drupal installation for Tests.
-    - mkdir -p ${WEB_ROOT}/sites/default/files
-    - cp ${CI_PROJECT_DIR}/config/settings.php ${WEB_ROOT}/sites/default/
     # If a dump exist from the cache of a previous build, we try to use it.
     - if [ ! -f ${CI_PROJECT_DIR}/dump/dump.sql ];
       then

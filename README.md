@@ -19,7 +19,7 @@ A lot of help and inspiration from those wonderful projects:
 
 ## Quick how to
 
-Copy _*.yml_ and _phpqa_config/_, _config/_ from this project to your project.
+Copy _*.yml_ and _phpqa_config/_, _.gitlab-ci/_ to your project.
 
 Put some code in you Drupal _modules/custom_ and _themes/custom_ folders.
 
