@@ -10,8 +10,8 @@ runcmd:
   # edited. this is required for Docker.
   - usermod -aG docker ubuntu
   # Install Gitlab runner.
-  - curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
-  - sudo apt-get install gitlab-runner
+  - curl -fsSL https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
+  - sudo apt-get install gitlab-runner -y
   # Pull docker images needed to speed up first test.
   - docker pull docker:stable
   - docker pull docker:stable-dind
