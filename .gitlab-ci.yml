@@ -239,7 +239,7 @@ stages:
     paths:
       - ${REPORT_DIR}/*
   cache:
-    key: drupal-build-cache
+    key: drupal-$CI_BUILD_REF_NAME
 
 ################################################################################
 # Jobs definition.
@@ -282,7 +282,7 @@ Build:
     expire_in: 1 day
   # On build we cache the composer, web and dump folders.
   cache:
-    key: drupal-build-cache
+    key: drupal-$CI_BUILD_REF_NAME
     paths:
       - drupal
 
@@ -506,7 +506,7 @@ phpmetrics All:
         --extensions=php,inc,module
         ${WEB_ROOT}
   cache:
-    key: drupal-build-cache
+    key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
 
@@ -520,7 +520,7 @@ phploc All:
         --tools phploc
         ${PHPQA_ALL_CODE}
   cache:
-    key: drupal-build-cache
+    key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
 
