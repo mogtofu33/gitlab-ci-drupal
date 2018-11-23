@@ -23,8 +23,9 @@ packages:
   - software-properties-common
   - python
   - apt-transport-https
-  - ca-certificates
   - curl
+  - ca-certificates
+  - git-core
   - docker-ce
 # Set-up Docker for Ubuntu, see doc at:
 #   https://docs.docker.com/install/linux/docker-ce/ubuntu
