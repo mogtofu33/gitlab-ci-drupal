@@ -45,7 +45,6 @@ variables:
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
   JS_CODE_IGNORE: "**/bootstrap/**/*"
   CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/*.css"
-  SCSS_FILES: "${WEB_ROOT}/themes/custom/**/scss/*.scss"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
