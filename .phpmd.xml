@@ -50,8 +50,8 @@ These checks do not need to be included since PHPCS will check for style.
 <!-- Naming -->
 <rule ref="rulesets/naming.xml/ShortVariable">
   <properties>
-    <!-- Allow $id as a variable name. -->
-    <property name="exceptions" description="Comma-separated list of exceptions" value="id"/>
+    <!-- Allow $id and $op as a variable name. -->
+    <property name="exceptions" description="Comma-separated list of exceptions" value="id,op"/>
   </properties>
 </rule>
 <rule ref="rulesets/naming.xml/LongVariable">
