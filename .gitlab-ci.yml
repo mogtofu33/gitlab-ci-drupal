@@ -189,6 +189,11 @@ stages:
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
   image: mogtofu33/drupal8ci:8.6
+  # Build is not for master but only some other branches.
+  except:
+    - master
+  only:
+    - testing
   services:
     - mariadb:latest
   before_script:
@@ -279,11 +284,6 @@ Build:
 # Job to run Unit and Kernel tests, do not require a build.
 Unit and kernel tests:
   stage: tests
-  # Build is not for master but only some other branches.
-  except:
-    - master
-  only:
-    - testing
   <<: *test_template
   script:
     - sudo -E -u www-data
@@ -310,11 +310,6 @@ Functional:
 # Job to check test coverage, need a build.
 Code coverage:
   stage: tests
-  # Build is not for master but only some other branches.
-  except:
-    - master
-  only:
-    - testing
   dependencies:
     - Build
   <<: *test_template
