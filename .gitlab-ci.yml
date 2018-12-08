@@ -36,15 +36,11 @@ variables:
   # Drupal custom code / theme / all code. We are checking our code quality,
   # and optionally Drupal core.
   #
-  # Test unit folder relative to web root.
-  UNIT_TEST_ROOT: "modules/custom"
-
   # Comma separated for phpqa and phpmetrics.
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
-  JS_CODE_IGNORE: "**/bootstrap/**/*"
-  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/*.css"
+  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
@@ -69,6 +65,8 @@ variables:
   ##############################################################################
   # Next part do not need to be edited for a first quick run.
   ##############################################################################
+  # All reports will be available in artifacts from this folder.
+  REPORT_DIR: "reports"
   #
   # Phpqa docker image tag and options like code to analyse relative to your 
   # project root.
@@ -77,8 +75,7 @@ variables:
   # Phpmetrics use the last phar release.
   #   https://github.com/phpmetrics/PhpMetrics/releases
   PHPMETRICS: "v2.4.1"
-  # All reports will be available in artifacts from this folder.
-  REPORT_DIR: "reports"
+
   # Drupal coding standards for Code Sniffer (phpcs) are provided by Coder module.
   #   https://www.drupal.org/project/coder
   DRUPAL_CODER: "2.12"
@@ -88,6 +85,9 @@ variables:
   PHPQA_PHP_CODE: "--analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
   PHPQA_ALL_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
 
+  # Tests to run, only custom code or empty for all.
+  TESTS: "custom"
+
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
 #   https://docs.gitlab.com/ee/ci/pipelines.html
@@ -96,7 +96,7 @@ variables:
 stages:
   - build
   # only on branch testing
-  - test
+  - tests
   - code quality
   - code lint
   # Only on tag, when released
@@ -150,7 +150,7 @@ stages:
 # We use Phpmetrics for metrics report.
 # Is included in phpqa but standalone provide the last version with more
 # report information.
-.phpqmetrics_template: &phpqmetrics_template
+.phpmetrics_template: &phpmetrics_template
   image: composer:latest
   before_script:
     - if [ ! -f ./phpmetrics ];
@@ -176,12 +176,6 @@ stages:
     paths:
     - node_modules/
 
-# Use Ruby docker image for Markdown lint.
-.ruby_template: &ruby_template
-  image: ruby:2-alpine
-  before_script:
-    - *ensure_report
-
 # Basic docker image with ssh to be able to access a remote.
 # Each access must add a ssh key, see samples below.
 .ssh_agent_template:
@@ -194,30 +188,34 @@ stages:
 
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
-  image: juampynr/drupal8ci:latest
+  image: mogtofu33/drupal8ci:8.6
   services:
     - mariadb:latest
   before_script:
     - *ensure_report
     - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/
-    # Prepare Drupal installation for Tests.
-    - mkdir -p ${WEB_ROOT}/sites/default/files
     - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php
     - mkdir -p /var/www/html
     - ln -s ${CI_PROJECT_DIR}/${WEB_ROOT} /var/www/html/web
+    # Prepare tests folder.
+    - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}"
+    - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
+    - chown -R www-data:www-data ${WEB_ROOT}
     - apache2-foreground&
-    # Import dump from cache if available.
+    # Import dump from cache if available, or Setup Drupal.
+    - mkdir -p ${CI_PROJECT_DIR}/dump;
     - if [ -f "dump/dump.sql" ];
       then
         mysql -hmariadb -uroot drupal < ${CI_PROJECT_DIR}/dump/dump.sql;
       else
-        ${CI_PROJECT_DIR}/vendor/bin/drush --root="/var/www/html/web" si -y minimal;
-        mkdir -p ${CI_PROJECT_DIR}/dump;
-        ${CI_PROJECT_DIR}/vendor/bin/drush --root="/var/www/html/web" sql-dump --result-file=${CI_PROJECT_DIR}/dump/dump.sql;
+        robo setup:drupal;
       fi
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
+    SIMPLETEST_BASE_URL: "http://localhost"
+    SIMPLETEST_DB: "mysql://root@mariadb/drupal"
+    BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
   artifacts:
     <<: *default_artifacts
     paths:
@@ -243,15 +241,18 @@ stages:
 #   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
 Build:
   stage: build
-  image: composer:latest
+  except:
+    - master
+  only:
+    - testing
+    - tags
+  image: mogtofu33/drupal8ci:8.6
   script:
-    # Download Drupal project, change with composer install if needed.
-    - if ! [ -f drupal/web/index.php ]; then
-        composer global require hirak/prestissimo --no-progress;
-        composer create-project drupal-composer/drupal-project:8.x-dev drupal --stability dev --no-interaction --ignore-platform-reqs;
-      fi
+    # Download Drupal project, change with install if providing composer.json file.
+    - robo download:drupal
+    #- robo install:drupal
     # Because create-project need an empty folder we copy the downloaded drupal.
-    - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR};
+    - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR}
   artifacts:
     paths:
       # Build files for deploy.
@@ -261,22 +262,23 @@ Build:
       - scripts
       - composer.json
       - composer.lock
-      - .editorconfig
-      - .gitattributes
-      - .gitignore
       # Specific to drupal-composer/drupal-project.
       - .env.example
       - load.environment.php
     expire_in: 1 day
-  # On build we cache the composer, web and dump folders.
+  # On build we cache the composer, web folders.
   cache:
     key: drupal-$CI_BUILD_REF_NAME
     paths:
       - drupal
+      # Replace if not using Vanilla create-project.
+      #- vendor
+      #- web
+      #- load.environment.php
 
 # Job to run Unit and Kernel tests, do not require a build.
 Unit and kernel tests:
-  stage: test
+  stage: tests
   # Build is not for master but only some other branches.
   except:
     - master
@@ -284,17 +286,30 @@ Unit and kernel tests:
     - testing
   <<: *test_template
   script:
-    - cd ${WEB_ROOT}
     - sudo -E -u www-data
-      ../vendor/bin/phpunit
-        -c core --verbose
-        --log-junit ../${REPORT_DIR}/phpunit.xml
-        --testdox-html ../${REPORT_DIR}/phpunit.html
-        ${UNIT_TEST_ROOT}
+      ./vendor/bin/phpunit
+        -c web/core --verbose
+        --log-junit ${REPORT_DIR}/phpunit.xml
+        --testdox-html ${REPORT_DIR}/phpunit.html
+        --testsuite ${TESTS}unit,${TESTS}kernel
+
+# Job to run Functional tests, require an install.
+Functional:
+  stage: tests
+  <<: *test_template
+  dependencies:
+    - Build
+  script:
+    - sudo -E -u www-data
+      ./vendor/bin/phpunit
+        -c web/core --verbose
+        --log-junit ${REPORT_DIR}/phpunit.xml
+        --testdox-html ${REPORT_DIR}/phpunit.html
+        --testsuite ${TESTS}functional
 
 # Job to check test coverage, need a build.
 Code coverage:
-  stage: test
+  stage: tests
   # Build is not for master but only some other branches.
   except:
     - master
@@ -308,15 +323,13 @@ Code coverage:
     - mkdir -p ${REPORT_DIR}/coverage-xml
     - mkdir -p ${REPORT_DIR}/coverage-html
     - chmod -R 777 ${REPORT_DIR}
-    - cd ${WEB_ROOT}
     - timeout 60m sudo -E -u www-data
-      ../vendor/bin/phpunit
-        -c core
-        --coverage-xml ../${REPORT_DIR}/coverage-xml
-        --coverage-html ../${REPORT_DIR}/coverage-html
+      ./vendor/bin/phpunit
+        -c web/core
+        --coverage-xml ${REPORT_DIR}/coverage-xml
+        --coverage-html ${REPORT_DIR}/coverage-html
         --coverage-text --colors=never
-        --testsuite nonfunctional
-        ${UNIT_TEST_ROOT}
+        --testsuite ${TESTS}unit,${TESTS}kernel
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
@@ -357,7 +370,7 @@ Best practices:
 ################################################################################
 
 # This is a eslint report based on Drupal 8 standards.
-Eslint:
+Js lint:
   stage: code lint
   only:
     - branches
@@ -365,7 +378,7 @@ Eslint:
   artifacts:
     <<: *default_artifacts
     paths:
-      - ${REPORT_DIR}/es-lint-report.html
+      - ${REPORT_DIR}/js-lint-report.html
   script:
     # We grab the latest eslint rules for Drupal 8.
     - apk --no-cache add curl
@@ -387,8 +400,7 @@ Eslint:
     - node_modules/.bin/eslint
         --config ./${WEB_ROOT}/core/.eslintrc.passing.json
         --format html
-        --output-file ${REPORT_DIR}/es-lint-report.html
-        --ignore-pattern ${JS_CODE_IGNORE}
+        --output-file ${REPORT_DIR}/js-lint-report.html
         ${JS_CODE}
   # Allow failure to produce report and warning.
   allow_failure: true
@@ -439,21 +451,6 @@ Sass lint:
         --output ${REPORT_DIR}/sass-lint-report.html'
   allow_failure: true
 
-# This is a markdown lint report, based on generic default rules.
-Markdown lint:
-  stage: code lint
-  only:
-    - branches
-  <<: *ruby_template
-  artifacts:
-    <<: *default_artifacts
-    paths:
-      - ${REPORT_DIR}/markdown_lint.txt
-  script:
-    - gem install mdl
-    - mdl ${WEB_ROOT}/modules/custom > ${REPORT_DIR}/markdown_lint.txt
-  allow_failure: true
-
 ################################################################################
 # Code metrics, only on tag for a release.
 ################################################################################
@@ -463,11 +460,11 @@ phpmetrics:
   stage: php code metrics
   only:
     - tags
-  <<: *phpqmetrics_template
+  <<: *phpmetrics_template
   script:
     - ./phpmetrics
         --report-html=${REPORT_DIR}
-        --extensions=php,inc,module
+        --extensions=php,inc,module,theme
         ${PHP_CODE}
 
 # Phploc report, no pass or failure as it's just informative.
@@ -487,11 +484,11 @@ phpmetrics All:
   stage: php code metrics
   only:
     - tags
-  <<: *phpqmetrics_template
+  <<: *phpmetrics_template
   script:
     - ./phpmetrics
         --report-html=${REPORT_DIR}
-        --extensions=php,inc,module
+        --extensions=php,inc,module,theme
         ${WEB_ROOT}
   cache:
     key: drupal-$CI_BUILD_REF_NAME
@@ -535,12 +532,11 @@ Deploy to testing:
     url: http://${TESTING_HOST}
   before_script: *ssh_agent_template
   script:
-    - echo "Deploy to testing"
     - echo -e "${TESTING_PRIVATE_KEY}" > ~/.ssh/id_rsa
     - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
-    # - ssh $USER_NAME@$TESTING_HOST
-    #     "cd ${DRUPAL_FOLDER}; ./scripts/my_deploy_script.sh;"
+    # - ssh -T $USER_NAME@$TESTING_HOST
+    #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
 Deploy to staging:
   stage: deploy to staging
@@ -552,12 +548,11 @@ Deploy to staging:
     url: http://${STAGING_HOST}
   before_script: *ssh_agent_template
   script:
-    - echo "Deploy to staging"
     - echo -e "${STAGING_PRIVATE_KEY}" > ~/.ssh/id_rsa
     - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
-    # - ssh $USER_NAME@$TESTING_HOST
-    #     "cd ${DRUPAL_FOLDER}; ./scripts/my_deploy_script.sh;"
+    # - ssh -T $USER_NAME@$TESTING_HOST
+    #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
   when: manual
 
 Deploy to production:
@@ -570,12 +565,11 @@ Deploy to production:
     url: http://${PRODUCTION_HOST}
   before_script: *ssh_agent_template
   script:
-    - echo "Deploy to production"
     - echo -e "${PRODUCTION_PRIVATE_KEY}" > ~/.ssh/id_rsa
     - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
-    # - ssh $USER_NAME@$TESTING_HOST
-    #     "cd ${DRUPAL_FOLDER}; ./scripts/my_deploy_script.sh;"
+    # - ssh -T $USER_NAME@$TESTING_HOST
+    #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
   when: manual
 
 # Default docker image when not overriden.

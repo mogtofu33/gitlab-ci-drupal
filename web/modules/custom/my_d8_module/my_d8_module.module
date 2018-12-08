@@ -17,7 +17,7 @@ function my_d8_module_help($route_name, RouteMatchInterface $route_match) {
     case 'help.page.my_d8_module_help':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('Help testing Gitlab CI.') . '</p>';
+      $output .= '<p>' . t('Help testing Gitlab CI for Drupal 8.') . '</p>';
       return $output;
 
     default:
