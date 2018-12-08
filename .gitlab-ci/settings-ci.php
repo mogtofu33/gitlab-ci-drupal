@@ -21,3 +21,6 @@ $databases['default']['default'] = array (
   'namespace' => 'Drupal\\Core\\Database\\Driver\\mysql',
   'driver' => 'mysql',
 );
+
+# https://www.drupal.org/project/drupal/issues/2867042
+$settings['file_chmod_directory'] = 02775;

@@ -6,11 +6,11 @@ use Drupal\block\Entity\Block;
 use Drupal\KernelTests\KernelTestBase;
 
 /**
- * Test description.
+ * Test Kernel.
  *
  * @group my_d8_module
  */
-class ExampleTest extends KernelTestBase {
+class ExampleKernelTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}

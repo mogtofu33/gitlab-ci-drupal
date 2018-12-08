@@ -10,12 +10,12 @@ use Drupal\node\NodeStorageInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests DemoModuleExampleService.
+ * Tests Unit DemoModuleExampleService.
  *
  * @group my_d8_module
  * @coversDefaultClass \Drupal\my_d8_module\DemoModuleExampleService
  */
-class DemoModuleExampleServiceTest extends TestCase {
+class ExampleUnitTest extends TestCase {
 
   /**
    * An instance of DemoModuleExampleService.
