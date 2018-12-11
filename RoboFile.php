@@ -45,22 +45,6 @@ class RoboFile extends Tasks {
   protected $webRoot = 'web';
 
   /**
-   * Drupal coding standards for Code Sniffer (phpcs) are provided by Coder.
-   *
-   * @var string
-   *   The coder url to download.
-   */
-  protected $coderUrl = 'https://ftp.drupal.org/files/projects/coder-8.x-3.1.tar.gz';
-
-  /**
-   * Phpmetrics to check Php code.
-   *
-   * @var string
-   *   The phpmetroics phar url to download.
-   */
-  protected $phpmetricsUrl = 'https://github.com/phpmetrics/PhpMetrics/releases/download/v2.4.1/phpmetrics.phar';
-
-  /**
    * RoboFile constructor.
    */
   public function __construct() {
@@ -74,35 +58,6 @@ class RoboFile extends Tasks {
     }
     // Treat this command like bash -e and exit as soon as there's a failure.
     $this->stopOnFail();
-  }
-
-  /**
-   * Installs Coder without composer.
-   */
-  public function installCoder() {
-    $filename = 'coder.tar.gz';
-    $this->downloadFile($filename, $this->coderUrl);
-
-    if (!file_exists('coder/coder_sniffer/Drupal/autoload.php')) {
-      $this->taskExtract($filename)
-        ->to($this->getDocroot() . '/coder')
-        ->run();
-    }
-    else {
-      $this->say('Coder already installed.');
-    }
-  }
-
-  /**
-   * Installs Phpmetrics without composer.
-   */
-  public function installPhpmetrics() {
-    $filename = 'phpmetrics.phar';
-    $this->downloadFile($filename, $this->phpmetricsUrl);
-
-    $this->taskFilesystemStack()
-      ->chmod('phpmetrics.phar', '755')
-      ->run();
   }
 
   /**
@@ -150,33 +105,15 @@ class RoboFile extends Tasks {
   /**
    * Install Drupal.
    *
-   * @param string $adminUser
-   *   (optional) The administrator's username.
-   * @param string $adminPassword
-   *   (optional) The administrator's password.
-   * @param string $siteName
-   *   (optional) The Drupal site name.
    * @param string $profile
    *   (optional) The Drupal profile name, default to minimal.
    */
-  public function setupDrupal($adminUser = NULL, $adminPassword = NULL, $siteName = NULL, $profile = 'minimal') {
+  public function setupDrupal($profile = 'minimal') {
 
     $task = $this->drush()
       ->args('site-install', $profile)
       ->option('yes')
       ->option('db-url', $this->dbUrl, '=');
-
-    if ($adminUser) {
-      $task->option('account-name', $adminUser, '=');
-    }
-
-    if ($adminPassword) {
-      $task->option('account-pass', $adminPassword, '=');
-    }
-
-    if ($siteName) {
-      $task->option('site-name', $siteName, '=');
-    }
 
     // Sending email will fail, so we need to allow this to always pass.
     $this->stopOnFail(FALSE);
@@ -218,25 +155,6 @@ class RoboFile extends Tasks {
   protected function getDocroot() {
     $docroot = (getcwd());
     return $docroot;
-  }
-
-  /**
-   * Helper to download a file.
-   *
-   * @param string $filename
-   *   The filename, obviously.
-   * @param string $url
-   *   The file url to download.
-   */
-  protected function downloadFile($filename, $url) {
-    if (!file_exists($filename)) {
-      $this->say("Download $filename...");
-      $data = file_get_contents($url, FALSE, NULL);
-      file_put_contents($filename, $data);
-    }
-    else {
-      $this->say("$filename already exist, skip.");
-    }
   }
 
   /**
