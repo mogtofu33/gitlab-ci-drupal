@@ -28,7 +28,7 @@ variables:
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:0,phpmd,phpcpd,security-checker,parallel-lint"
+  TOOLS: "--tools phpcs:0,phpmd,phpcpd,security-checker:0"
   # Coding best practices limit, ~20 could be reasonable, to adapt for your project.
   BEST_PRACTICES: "--tools phpcs:0"
 
@@ -189,32 +189,36 @@ stages:
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
   image: mogtofu33/drupal8ci:8.6
-  # Build is not for master but only some other branches.
+  # Build is not for master but only branch testing or tags for release.
   except:
     - master
   only:
     - testing
+    - tags
   services:
     - mariadb:latest
   before_script:
     - *ensure_report
+    # Copy CI settings.
     - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/
+    # Prepare Drupal installation.
     - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php
     - mkdir -p /var/www/html
     - ln -s ${CI_PROJECT_DIR}/${WEB_ROOT} /var/www/html/web
-    # Prepare tests folder.
+    # Prepare tests folder and ensure permissions.
     - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chown -R www-data:www-data ${WEB_ROOT}
     - apache2-foreground&
     # Import dump from cache if available, or Setup Drupal.
-    - mkdir -p ${CI_PROJECT_DIR}/dump;
+    - mkdir -p dump && chmod -R 777 dump
     - if [ -f "dump/dump.sql" ];
       then
         mysql -hmariadb -uroot drupal < ${CI_PROJECT_DIR}/dump/dump.sql;
       else
         robo setup:drupal;
       fi
+    - robo check:drupal
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
@@ -253,6 +257,8 @@ Build:
     - tags
   image: mogtofu33/drupal8ci:8.6
   script:
+    # Check composer first.
+    - composer --verbose --no-check-all --no-check-publish validate
     # Download Drupal project, change with install if providing composer.json file.
     - robo download:drupal
     #- robo install:drupal
@@ -276,22 +282,16 @@ Build:
     key: drupal-$CI_BUILD_REF_NAME
     paths:
       - drupal
-      # Replace if not using Vanilla create-project.
+      # Replace if using composer.json based on Drupal Composer project.
       #- vendor
       #- web
-      #- load.environment.php
 
 # Job to run Unit and Kernel tests, do not require a build.
 Unit and kernel tests:
   stage: tests
   <<: *test_template
   script:
-    - sudo -E -u www-data
-      ./vendor/bin/phpunit
-        -c web/core --verbose
-        --log-junit ${REPORT_DIR}/phpunit.xml
-        --testdox-html ${REPORT_DIR}/phpunit.html
-        --testsuite ${TESTS}unit,${TESTS}kernel
+    - sudo -E -u www-data robo test:suite "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
 
 # Job to run Functional tests, require an install.
 Functional:
@@ -300,12 +300,7 @@ Functional:
   dependencies:
     - Build
   script:
-    - sudo -E -u www-data
-      ./vendor/bin/phpunit
-        -c web/core --verbose
-        --log-junit ${REPORT_DIR}/phpunit.xml
-        --testdox-html ${REPORT_DIR}/phpunit.html
-        --testsuite ${TESTS}functional
+    - sudo -E -u www-data robo test:suite "${TESTS}functional" "${REPORT_DIR}"
 
 # Job to check test coverage, need a build.
 Code coverage:
@@ -318,13 +313,7 @@ Code coverage:
     - mkdir -p ${REPORT_DIR}/coverage-xml
     - mkdir -p ${REPORT_DIR}/coverage-html
     - chmod -R 777 ${REPORT_DIR}
-    - timeout 60m sudo -E -u www-data
-      ./vendor/bin/phpunit
-        -c web/core
-        --coverage-xml ${REPORT_DIR}/coverage-xml
-        --coverage-html ${REPORT_DIR}/coverage-html
-        --coverage-text --colors=never
-        --testsuite ${TESTS}unit,${TESTS}kernel
+    - timeout 60m sudo -E -u www-data robo test:coverage "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
@@ -397,7 +386,7 @@ Js lint:
         --format html
         --output-file ${REPORT_DIR}/js-lint-report.html
         ${JS_CODE}
-  # Allow failure to produce report and warning.
+  # Allow failure to produce report and warning, not a critical job.
   allow_failure: true
 
 # Drupal 8.6+ rules used here for css stylelint.
@@ -451,7 +440,7 @@ Sass lint:
 ################################################################################
 
 # Phpmetrics report, no pass or failure as it's just informative.
-phpmetrics:
+Phpmetrics:
   stage: php code metrics
   only:
     - tags
@@ -463,7 +452,7 @@ phpmetrics:
         ${PHP_CODE}
 
 # Phploc report, no pass or failure as it's just informative.
-phploc:
+Phploc:
   stage: php code metrics
   only:
     - tags
@@ -475,7 +464,7 @@ phploc:
 
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
-phpmetrics All:
+Phpmetrics All:
   stage: php code metrics
   only:
     - tags
@@ -489,8 +478,9 @@ phpmetrics All:
     key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
+  when: manual
 
-phploc All:
+Phploc All:
   stage: php code metrics
   only:
     - tags
@@ -503,6 +493,7 @@ phploc All:
     key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
+  when: manual
 
 ################################################################################
 # Deploy jobs definition.

@@ -31,7 +31,8 @@ class RoboFile extends Tasks {
    * Database dump.
    *
    * @var string
-   *   A database dump file for CI.
+   *   A database dump file for CI. This can be overridden by specifying a
+   *   $DB_DUMP environment variable. This must be relative to root.
    */
   protected $dbDump = 'dump/dump.sql';
 
@@ -52,6 +53,10 @@ class RoboFile extends Tasks {
     if (filter_var(getenv('DB_URL'), FILTER_VALIDATE_URL)) {
       $this->dbUrl = getenv('DB_URL');
     }
+    // Pull a DB_DUMP from the environment, if it exists.
+    if (filter_var(getenv('DB_DUMP'), FILTER_VALIDATE_URL)) {
+      $this->dbDump = getenv('DB_DUMP');
+    }
     // Pull a WEB_ROOT from the environment, if it exists.
     if (filter_var(getenv('WEB_ROOT'), FILTER_VALIDATE_URL)) {
       $this->webRoot = getenv('WEB_ROOT');
@@ -69,13 +74,18 @@ class RoboFile extends Tasks {
     $this->taskFilesystemStack()->remove('composer.lock')->run();
     $this->taskComposerUpdate()
       ->optimizeAutoloader()
+      ->noInteraction()
+      ->noAnsi()
+      ->ignorePlatformRequirements()
+      ->option('no-suggest')
+      ->option('profile')
       ->run();
   }
 
   /**
    * Install Vanilla Drupal 8 with Composer template.
    */
-  public function downloadDrupal() {
+  public function downloadDrupalProject() {
     if (!file_exists('drupal/web/index.php')) {
       $this->taskComposerCreateProject()
         ->source('drupal-composer/drupal-project:8.x-dev')
@@ -83,12 +93,13 @@ class RoboFile extends Tasks {
         ->preferDist()
         ->noInteraction()
         ->ignorePlatformRequirements()
+        ->option('no-suggest')
+        ->option('profile')
         ->run();
     }
     else {
       $this->say("drupal folder exist, skip.");
     }
-    #$this->_deleteDir('drupal');
   }
 
   /**
@@ -98,7 +109,10 @@ class RoboFile extends Tasks {
     $this->taskComposerInstall()
       ->preferDist()
       ->noInteraction()
+      ->noAnsi()
       ->ignorePlatformRequirements()
+      ->option('no-suggest')
+      ->option('profile')
       ->run();
   }
 
@@ -116,7 +130,40 @@ class RoboFile extends Tasks {
       ->option('db-url', $this->dbUrl, '=');
 
     // Sending email will fail, so we need to allow this to always pass.
-    $this->stopOnFail(FALSE);
+    $this->stopOnFail(false);
+    $task->run();
+    $this->stopOnFail();
+
+    $this->dumpDrupal();
+  }
+
+  /**
+   * Check Drupal.
+   *
+   * @return string
+   *   Drupal boostrap result.
+   */
+  public function checkDrupal() {
+    return $this->drush()
+      ->args('status')
+      ->option('field', 'bootstrap', '=')
+      ->run();
+  }
+
+  /**
+   * Install Drupal from config.
+   */
+  public function setupDrupalFromConfig() {
+
+    $task = $this->drush()
+      ->args('site-install', 'config_installer')
+      ->arg('config_installer_sync_configure_form.sync_directory="../config/sync"')
+      ->option('yes')
+      ->option('db-url', $this->dbUrl, '=')
+      ->run();
+
+    // Sending email will fail, so we need to allow this to always pass.
+    $this->stopOnFail(false);
     $task->run();
     $this->stopOnFail();
 
@@ -129,7 +176,7 @@ class RoboFile extends Tasks {
   public function dumpDrupal() {
     $this->drush()
       ->args('sql-dump')
-      ->option('result-file', 'dump/dump.sql', '=')
+      ->option('result-file', $this->getDocroot() . '/' . $this->dbDump, '=')
       ->run();
   }
 
@@ -163,9 +210,75 @@ class RoboFile extends Tasks {
    * @param string $module
    *   The module name.
    */
-  public function test($module) {
+  public function test($module = null) {
     $this->phpUnit($module)
       ->run();
+  }
+
+  /**
+   * Run PHPUnit Unit and Kernel for the testsuite or module.
+   *
+   * @param string $testsuite
+   *  (optional)  The testsuite names, separated by commas.
+   *
+   * @param string $report
+   *   (optional) Report dir, relative to root, without trailing slash.
+   *
+   * @param nbool $xml
+   *   (optional) Add coverage xml report (--log-junit).
+   *
+   * @param bool $html
+   *   (optional) Add coverage html report (--testdox-html).
+   *
+   * @param string $module
+   *   (optional) The module name.
+   */
+  public function testSuite($testsuite = 'unit,kernel', $report = '', $xml = true, $html = true, $module = null) {
+    $test = $this->phpUnit($module, $testsuite);
+    if ($xml) {
+      $test->xml($report . '/phpunit.xml');
+    }
+    if ($html) {
+      $test->option('testdox-html', $report . '/phpunit.html');
+    }
+    $test->run();
+  }
+
+  /**
+   * Run PHPUnit code coverage for the testsuite or module.
+   *
+   * @param string $testsuite
+   *  (optional)  The testsuite names, separated by commas.
+   *
+   * @param string $report
+   *   (optional) Report dir, relative to root, without trailing slash.
+   *
+   * @param nbool $xml
+   *   (optional) Add coverage xml report (--coverage-xml).
+   *
+   * @param bool $html
+   *   (optional) Add coverage html report (--coverage-html).
+   *
+   * @param bool $text
+   *   (optional) Add coverage text (--coverage-text). Force disabling colors
+   *   (--colors never).
+   *
+   * @param string $module
+   *   (optional) The module name.
+   */
+  public function testCoverage($testsuite = 'unit,kernel', $report = '', $xml = true, $html = true, $text = true, $module = null) {
+    $test = $this->phpUnit($module, $testsuite);
+    if ($xml) {
+      $test->option('coverage-xml', $report . '/coverage-xml');
+    }
+    if ($html) {
+      $test->option('coverage-html', $report . '/coverage-html');
+    }
+    if ($text) {
+      $test->option('coverage-text')
+        ->option('colors', 'never', '=');
+    }
+    $test->run();
   }
 
   /**
@@ -176,16 +289,28 @@ class RoboFile extends Tasks {
    * directory.
    *
    * @param string $module
-   *   The module name.
+   *   (optional) The module name.
+   *
+   * @param string $testsuite
+   *   (optional) The testsuite names, separated by commas.
    *
    * @return \Robo\Task\Testing\PHPUnit
    */
-  private function phpUnit($module) {
-    return $this->taskPhpUnit('vendor/bin/phpunit')
+  private function phpUnit($module = null, $testsuite = null) {
+    $task = $this->taskPhpUnit('vendor/bin/phpunit')
       ->option('verbose')
       ->option('debug')
-      ->configFile($this->webRoot . '/core')
-      ->group($module);
+      ->configFile($this->webRoot . '/core');
+
+    if ($module) {
+      $task->group($module);
+    }
+
+    if ($testsuite) {
+      $task->option('testsuite', $testsuite);
+    }
+  
+    return $task;
   }
 
 }
