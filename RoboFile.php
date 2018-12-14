@@ -83,9 +83,12 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Install Vanilla Drupal 8 with Composer template.
+   * Install Vanilla Drupal 8 project with Composer.
+   *
+   * @param null|string $dest
+   *   (optional) The destination to copy the downloaded drupal.
    */
-  public function downloadDrupalProject() {
+  public function downloadDrupalProject($dest = null) {
     if (!file_exists('drupal/web/index.php')) {
       $this->taskComposerCreateProject()
         ->source('drupal-composer/drupal-project:8.x-dev')
@@ -93,12 +96,15 @@ class RoboFile extends Tasks {
         ->preferDist()
         ->noInteraction()
         ->ignorePlatformRequirements()
-        ->option('no-suggest')
         ->option('profile')
         ->run();
     }
     else {
-      $this->say("drupal folder exist, skip.");
+      $this->say("drupal folder exist, skip create-project.");
+    }
+
+    if ($dest) {
+      $this->_copyDir('drupal', $dest);
     }
   }
 

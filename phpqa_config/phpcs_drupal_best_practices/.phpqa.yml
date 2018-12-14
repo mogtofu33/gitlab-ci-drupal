@@ -1,3 +1,0 @@
-# Php Code Sniffer override for Drupal coding standard, relative to current path.
-phpcs:
-    standard: ../../coder/coder_sniffer/DrupalPractice/ruleset.xml
