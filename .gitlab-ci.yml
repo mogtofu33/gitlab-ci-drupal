@@ -300,8 +300,7 @@ Security report:
     - docker:dind
     #- selenium/standalone-firefox:latest
   script:
-    - docker ps
-    - curl http://chromedriver:4444/wd/hub/status
+    - curl -s http://chromedriver:4444/wd/hub/status
     - cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
