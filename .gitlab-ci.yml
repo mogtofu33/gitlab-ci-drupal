@@ -232,10 +232,10 @@ Unit and kernel tests:
   tags:
     - docker
   <<: *test_template
-  dependencies:
-    - Build
   script:
     - robo test:suite "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
+  dependencies:
+    - Build
 
 # Job to run Functional tests, require an install.
 Functional:
@@ -243,18 +243,16 @@ Functional:
   tags:
     - docker
   <<: *test_template
-  dependencies:
-    - Build
   script:
     - robo test:suite "${TESTS}functional" "${REPORT_DIR}"
+  dependencies:
+    - Build
 
 # Job to check test coverage.
 Code coverage:
   stage: tests
   tags:
     - docker
-  dependencies:
-    - Build
   <<: *test_template
   script:
     # Create the needed folders.
@@ -262,6 +260,8 @@ Code coverage:
     - mkdir -p ${REPORT_DIR}/coverage-html
     - chmod -R 777 ${REPORT_DIR}
     - robo test:coverage "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
+  dependencies:
+    - Build
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
@@ -269,10 +269,18 @@ Security report:
   stage: tests
   tags:
     - docker
+  except:
+    - master
+  only:
+    - testing
+    - tags
+  script:
+    - if [ -f "composer.lock" ];
+      then
+        security-checker security:check;
+      fi
   dependencies:
     - Build
-  script:
-    - security-checker security:check
 
 ################################################################################
 # Code quality jobs for Drupal 8+
