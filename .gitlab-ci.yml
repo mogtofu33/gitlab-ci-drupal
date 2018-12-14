@@ -186,6 +186,9 @@ before_script:
 # Sample of a build, considering a Drupal 8 with composer.
 # For more samples see
 #   https://docs.gitlab.com/ee/ci/examples/deployment/composer-npm-deploy.html
+# Two scenarios here:
+# - Your repo include only custom code for a composer based project
+# - Your repo include at least a composer.json file to install Drupal
 Build:
   stage: build
   tags:
@@ -281,6 +284,45 @@ Security report:
       fi
   dependencies:
     - Build
+
+# Job to run Functional Javascript tests wit Nightwatch.
+# WIP, not working actually.
+# https://gitlab.com/MadLittleMods/playing-with-selenium-on-gitlab-ci/blob/master/.gitlab-ci.yml
+(WIP) Functional JS:
+  stage: tests
+  <<: *test_template
+  dependencies:
+    - Build
+  services:
+    - mariadb:latest
+    - name: selenium/standalone-chrome-debug:latest
+      alias: chromedriver
+    # - docker:dind
+    #- selenium/standalone-firefox:latest
+  script:
+    - docker ps
+    - curl http://chromedriver:4444/wd/hub/status
+    - cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
+    - cd ${WEB_ROOT}/core
+    - yarn install
+    - yarn test:nightwatch --skiptags core
+    #- cp -rf reports/nightwatch ${CI_PROJECT_DIR}/${REPORT_DIR}
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+    MYSQL_DATABASE: "drupal"
+    BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    # DRUPAL_TEST_BASE_URL: "http://localhost"
+    # DRUPAL_TEST_DB_URL: "mysql://root@mariadb/drupal"
+    # DRUPAL_TEST_WEBDRIVER_HOSTNAME: "chromedriver"
+    # DRUPAL_TEST_WEBDRIVER_PORT: "9515"
+    # DRUPAL_TEST_CHROMEDRIVER_AUTOSTART: "false"
+    # DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--disable-gpu --headless --no-sandbox"
+    # DRUPAL_NIGHTWATCH_OUTPUT: "/var/www/html/${REPORT_DIR}/nightwatch"
+    # DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/simpletest"
+    # DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: "../modules/custom,../themes/custom"
+  when: manual
 
 ################################################################################
 # Code quality jobs for Drupal 8+
@@ -396,17 +438,18 @@ Sass lint:
         --output ${REPORT_DIR}/sass-lint-report.html
 
 ################################################################################
-# Code metrics, only on tag for a release.
+# Code metrics, would probably make sense only for a tag release.
 ################################################################################
 
 # Common definition for all metrics jobs.
 .metrics_template: &metrics_template
   stage: php code metrics
+  # only:
+  #   - tags
   tags:
     - docker
   artifacts:
     <<: *default_artifacts
-  when: manual
 
 # Phpmetrics report, no pass or failure as it's just informative.
 Php metrics:
@@ -431,6 +474,12 @@ Php stats:
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
 Php metrics All:
+  # Need same constaint as Build job.
+  except:
+    - master
+  only:
+    - testing
+    - tags
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -444,8 +493,15 @@ Php metrics All:
     key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
+  when: manual
 
 Php stats All:
+  # Need same constaint as Build job.
+  except:
+    - master
+  only:
+    - testing
+    - tags
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -455,7 +511,8 @@ Php stats All:
     key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
-
+  when: manual
+  
 ################################################################################
 # Deploy jobs definition.
 #
