@@ -230,7 +230,7 @@ Build:
       #- web
 
 # Job to run Unit and Kernel tests.
-Unit and kernel tests:
+.Unit and kernel tests:
   stage: tests
   tags:
     - docker
@@ -241,7 +241,7 @@ Unit and kernel tests:
     - Build
 
 # Job to run Functional tests, require an install.
-Functional:
+..Functional:
   stage: tests
   tags:
     - docker
@@ -252,7 +252,7 @@ Functional:
     - Build
 
 # Job to check test coverage.
-Code coverage:
+.Code coverage:
   stage: tests
   tags:
     - docker
@@ -268,7 +268,7 @@ Code coverage:
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-Security report:
+.Security report:
   stage: tests
   tags:
     - docker
@@ -304,7 +304,7 @@ Security report:
     - cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
-    - yarn test:nightwatch --skiptags core
+    - yarn test:nightwatch --tags core
     #- cp -rf reports/nightwatch ${CI_PROJECT_DIR}/${REPORT_DIR}
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
@@ -330,7 +330,7 @@ Security report:
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
-Code quality:
+.Code quality:
   stage: code quality
   tags:
     - docker
@@ -342,7 +342,7 @@ Code quality:
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
 
 # Drupal coding standard best practices report.
-Best practices:
+.Best practices:
   stage: code quality
   tags:
     - docker
@@ -374,7 +374,7 @@ Best practices:
   allow_failure: true
 
 # This is a eslint report based on Drupal 8.6+ standards.
-Js lint:
+.Js lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -403,7 +403,7 @@ Js lint:
         ${JS_CODE}
 
 # Drupal 8.6+ rules used here for css stylelint.
-Css lint:
+.Css lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -420,7 +420,7 @@ Css lint:
     - stylelint "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
 
 # This is a sass lint report, default rules used here.
-Sass lint:
+.Sass lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -451,7 +451,7 @@ Sass lint:
     <<: *default_artifacts
 
 # Phpmetrics report, no pass or failure as it's just informative.
-Php metrics:
+.Php metrics:
   <<: *metrics_template
   artifacts:
     <<: *default_artifacts
@@ -463,7 +463,7 @@ Php metrics:
         ${PHPQA_PHP_CODE}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
-Php stats:
+.Php stats:
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -472,7 +472,7 @@ Php stats:
 
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
-Php metrics All:
+.Php metrics All:
   # Need same constaint as Build job.
   except:
     - master
@@ -494,7 +494,7 @@ Php metrics All:
     - Build
   when: manual
 
-Php stats All:
+.Php stats All:
   # Need same constaint as Build job.
   except:
     - master
@@ -538,7 +538,7 @@ Php stats All:
     # Avoid warning on connection.
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
 
-Deploy to testing:
+.Deploy to testing:
   stage: deploy to testing
   <<: *deploy_template
   only:
@@ -554,7 +554,7 @@ Deploy to testing:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-Deploy to staging:
+.Deploy to staging:
   stage: deploy to staging
   <<: *deploy_template
   only:
@@ -571,7 +571,7 @@ Deploy to staging:
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
   when: manual
 
-Deploy to production:
+.Deploy to production:
   stage: deploy to production
   <<: *deploy_template
   only:
