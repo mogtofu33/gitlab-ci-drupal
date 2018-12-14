@@ -297,7 +297,7 @@ Security report:
     - mariadb:latest
     - name: selenium/standalone-chrome-debug:latest
       alias: chromedriver
-    # - docker:dind
+    - docker:dind
     #- selenium/standalone-firefox:latest
   script:
     - docker ps
@@ -484,7 +484,7 @@ Php metrics All:
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phpmetrics
-        ${WEB_ROOT}
+        ${PHPQA_ALL_CODE}
   artifacts:
     <<: *default_artifacts
     paths:
