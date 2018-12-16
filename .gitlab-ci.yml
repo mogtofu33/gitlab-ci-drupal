@@ -308,7 +308,7 @@ Build:
     #- ls -lAh .
     #- yarn test:nightwatch --tags core
     #- yarn test:nightwatch || true
-    - yarn test:nightwatch --verbose ${CI_PROJECT_DIR}/${WEB_ROOT}/modules/custom/my_d8_module/tests/scr/Nightwatch/ExampleTest.js
+    - yarn test:nightwatch --verbose
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
