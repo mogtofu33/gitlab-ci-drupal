@@ -298,7 +298,7 @@ Build:
     - name: selenium/standalone-chrome:latest
       alias: chromedriver
   script:
-    - test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test == 0 ]; then exit 1; fi
+    - test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
     - curl -s http://chromedriver:4444/wd/hub/status | jq '.value.message'
     - cp .gitlab-ci/.env.chrome ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
