@@ -295,17 +295,14 @@ Build:
     - Build
   services:
     - mariadb:latest
-    #- name: selenium/standalone-chrome-debug:latest
     - name: selenium/standalone-chrome:latest
       alias: chromedriver
-    #- selenium/standalone-firefox-debug:latest
-    #  alias: firefoxdriver
   script:
     #- curl -s http://chromedriver:4444/wd/hub/status || true
-    - cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
+    - cp .gitlab-ci/.env.chrome ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
-    - yarn test:nightwatch --verbose --skiptags core
+    - yarn test:nightwatch --verbose
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
