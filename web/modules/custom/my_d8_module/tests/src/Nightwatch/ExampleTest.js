@@ -7,7 +7,7 @@ module.exports = {
     browser
       .drupalUninstall();
   },
-  'Visit the homepage': (browser) => {
+  'Example test homepage': (browser) => {
     browser
       .relativeURL('/')
       .waitForElementVisible('body', 1000)
