@@ -302,7 +302,7 @@ Build:
     - cp .gitlab-ci/.env.chrome ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
-    - yarn test:nightwatch --verbose
+    - yarn test:nightwatch --verbose --tags custom
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
