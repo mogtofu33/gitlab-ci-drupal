@@ -297,32 +297,20 @@ Build:
     - mariadb:latest
     - name: selenium/standalone-chrome-debug:latest
       alias: chromedriver
-    - docker:dind
+    #- docker:dind
     #- selenium/standalone-firefox:latest
   script:
-    - curl -s http://chromedriver:4444/wd/hub/status
-    #- cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
+    - curl -s http://chromedriver:4444/wd/hub/status || true
+    - cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
     - yarn test:nightwatch --tags core
-    #- cp -rf reports/nightwatch ${CI_PROJECT_DIR}/${REPORT_DIR}
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-    DRUPAL_TEST_BASE_URL: "http://localhost"
-    DRUPAL_TEST_DB_URL: "mysql://root@mariadb/drupal"
-    DRUPAL_TEST_WEBDRIVER_HOSTNAME: "chromedriver"
-    DRUPAL_TEST_WEBDRIVER_PORT: "4444"
-    DRUPAL_TEST_WEBDRIVER_PATH_PREFIX: "/wd/hub"
-    DRUPAL_TEST_CHROMEDRIVER_AUTOSTART: "false"
-    DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--disable-gpu --headless --no-sandbox"
-    DRUPAL_NIGHTWATCH_OUTPUT: "/var/www/html/${REPORT_DIR}/nightwatch"
-    DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/simpletest"
-    DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: "../modules"
-  #when: manual
 
 ################################################################################
 # Code quality jobs for Drupal 8+
