@@ -305,10 +305,7 @@ Build:
     - cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
-    #- ls -lAh .
-    #- yarn test:nightwatch --tags core
-    #- yarn test:nightwatch || true
-    - yarn test:nightwatch --verbose
+    - yarn test:nightwatch --verbose --skiptags core
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
