@@ -25,8 +25,6 @@ class ExampleFunctionalJavascriptTest extends WebDriverTestBase {
     $page = $this
       ->getSession()
       ->getPage();
-    $assert_session
-      ->linkExists('Log in');
   }
 
 }
