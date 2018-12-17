@@ -285,6 +285,7 @@ Build:
   dependencies:
     - Build
 
+# https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
 Functional Js:
   stage: tests
   tags:
@@ -313,6 +314,7 @@ Functional Js:
 
 # Job to run Functional Javascript tests with Nightwatch.
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+# https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
 Nightwatch Js:
   stage: tests
   <<: *test_template
