@@ -285,10 +285,38 @@ Build:
   dependencies:
     - Build
 
-# Job to run Functional Javascript tests wit Nightwatch.
-# WIP, not working actually.
-# https://gitlab.com/MadLittleMods/playing-with-selenium-on-gitlab-ci/blob/master/.gitlab-ci.yml
-(WIP) Functional JS:
+Functional Js:
+  stage: tests
+  tags:
+    - docker
+  <<: *test_template
+  services:
+    - mariadb:latest
+    - name: selenium/standalone-chrome:latest
+      alias: chromedriver
+  script:
+    - test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
+    - curl -s http://chromedriver:4444/wd/hub/status | jq '.'
+    - robo test:suite "${TESTS}functional-javascript" "${REPORT_DIR}"
+  dependencies:
+    - Build
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+    MYSQL_DATABASE: "drupal"
+    DB_DUMP: "dump/dump.sql"
+    SIMPLETEST_BASE_URL: "http://localhost"
+    SIMPLETEST_DB: "mysql://root@mariadb/drupal"
+    BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
+    MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", null, "http://chromedriver:4444/wd/hub"]'
+    MINK_DRIVER_CLASS: "Drupal\FunctionalJavascriptTests\DrupalSelenium2Driver"
+    MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless","--no-sandbox"]}}, "http://chromedriver:4444/wd/hub"]'
+    MINK_DRIVER_ARGS: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless","--no-sandbox"]}}, "http://chromedriver:4444/wd/hub"]'
+    APACHE_RUN_USER: "www-data"
+    APACHE_RUN_GROUP: "www-data"
+
+# Job to run Functional Javascript tests with Nightwatch.
+# https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+Nightwatch Js:
   stage: tests
   <<: *test_template
   dependencies:
@@ -299,11 +327,11 @@ Build:
       alias: chromedriver
   script:
     - test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
-    - curl -s http://chromedriver:4444/wd/hub/status | jq '.value.message'
+    - curl -s http://chromedriver:4444/wd/hub/status | jq '.'
     - cp .gitlab-ci/.env.chrome ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
-    - yarn test:nightwatch --tags custom
+    - yarn test:nightwatch
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
