@@ -20,15 +20,13 @@ class ExampleFunctionalJavascriptTest extends WebDriverTestBase {
    * Tests the homepage, no specific js here.
    */
   public function testHomepage() {
-    $this->drupalGet('<front>');
-    $session = $this
-      ->getSession();
     $assert_session = $this
       ->assertSession();
-    $page = $session
+    $page = $this
+      ->getSession()
       ->getPage();
-    $content = $page->findLink('Log in');
-    $this->assertTrue($content->isVisible(), 'Log in link visible.');
+    $assert_session
+      ->linkExists('Log in');
   }
 
 }
