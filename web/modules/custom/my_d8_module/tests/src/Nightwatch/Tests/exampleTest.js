@@ -12,7 +12,7 @@ module.exports = {
     browser
       .drupalRelativeURL('/')
       .waitForElementVisible('body', 1000)
-      .assert.containsText('body', 'Log in')
+      .assert.containsText('body', '')
       .end();
   },
 };

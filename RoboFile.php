@@ -302,12 +302,12 @@ class RoboFile extends Tasks {
   public function testSuiteCoverageCi($testsuite = 'unit,kernel', $report = '', $module = null) {
     $test = $this->phpUnit($module, $testsuite);
     // Report 
-    $test->xml($report . '/phpunit.xml');
-    $test->option('testdox-html', $report . '/phpunit.html');
-    // Coverage options.
-    $test->option('coverage-xml', $report . '/coverage-xml');
-    $test->option('coverage-html', $report . '/coverage-html');
-    $test->option('coverage-text')
+    $test->xml($report . '/phpunit.xml')
+      ->option('testdox-html', $report . '/phpunit.html')
+      // Coverage options.
+      ->option('coverage-xml', $report . '/coverage-xml')
+      ->option('coverage-html', $report . '/coverage-html')
+      ->option('coverage-text')
       ->option('colors', 'never', '=');
     $test->run();
   }

@@ -20,6 +20,9 @@ class ExampleFunctionalJavascriptTest extends WebDriverTestBase {
    * Tests the homepage, no specific js here.
    */
   public function testHomepage() {
+    $this->drupalGet('<front>');
+    $this->createScreenshot('public://screenshot.jpg');
+    $this->assertFileExists('public://screenshot.jpg');
     $session = $this->getSession();
     $assert_session = $this->assertSession();
     $page = $session->getPage();
