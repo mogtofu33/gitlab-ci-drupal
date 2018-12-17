@@ -20,11 +20,12 @@ class ExampleFunctionalJavascriptTest extends WebDriverTestBase {
    * Tests the homepage, no specific js here.
    */
   public function testHomepage() {
-    $assert_session = $this
-      ->assertSession();
-    $page = $this
-      ->getSession()
-      ->getPage();
+    $session = $this->getSession();
+    $assert_session = $this->assertSession();
+    $page = $session->getPage();
+    $this->drupalGet('<front>');
+    $this->createScreenshot('public://screenshot.jpg');
+    $this->assertFileExists('public://screenshot.jpg');
   }
 
 }

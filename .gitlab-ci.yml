@@ -229,6 +229,23 @@ Build:
       #- vendor
       #- web
 
+.Security report:
+  stage: tests
+  tags:
+    - docker
+  except:
+    - master
+  only:
+    - testing
+    - tags
+  script:
+    - if [ -f "composer.lock" ];
+      then
+        security-checker security:check;
+      fi
+  dependencies:
+    - Build
+
 # Job to run Unit and Kernel tests.
 .Unit and kernel tests:
   stage: tests
@@ -237,17 +254,6 @@ Build:
   <<: *test_template
   script:
     - robo test:suite "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
-  dependencies:
-    - Build
-
-# Job to run Functional tests, require an install.
-.Functional:
-  stage: tests
-  tags:
-    - docker
-  <<: *test_template
-  script:
-    - robo test:suite "${TESTS}functional" "${REPORT_DIR}"
   dependencies:
     - Build
 
@@ -268,22 +274,33 @@ Build:
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-.Security report:
+Unit, Kernel and coverage:
   stage: tests
   tags:
     - docker
-  except:
-    - master
-  only:
-    - testing
-    - tags
+  <<: *test_template
   script:
-    - if [ -f "composer.lock" ];
-      then
-        security-checker security:check;
-      fi
+    # Create the needed folders.
+    - mkdir -p ${REPORT_DIR}/coverage-xml
+    - mkdir -p ${REPORT_DIR}/coverage-html
+    - chmod -R 777 ${REPORT_DIR}
+    - robo test:suite-coverage-ci "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
   dependencies:
     - Build
+  # https://docs.gitlab.com/ee/ci/yaml/#coverage
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+
+# Job to run Functional tests, require an install.
+.Functional:
+  stage: tests
+  tags:
+    - docker
+  <<: *test_template
+  script:
+    - robo test:suite "${TESTS}functional" "${REPORT_DIR}"
+  dependencies:
+    - Build
+
 
 # https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
 Functional Js:

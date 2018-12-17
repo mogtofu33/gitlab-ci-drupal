@@ -10,10 +10,9 @@ module.exports = {
   },
   'Example test homepage': (browser) => {
     browser
-      .relativeURL('/')
+      .drupalRelativeURL('/')
       .waitForElementVisible('body', 1000)
       .assert.containsText('body', 'Log in')
       .end();
   },
-
 };

@@ -288,6 +288,31 @@ class RoboFile extends Tasks {
   }
 
   /**
+   * Run PHPUnit Unit, Kernel and Coverage for the testsuite on CI.
+   *
+   * @param string $testsuite
+   *  (optional)  The testsuite names, separated by commas.
+   *
+   * @param string $report
+   *   (optional) Report dir, relative to root, without trailing slash.
+   *
+   * @param string $module
+   *   (optional) The module name.
+   */
+  public function testSuiteCoverageCi($testsuite = 'unit,kernel', $report = '', $module = null) {
+    $test = $this->phpUnit($module, $testsuite);
+    // Report 
+    $test->xml($report . '/phpunit.xml');
+    $test->option('testdox-html', $report . '/phpunit.html');
+    // Coverage options.
+    $test->option('coverage-xml', $report . '/coverage-xml');
+    $test->option('coverage-html', $report . '/coverage-html');
+    $test->option('coverage-text')
+      ->option('colors', 'never', '=');
+    $test->run();
+  }
+
+  /**
    * Return a configured phpunit task.
    *
    * This will check for PHPUnit configuration first in the module directory.
