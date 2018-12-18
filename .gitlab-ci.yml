@@ -132,16 +132,18 @@ before_script:
   only:
     - testing
     - tags
+  tags:
+    - docker
   services:
     - mariadb:latest
   before_script:
     - *ensure_report
     # Copy CI settings.
-    - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/
+    - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/ || true
     # Prepare Drupal installation.
-    - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php
+    - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php || true
     - mkdir -p /var/www/html
-    - ln -s "${CI_PROJECT_DIR}/"${WEB_ROOT} /var/www/html/web
+    - ln -s "${CI_PROJECT_DIR}/${WEB_ROOT}" /var/www/html/web
     # Prepare tests folder and ensure permissions.
     - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
@@ -202,11 +204,21 @@ Build:
     # Download Drupal project, change with install if providing composer.json file.
     - robo download:drupal-project
     # Because create-project need an empty folder we copy the downloaded drupal.
-    - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR}
+    - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR} || true
     #
     # Check composer first, then install.
     # - composer --verbose --no-check-all --no-check-publish validate
     # - robo install:drupal
+    # Install from config in folder ../config/sync.
+    # - robo install:drupal-from-config
+  # On build we cache the composer, web folders.
+  cache:
+    key: drupal-$CI_BUILD_REF_NAME
+    paths:
+      # Remove drupal if install and not create on previous script.
+      - drupal
+      - vendor
+      - web
   artifacts:
     paths:
       # Build files for deploy/release.
@@ -220,53 +232,6 @@ Build:
       - .env.example
       - load.environment.php
     expire_in: 1 day
-  # On build we cache the composer, web folders.
-  cache:
-    key: drupal-$CI_BUILD_REF_NAME
-    paths:
-      - drupal
-      # Replace if using composer.json based on Drupal Composer project.
-      #- vendor
-      #- web
-
-# Job to run Unit and Kernel tests.
-Unit and kernel tests:
-  stage: tests
-  tags:
-    - docker
-  <<: *test_template
-  script:
-    - robo test:suite "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
-  dependencies:
-    - Build
-
-# Job to run Functional tests, require an install.
-Functional:
-  stage: tests
-  tags:
-    - docker
-  <<: *test_template
-  script:
-    - robo test:suite "${TESTS}functional" "${REPORT_DIR}"
-  dependencies:
-    - Build
-
-# Job to check test coverage.
-Code coverage:
-  stage: tests
-  tags:
-    - docker
-  <<: *test_template
-  script:
-    # Create the needed folders.
-    - mkdir -p ${REPORT_DIR}/coverage-xml
-    - mkdir -p ${REPORT_DIR}/coverage-html
-    - chmod -R 777 ${REPORT_DIR}
-    - robo test:coverage "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
-  dependencies:
-    - Build
-  # https://docs.gitlab.com/ee/ci/yaml/#coverage
-  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
 Security report:
   stage: tests
@@ -285,44 +250,93 @@ Security report:
   dependencies:
     - Build
 
-# Job to run Functional Javascript tests wit Nightwatch.
-# WIP, not working actually.
-# https://gitlab.com/MadLittleMods/playing-with-selenium-on-gitlab-ci/blob/master/.gitlab-ci.yml
-(WIP) Functional JS:
+# Job to run Unit and Kernel tests.
+Unit and kernel tests:
+  stage: tests
+  <<: *test_template
+  script:
+    - robo test:suite "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
+  dependencies:
+    - Build
+
+# Job to check test coverage.
+Code coverage:
+  stage: tests
+  <<: *test_template
+  script:
+    # Create the needed folders.
+    - mkdir -p ${REPORT_DIR}/coverage-xml
+    - mkdir -p ${REPORT_DIR}/coverage-html
+    - chmod -R 777 ${REPORT_DIR}
+    - robo test:coverage "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
+  dependencies:
+    - Build
+  # https://docs.gitlab.com/ee/ci/yaml/#coverage
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+
+# Job to run Functional tests, require an install.
+Functional:
+  stage: tests
+  <<: *test_template
+  script:
+    - robo test:suite "${TESTS}functional" "${REPORT_DIR}"
+  dependencies:
+    - Build
+
+# https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
+Functional Js:
+  stage: tests
+  <<: *test_template
+  services:
+    - mariadb:latest
+    - name: selenium/standalone-chrome:latest
+      alias: chromedriver
+  script:
+    - test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
+    - curl -s http://chromedriver:4444/wd/hub/status | jq '.'
+    - robo test:suite "${TESTS}functional-javascript" "${REPORT_DIR}"
+  dependencies:
+    - Build
+  variables:
+    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+    MYSQL_DATABASE: "drupal"
+    DB_DUMP: "dump/dump.sql"
+    SIMPLETEST_BASE_URL: "http://localhost"
+    SIMPLETEST_DB: "mysql://root@mariadb/drupal"
+    BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
+    MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless","--no-sandbox"]}}, "http://chromedriver:4444/wd/hub"]'
+    APACHE_RUN_USER: "www-data"
+    APACHE_RUN_GROUP: "www-data"
+  # Because current core tests failed.
+  allow_failure: true
+
+# Job to run Functional Javascript tests with Nightwatch.
+# https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+# https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
+Nightwatch Js:
   stage: tests
   <<: *test_template
   dependencies:
     - Build
   services:
     - mariadb:latest
-    - name: selenium/standalone-chrome-debug:latest
+    - name: selenium/standalone-chrome:latest
       alias: chromedriver
-    - docker:dind
-    #- selenium/standalone-firefox:latest
   script:
-    - docker ps
-    - curl http://chromedriver:4444/wd/hub/status
-    - cp .gitlab-ci/.env-nightwatch ${WEB_ROOT}/core/.env || true
+    - test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
+    - curl -s http://chromedriver:4444/wd/hub/status | jq '.'
+    - cp .gitlab-ci/.env.chrome ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
-    - yarn test:nightwatch --skiptags core
-    #- cp -rf reports/nightwatch ${CI_PROJECT_DIR}/${REPORT_DIR}
+    - yarn test:nightwatch --tag custom
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-    # DRUPAL_TEST_BASE_URL: "http://localhost"
-    # DRUPAL_TEST_DB_URL: "mysql://root@mariadb/drupal"
-    # DRUPAL_TEST_WEBDRIVER_HOSTNAME: "chromedriver"
-    # DRUPAL_TEST_WEBDRIVER_PORT: "9515"
-    # DRUPAL_TEST_CHROMEDRIVER_AUTOSTART: "false"
-    # DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--disable-gpu --headless --no-sandbox"
-    # DRUPAL_NIGHTWATCH_OUTPUT: "/var/www/html/${REPORT_DIR}/nightwatch"
-    # DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/simpletest"
-    # DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: "../modules/custom,../themes/custom"
-  when: manual
+  # Because current core tests failed.
+  allow_failure: true
 
 ################################################################################
 # Code quality jobs for Drupal 8+
@@ -538,6 +552,7 @@ Php stats All:
     - chmod 700 ~/.ssh
     # Avoid warning on connection.
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  when: manual
 
 Deploy to testing:
   stage: deploy to testing
@@ -545,6 +560,7 @@ Deploy to testing:
   only:
     - testing
     - master
+    - tags
   environment:
     name: testing
     url: http://${TESTING_HOST}
@@ -561,6 +577,7 @@ Deploy to staging:
   only:
     - staging
     - master
+    - tags
   environment:
     name: staging
     url: http://${STAGING_HOST}
@@ -570,7 +587,6 @@ Deploy to staging:
     # We can now ssh and run any deploy script.
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
-  when: manual
 
 Deploy to production:
   stage: deploy to production
@@ -578,6 +594,7 @@ Deploy to production:
   only:
     - production
     - master
+    - tags
   environment:
     name: production
     url: http://${PRODUCTION_HOST}
@@ -587,7 +604,6 @@ Deploy to production:
     # We can now ssh and run any deploy script.
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
-  when: manual
 
 # Base image for all ci, see https://gitlab.com/mog33/drupal8ci
 image: mogtofu33/drupal8ci:8.6

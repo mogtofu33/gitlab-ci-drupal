@@ -157,7 +157,7 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Install Drupal from config.
+   * Install Drupal from config in ../config/sync.
    */
   public function setupDrupalFromConfig() {
 
@@ -196,6 +196,19 @@ class RoboFile extends Tasks {
     // Drush needs an absolute path to the docroot.
     $docroot = $this->getDocroot() . '/' . $this->webRoot;
     return $this->taskExec('vendor/bin/drush')
+      ->option('root', $docroot, '=');
+  }
+
+  /**
+   * Return drupal console with default arguments.
+   *
+   * @return \Robo\Task\Base\Exec
+   *   A drupal console exec command.
+   */
+  protected function drupal_console() {
+    // Drush needs an absolute path to the docroot.
+    $docroot = $this->getDocroot() . '/' . $this->webRoot;
+    return $this->taskExec('vendor/bin/drupal')
       ->option('root', $docroot, '=');
   }
 
@@ -305,7 +318,7 @@ class RoboFile extends Tasks {
   private function phpUnit($module = null, $testsuite = null) {
     $task = $this->taskPhpUnit('vendor/bin/phpunit')
       ->option('verbose')
-      ->option('debug')
+      // ->option('debug')
       ->configFile($this->webRoot . '/core');
 
     if ($module) {
