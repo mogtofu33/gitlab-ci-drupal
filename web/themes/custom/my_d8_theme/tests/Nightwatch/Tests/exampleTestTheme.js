@@ -1,4 +1,5 @@
 module.exports = {
+  '@tags': ['custom'],
   before: function(browser) {
     browser
       .drupalInstall();
@@ -7,12 +8,11 @@ module.exports = {
     browser
       .drupalUninstall();
   },
-  'Visit the homepage': (browser) => {
+  'Example test homepage': (browser) => {
     browser
-      .relativeURL('/')
+      .drupalRelativeURL('/')
       .waitForElementVisible('body', 1000)
-      .assert.containsText('body', 'Log in')
+      .assert.containsText('body', '')
       .end();
   },
-
 };

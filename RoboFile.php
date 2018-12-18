@@ -157,7 +157,7 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Install Drupal from config.
+   * Install Drupal from config in ../config/sync.
    */
   public function setupDrupalFromConfig() {
 
@@ -196,6 +196,19 @@ class RoboFile extends Tasks {
     // Drush needs an absolute path to the docroot.
     $docroot = $this->getDocroot() . '/' . $this->webRoot;
     return $this->taskExec('vendor/bin/drush')
+      ->option('root', $docroot, '=');
+  }
+
+  /**
+   * Return drupal console with default arguments.
+   *
+   * @return \Robo\Task\Base\Exec
+   *   A drupal console exec command.
+   */
+  protected function drupal_console() {
+    // Drush needs an absolute path to the docroot.
+    $docroot = $this->getDocroot() . '/' . $this->webRoot;
+    return $this->taskExec('vendor/bin/drupal')
       ->option('root', $docroot, '=');
   }
 
@@ -288,31 +301,6 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Run PHPUnit Unit, Kernel and Coverage for the testsuite on CI.
-   *
-   * @param string $testsuite
-   *  (optional)  The testsuite names, separated by commas.
-   *
-   * @param string $report
-   *   (optional) Report dir, relative to root, without trailing slash.
-   *
-   * @param string $module
-   *   (optional) The module name.
-   */
-  public function testSuiteCoverageCi($testsuite = 'unit,kernel', $report = '', $module = null) {
-    $test = $this->phpUnit($module, $testsuite);
-    // Report 
-    $test->xml($report . '/phpunit.xml')
-      ->option('testdox-html', $report . '/phpunit.html')
-      // Coverage options.
-      ->option('coverage-xml', $report . '/coverage-xml')
-      ->option('coverage-html', $report . '/coverage-html')
-      ->option('coverage-text')
-      ->option('colors', 'never', '=');
-    $test->run();
-  }
-
-  /**
    * Return a configured phpunit task.
    *
    * This will check for PHPUnit configuration first in the module directory.
@@ -330,7 +318,7 @@ class RoboFile extends Tasks {
   private function phpUnit($module = null, $testsuite = null) {
     $task = $this->taskPhpUnit('vendor/bin/phpunit')
       ->option('verbose')
-      ->option('debug')
+      // ->option('debug')
       ->configFile($this->webRoot . '/core');
 
     if ($module) {

@@ -132,14 +132,16 @@ before_script:
   only:
     - testing
     - tags
+  tags:
+    - docker
   services:
     - mariadb:latest
   before_script:
     - *ensure_report
     # Copy CI settings.
-    - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/
+    - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/ || true
     # Prepare Drupal installation.
-    - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php
+    - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php || true
     - mkdir -p /var/www/html
     - ln -s "${CI_PROJECT_DIR}/${WEB_ROOT}" /var/www/html/web
     # Prepare tests folder and ensure permissions.
@@ -202,11 +204,21 @@ Build:
     # Download Drupal project, change with install if providing composer.json file.
     - robo download:drupal-project
     # Because create-project need an empty folder we copy the downloaded drupal.
-    - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR}
+    - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR} || true
     #
     # Check composer first, then install.
     # - composer --verbose --no-check-all --no-check-publish validate
     # - robo install:drupal
+    # Install from config in folder ../config/sync.
+    # - robo install:drupal-from-config
+  # On build we cache the composer, web folders.
+  cache:
+    key: drupal-$CI_BUILD_REF_NAME
+    paths:
+      # Remove drupal if install and not create on previous script.
+      - drupal
+      - vendor
+      - web
   artifacts:
     paths:
       # Build files for deploy/release.
@@ -220,16 +232,8 @@ Build:
       - .env.example
       - load.environment.php
     expire_in: 1 day
-  # On build we cache the composer, web folders.
-  cache:
-    key: drupal-$CI_BUILD_REF_NAME
-    paths:
-      - drupal
-      # Replace if using composer.json based on Drupal Composer project.
-      #- vendor
-      #- web
 
-.Security report:
+Security report:
   stage: tests
   tags:
     - docker
@@ -247,10 +251,8 @@ Build:
     - Build
 
 # Job to run Unit and Kernel tests.
-.Unit and kernel tests:
+Unit and kernel tests:
   stage: tests
-  tags:
-    - docker
   <<: *test_template
   script:
     - robo test:suite "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
@@ -258,10 +260,8 @@ Build:
     - Build
 
 # Job to check test coverage.
-.Code coverage:
+Code coverage:
   stage: tests
-  tags:
-    - docker
   <<: *test_template
   script:
     # Create the needed folders.
@@ -274,39 +274,18 @@ Build:
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-Unit, Kernel and coverage:
-  stage: tests
-  tags:
-    - docker
-  <<: *test_template
-  script:
-    # Create the needed folders.
-    - mkdir -p ${REPORT_DIR}/coverage-xml
-    - mkdir -p ${REPORT_DIR}/coverage-html
-    - chmod -R 777 ${REPORT_DIR}
-    - robo test:suite-coverage-ci "${TESTS}unit,${TESTS}kernel" "${REPORT_DIR}"
-  dependencies:
-    - Build
-  # https://docs.gitlab.com/ee/ci/yaml/#coverage
-  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
-
 # Job to run Functional tests, require an install.
-.Functional:
+Functional:
   stage: tests
-  tags:
-    - docker
   <<: *test_template
   script:
     - robo test:suite "${TESTS}functional" "${REPORT_DIR}"
   dependencies:
     - Build
 
-
 # https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
 Functional Js:
   stage: tests
-  tags:
-    - docker
   <<: *test_template
   services:
     - mariadb:latest
@@ -326,8 +305,8 @@ Functional Js:
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
     MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless","--no-sandbox"]}}, "http://chromedriver:4444/wd/hub"]'
-    #APACHE_RUN_USER: "www-data"
-    #APACHE_RUN_GROUP: "www-data"
+    APACHE_RUN_USER: "www-data"
+    APACHE_RUN_GROUP: "www-data"
   # Because current core tests failed.
   allow_failure: true
 
@@ -366,7 +345,7 @@ Nightwatch Js:
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
-.Code quality:
+Code quality:
   stage: code quality
   tags:
     - docker
@@ -378,7 +357,7 @@ Nightwatch Js:
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
 
 # Drupal coding standard best practices report.
-.Best practices:
+Best practices:
   stage: code quality
   tags:
     - docker
@@ -410,7 +389,7 @@ Nightwatch Js:
   allow_failure: true
 
 # This is a eslint report based on Drupal 8.6+ standards.
-.Js lint:
+Js lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -439,7 +418,7 @@ Nightwatch Js:
         ${JS_CODE}
 
 # Drupal 8.6+ rules used here for css stylelint.
-.Css lint:
+Css lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -456,7 +435,7 @@ Nightwatch Js:
     - stylelint "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
 
 # This is a sass lint report, default rules used here.
-.Sass lint:
+Sass lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -487,7 +466,7 @@ Nightwatch Js:
     <<: *default_artifacts
 
 # Phpmetrics report, no pass or failure as it's just informative.
-.Php metrics:
+Php metrics:
   <<: *metrics_template
   artifacts:
     <<: *default_artifacts
@@ -499,7 +478,7 @@ Nightwatch Js:
         ${PHPQA_PHP_CODE}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
-.Php stats:
+Php stats:
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -508,7 +487,7 @@ Nightwatch Js:
 
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
-.Php metrics All:
+Php metrics All:
   # Need same constaint as Build job.
   except:
     - master
@@ -530,7 +509,7 @@ Nightwatch Js:
     - Build
   when: manual
 
-.Php stats All:
+Php stats All:
   # Need same constaint as Build job.
   except:
     - master
@@ -573,13 +552,15 @@ Nightwatch Js:
     - chmod 700 ~/.ssh
     # Avoid warning on connection.
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+  when: manual
 
-.Deploy to testing:
+Deploy to testing:
   stage: deploy to testing
   <<: *deploy_template
   only:
     - testing
     - master
+    - tags
   environment:
     name: testing
     url: http://${TESTING_HOST}
@@ -590,12 +571,13 @@ Nightwatch Js:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-.Deploy to staging:
+Deploy to staging:
   stage: deploy to staging
   <<: *deploy_template
   only:
     - staging
     - master
+    - tags
   environment:
     name: staging
     url: http://${STAGING_HOST}
@@ -605,14 +587,14 @@ Nightwatch Js:
     # We can now ssh and run any deploy script.
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
-  when: manual
 
-.Deploy to production:
+Deploy to production:
   stage: deploy to production
   <<: *deploy_template
   only:
     - production
     - master
+    - tags
   environment:
     name: production
     url: http://${PRODUCTION_HOST}
@@ -622,7 +604,6 @@ Nightwatch Js:
     # We can now ssh and run any deploy script.
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
-  when: manual
 
 # Base image for all ci, see https://gitlab.com/mog33/drupal8ci
 image: mogtofu33/drupal8ci:8.6
