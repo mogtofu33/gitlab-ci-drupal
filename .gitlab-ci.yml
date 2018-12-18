@@ -166,7 +166,7 @@ before_script:
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
     # Install Drupal from config in ./config/sync with config_installer.
-    #SETUP_FROM_CONFIG: true
+    #SETUP_FROM_CONFIG: "1"
   artifacts:
     <<: *default_artifacts
     paths:
