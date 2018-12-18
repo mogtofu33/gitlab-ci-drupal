@@ -165,6 +165,8 @@ before_script:
     SIMPLETEST_BASE_URL: "http://localhost"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
+    # Install Drupal from config in ./config/sync with config_installer.
+    #SETUP_FROM_CONFIG: true
   artifacts:
     <<: *default_artifacts
     paths:
@@ -209,8 +211,6 @@ Build:
     # Check composer first, then install.
     # - composer --verbose --no-check-all --no-check-publish validate
     # - robo install:drupal
-    # Install from config in folder ../config/sync.
-    # - robo install:drupal-from-config
   # On build we cache the composer, web folders.
   cache:
     key: drupal-$CI_BUILD_REF_NAME

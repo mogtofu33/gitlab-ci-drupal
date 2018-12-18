@@ -46,6 +46,24 @@ class RoboFile extends Tasks {
   protected $webRoot = 'web';
 
   /**
+   * Drupal setup profile.
+   *
+   * @var string
+   *   The profile name. This can be overridden by specifying a $SETUP_PROFILE
+   *   environment variable.
+   */
+  protected $setupProfile = 'minimal';
+
+  /**
+   * Drupal setup from config.
+   *
+   * @var bool
+   *   Is Drupal setup regular or from config. This can be overridden by 
+   *   specifying a $SETUP_FROM_CONFIG environment variable.
+   */
+  protected $setupFromConfig = false;
+
+  /**
    * RoboFile constructor.
    */
   public function __construct() {
@@ -60,6 +78,14 @@ class RoboFile extends Tasks {
     // Pull a WEB_ROOT from the environment, if it exists.
     if (filter_var(getenv('WEB_ROOT'), FILTER_VALIDATE_URL)) {
       $this->webRoot = getenv('WEB_ROOT');
+    }
+    // Pull a SETUP_PROFILE from the environment, if it exists.
+    if (filter_var(getenv('SETUP_PROFILE'), FILTER_VALIDATE_URL)) {
+      $this->setupProfile = getenv('SETUP_PROFILE');
+    }
+    // Pull a SETUP_FROM_CONFIG from the environment, if it exists.
+    if (filter_var(getenv('SETUP_FROM_CONFIG'), FILTER_VALIDATE_URL)) {
+      $this->setupFromConfig = getenv('SETUP_FROM_CONFIG');
     }
     // Treat this command like bash -e and exit as soon as there's a failure.
     $this->stopOnFail();
@@ -123,17 +149,23 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Install Drupal.
-   *
-   * @param string $profile
-   *   (optional) The Drupal profile name, default to minimal.
+   * Install Drupal from profile or config with config_installer.
    */
-  public function setupDrupal($profile = 'minimal') {
-
-    $task = $this->drush()
-      ->args('site-install', $profile)
-      ->option('yes')
-      ->option('db-url', $this->dbUrl, '=');
+  public function setupDrupal() {
+    if ($this->setupFromConfig) {
+      $task = $this->drush()
+        ->args('site-install', 'config_installer')
+        ->arg('config_installer_sync_configure_form.sync_directory="../config/sync"')
+        ->option('yes')
+        ->option('db-url', $this->dbUrl, '=')
+        ->run();
+    }
+    else {
+      $task = $this->drush()
+        ->args('site-install', $this->setupProfile)
+        ->option('yes')
+        ->option('db-url', $this->dbUrl, '=');
+    }
 
     // Sending email will fail, so we need to allow this to always pass.
     $this->stopOnFail(false);
@@ -154,26 +186,6 @@ class RoboFile extends Tasks {
       ->args('status')
       ->option('field', 'bootstrap', '=')
       ->run();
-  }
-
-  /**
-   * Install Drupal from config in ../config/sync.
-   */
-  public function setupDrupalFromConfig() {
-
-    $task = $this->drush()
-      ->args('site-install', 'config_installer')
-      ->arg('config_installer_sync_configure_form.sync_directory="../config/sync"')
-      ->option('yes')
-      ->option('db-url', $this->dbUrl, '=')
-      ->run();
-
-    // Sending email will fail, so we need to allow this to always pass.
-    $this->stopOnFail(false);
-    $task->run();
-    $this->stopOnFail();
-
-    $this->dumpDrupal();
   }
 
   /**
