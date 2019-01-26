@@ -60,7 +60,8 @@ variables:
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
-  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/"
+  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/*.css"
+  SCSS_FILES: "${WEB_ROOT}/themes/custom/**/scss/*.scss"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
@@ -421,22 +422,26 @@ Js lint:
         --output-file ${REPORT_DIR}/js-lint-report.html
         ${JS_CODE}
 
-# Drupal 8.6+ rules used here for css stylelint.
+# Drupal 8.6+ rules used here for stylelint to check css or scss.
 Css lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
     paths:
-      - ${REPORT_DIR}/css-lint-report.txt
+      - ${REPORT_DIR}/*.txt
   before_script:
     # We grab the Drupal standards, not needed if after a build.
     - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json
       -o ${WEB_ROOT}/.stylelintrc.json
   script:
     # Terminal result.
-    - stylelint "./${CSS_FILES}"
+    - stylelint --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${CSS_FILES}"
     # Txt report.
-    - stylelint "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+    - stylelint --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+    # Scss version, Terminal result.
+    - stylelint -s scss --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${SCSS_FILES}"
+    # Txt report.
+    - stylelint -s scss --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
 
 # This is a sass lint report, default rules used here.
 Sass lint:
