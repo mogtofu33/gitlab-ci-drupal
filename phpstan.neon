@@ -1,0 +1,28 @@
+parameters:
+  bootstrap: web/core/tests/bootstrap.php
+  fileExtensions:
+    - php
+    - module
+    - inc
+  ignoreErrors:
+    - '#Function t not found.#'
+    - '#Function system_region_list not found.#'
+    - '#Function drupal_set_message not found.#'
+    - '#Function file_scan_directory not found.#'
+    - '#Function watchdog_exception not found.#'
+    - '#Function drupal_get_path not found.#'
+    - '#Function batch_set not found.#'
+    - '#Function render not found.#'
+    - '#Function drupal_basename not found.#'
+    - '#Function locale_translation_get_status not found.#'
+    - '#Function _locale_translation_default_update_options not found.#'
+    - '#Function locale_translation_clear_status not found.#'
+    - '#Function locale_translation_batch_update_build not found.#'
+    - '#Constant FILE_EXISTS_REPLACE not found.#'
+    - '#Function file_save_data not found.#'
+  excludes_analyse:
+    - "./**/*.post_update.php"
+    - "./**/tests/**"
+    - "./**/testing/**"
+    - "./**/*/theme-settings.php"
+    - "./**/*/*.api.php"

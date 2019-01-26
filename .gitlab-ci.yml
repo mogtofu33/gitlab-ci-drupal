@@ -486,7 +486,7 @@ Php stats:
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
-        --tools phploc,pdepend
+        --tools phploc,pdepend,phpstan
         ${PHPQA_PHP_CODE}
 
 # Same reports for all Drupal code including our custom.

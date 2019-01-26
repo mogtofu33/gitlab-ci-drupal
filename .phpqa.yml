@@ -22,6 +22,12 @@ phpcpd:
     minLines: 5
     minTokens: 70
 
+phpstan:
+    allowedErrorsCount: null
+    level: 0
+    # https://github.com/phpstan/phpstan#configuration
+    standard: phpstan.neon
+
 # Php file extensions to parse.
 extensions:
     - php
