@@ -379,6 +379,21 @@ Best practices:
   # Allow failure to produce report and warning.
   allow_failure: true
 
+# Satic analysis tools, need some adaptation, see phpstan.neon and psalm.xml
+Code analysis:
+  stage: code quality
+  tags:
+    - docker
+  only:
+    - branches
+  artifacts:
+    <<: *default_artifacts
+  script:
+    - phpqa ${PHPQA_REPORT}
+        --tools phpstan,psalm
+        ${PHPQA_PHP_CODE}
+  allow_failure: true
+
 ################################################################################
 # Code  lint jobs for Drupal 8+
 ################################################################################
@@ -482,15 +497,6 @@ Php metrics:
         --tools phpmetrics
         ${PHPQA_PHP_CODE}
 
-# Satic analysis tools, need some adaptation, see phpstan.neon and psalm.xml
-Php static analysis:
-  <<: *metrics_template
-  script:
-    - phpqa ${PHPQA_REPORT}
-        --tools phpstan,psalm
-        ${PHPQA_PHP_CODE}
-  allow_failure: true
-
 # Phploc, Pdepend report, no pass or failure as it's just informative.
 Php stats:
   <<: *metrics_template
@@ -498,7 +504,6 @@ Php stats:
     - phpqa ${PHPQA_REPORT}
         --tools phploc,pdepend
         ${PHPQA_PHP_CODE}
-
 
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
