@@ -24,9 +24,15 @@ phpcpd:
 
 phpstan:
     allowedErrorsCount: null
-    level: 0
+    level: 7
     # https://github.com/phpstan/phpstan#configuration
     standard: phpstan.neon
+
+psalm:
+    config: psalm.xml
+    deadCode: false
+    threads: 1
+    showInfo: true
 
 # Php file extensions to parse.
 extensions:

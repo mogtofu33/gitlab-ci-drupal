@@ -429,19 +429,15 @@ Css lint:
     <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/*.txt
-  before_script:
-    # We grab the Drupal standards, not needed if after a build.
-    - curl -fsSL https://cgit.drupalcode.org/drupal/plain/core/.stylelintrc.json
-      -o ${WEB_ROOT}/.stylelintrc.json
   script:
     # Terminal result.
-    - stylelint --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${CSS_FILES}"
+    - stylelint --config-basedir /root/node_modules/ --config .stylelintrc.json "./${CSS_FILES}"
     # Txt report.
-    - stylelint --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+    - stylelint --config-basedir /root/node_modules/ --config .stylelintrc.json "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
     # Scss version, Terminal result.
-    - stylelint -s scss --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${SCSS_FILES}"
+    - stylelint -s scss --config-basedir /root/node_modules/ --config .stylelintrc.json "./${SCSS_FILES}"
     # Txt report.
-    - stylelint -s scss --config-basedir /root/node_modules/ --config ${WEB_ROOT}/.stylelintrc.json "./${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
+    - stylelint -s scss --config-basedir /root/node_modules/ --config .stylelintrc.json "./${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
 
 # This is a sass lint report, default rules used here.
 Sass lint:
@@ -486,13 +482,23 @@ Php metrics:
         --tools phpmetrics
         ${PHPQA_PHP_CODE}
 
+# Satic analysis tools, need some adaptation, see phpstan.neon and psalm.xml
+Php static analysis:
+  <<: *metrics_template
+  script:
+    - phpqa ${PHPQA_REPORT}
+        --tools phpstan,psalm
+        ${PHPQA_PHP_CODE}
+  allow_failure: true
+
 # Phploc, Pdepend report, no pass or failure as it's just informative.
 Php stats:
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
-        --tools phploc,pdepend,phpstan
+        --tools phploc,pdepend
         ${PHPQA_PHP_CODE}
+
 
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
