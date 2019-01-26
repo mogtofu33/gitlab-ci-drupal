@@ -205,10 +205,15 @@ class RoboFile extends Tasks {
    *   A drush exec command.
    */
   protected function drush() {
-    // Drush needs an absolute path to the docroot.
-    $docroot = $this->getDocroot() . '/' . $this->webRoot;
-    return $this->taskExec('vendor/bin/drush')
-      ->option('root', $docroot, '=');
+    if (!file_exists('vendor/bin/drush')) {
+      // Drush needs an absolute path to the docroot.
+      $docroot = $this->getDocroot() . '/' . $this->webRoot;
+      return $this->taskExec('vendor/bin/drush')
+        ->option('root', $docroot, '=');
+    }
+    else {
+      return Robo\Result::error($this, "Missing Drush, probably missing build?");
+    }
   }
 
   /**
@@ -218,10 +223,15 @@ class RoboFile extends Tasks {
    *   A drupal console exec command.
    */
   protected function drupal_console() {
-    // Drush needs an absolute path to the docroot.
-    $docroot = $this->getDocroot() . '/' . $this->webRoot;
-    return $this->taskExec('vendor/bin/drupal')
-      ->option('root', $docroot, '=');
+    if (!file_exists('vendor/bin/drush')) {
+      // Drush needs an absolute path to the docroot.
+      $docroot = $this->getDocroot() . '/' . $this->webRoot;
+      return $this->taskExec('vendor/bin/drupal')
+        ->option('root', $docroot, '=');
+    }
+    else {
+      return Robo\Result::error($this, "Missing Drupal console, probably missing build?");
+    }
   }
 
   /**
@@ -250,7 +260,7 @@ class RoboFile extends Tasks {
    * Run PHPUnit Unit and Kernel for the testsuite or module.
    *
    * @param string $testsuite
-   *  (optional)  The testsuite names, separated by commas.
+   *   (optional) The testsuite names, separated by commas.
    *
    * @param string $report
    *   (optional) Report dir, relative to root, without trailing slash.
@@ -279,7 +289,7 @@ class RoboFile extends Tasks {
    * Run PHPUnit code coverage for the testsuite or module.
    *
    * @param string $testsuite
-   *  (optional)  The testsuite names, separated by commas.
+   *   (optional) The testsuite names, separated by commas.
    *
    * @param string $report
    *   (optional) Report dir, relative to root, without trailing slash.
