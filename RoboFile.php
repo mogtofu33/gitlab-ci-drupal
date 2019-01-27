@@ -205,14 +205,14 @@ class RoboFile extends Tasks {
    *   A drush exec command.
    */
   protected function drush() {
-    if (!file_exists('vendor/bin/drush')) {
+    if (!file_exists($this->getDocroot() . '/' . 'vendor/bin/drush')) {
       // Drush needs an absolute path to the docroot.
       $docroot = $this->getDocroot() . '/' . $this->webRoot;
       return $this->taskExec('vendor/bin/drush')
         ->option('root', $docroot, '=');
     }
     else {
-      return Robo\Result::error($this, "Missing Drush, probably missing build?");
+      $this->say("Missing Drush, probably missing build?");
     }
   }
 
@@ -223,14 +223,14 @@ class RoboFile extends Tasks {
    *   A drupal console exec command.
    */
   protected function drupal_console() {
-    if (!file_exists('vendor/bin/drush')) {
+    if (!file_exists($this->getDocroot() . '/' . 'vendor/bin/drush')) {
       // Drush needs an absolute path to the docroot.
       $docroot = $this->getDocroot() . '/' . $this->webRoot;
       return $this->taskExec('vendor/bin/drupal')
         ->option('root', $docroot, '=');
     }
     else {
-      return Robo\Result::error($this, "Missing Drupal console, probably missing build?");
+      $this->say("Missing Drupal console, probably missing build?");
     }
   }
 
