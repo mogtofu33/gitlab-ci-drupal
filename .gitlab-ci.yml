@@ -60,8 +60,8 @@ variables:
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
-  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/*.css"
-  SCSS_FILES: "${WEB_ROOT}/themes/custom/**/scss/*.scss"
+  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/**"
+  SCSS_FILES: "${WEB_ROOT}/themes/custom/**/scss/**"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
