@@ -331,6 +331,9 @@ Nightwatch Js:
     #- test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
     #- curl -s http://chromedriver:4444/wd/hub/status | jq '.'
     - cp .gitlab-ci/.env.ci ${WEB_ROOT}/core/.env || true
+    # Patch for Nightwatch to allow install profile.
+    - curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o 3017176-7.patch
+    - git apply -v 3017176-7.patch
     - cd ${WEB_ROOT}/core
     - yarn install
     - yarn test:nightwatch --tag custom
