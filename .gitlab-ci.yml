@@ -295,7 +295,7 @@ Functional:
     - name: selenium/standalone-chrome:latest
       alias: chromedriver
   script:
-    # Test selenium is sup.
+    # Test selenium is up.
     #- test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
     #- curl -s http://chromedriver:4444/wd/hub/status | jq '.'
     - robo test:suite "${TESTS}functional-javascript" "${REPORT_DIR}"
@@ -327,10 +327,10 @@ Nightwatch Js:
     - name: selenium/standalone-chrome:latest
       alias: chromedriver
   script:
-    # Test selenium is sup.
+    # Test selenium is up.
     #- test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
     #- curl -s http://chromedriver:4444/wd/hub/status | jq '.'
-    - cp .gitlab-ci/.env.chrome ${WEB_ROOT}/core/.env || true
+    - cp .gitlab-ci/.env.ci ${WEB_ROOT}/core/.env || true
     - cd ${WEB_ROOT}/core
     - yarn install
     - yarn test:nightwatch --tag custom
