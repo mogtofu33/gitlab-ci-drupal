@@ -9,6 +9,20 @@
 # This file is way too huge for a normal CI process, this is just a commented
 # example of working jobs for Drupal 8, feel free to cherry pick what you need.
 #
+# Two scenarios:
+#   (Default) You are using this project side of your custom modules / themes /
+#   profile WITHOUT a composer.json file for Drupal. Then this process will
+#   install Drupal composer template project for you.
+#     You need to configure / adapt or delete the deploy part, search [DEPLOY] 
+#     in this file.
+#
+#   You are using this project side of your custom modules / themes /
+#   profile WITH a composer.json file.
+#     You need to switch the CI action that manage the installation of Drupal
+#     search [COMPOSER.JSON] in this file.
+#     You need to configure / adapt or delete the deploy part, search [DEPLOY] 
+#     in this file.
+#
 # For Gilab CI help on this file see:
 #   https://docs.gitlab.com/ee/ci/yaml
 #
@@ -35,7 +49,7 @@ variables:
   TESTS: "custom"
 
   ##############################################################################
-  # Global settings for all env used for deploy.
+  # [DEPLOY] Global settings for all env used for deploy.
   ##############################################################################
   # 
   # USER_NAME: "ubuntu"
@@ -60,12 +74,12 @@ variables:
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
-  CSS_FILES: "${WEB_ROOT}/themes/custom/**/css/**"
-  SCSS_FILES: "${WEB_ROOT}/themes/custom/**/scss/**"
+  CSS_FILES: "${WEB_ROOT}/themes/contrib/**/css/*.css ${WEB_ROOT}/themes/custom/**/css/**/*.css"
+  SCSS_FILES: "${WEB_ROOT}/themes/contrib/**/scss/*.scss ${WEB_ROOT}/themes/custom/**/scss/**/*.scss"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
-  PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap"
-  PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css"
+  PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap,tests"
+  PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css,*Test.php"
 
   ##############################################################################
   # All reports will be available in artifacts from this folder.
@@ -91,11 +105,11 @@ stages:
   - code lint
   # Only on tag, when released.
   - php code metrics
-  # Branch testing or master.
+  # [DEPLOY] Branch testing or master.
   - deploy to testing
-  # Manual if branch staging or master.
+  # [DEPLOY] Manual if branch staging or master.
   - deploy to staging
-  # Manual if branch production or master.
+  # [DEPLOY] Manual if branch production or master.
   - deploy to production
 
 ################################################################################
@@ -150,15 +164,21 @@ before_script:
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chown -R www-data:www-data ${WEB_ROOT}
     - apache2-foreground&
-    # Import dump from cache if available, or Setup Drupal.
+    # Import dump from cache if available, or Install Drupal.
     - mkdir -p dump && chmod -R 777 dump
-    - if [ -f "${DB_DUMP}" ];
+    - if [ "${INSTALL_DRUPAL}" == "1" ];
       then
-        mysql -hmariadb -uroot drupal < ${CI_PROJECT_DIR}/${DB_DUMP};
-      else
-        robo setup:drupal;
+        if [ -f "${DB_DUMP}" ];
+        then
+          mysql -hmariadb -uroot drupal < ${CI_PROJECT_DIR}/${DB_DUMP};
+        else
+          robo setup:drupal;
+        fi
       fi
-    - robo check:drupal
+    - if [ "${INSTALL_DRUPAL}" == "1" ];
+      then
+        robo check:drupal;
+      fi
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
@@ -166,6 +186,8 @@ before_script:
     SIMPLETEST_BASE_URL: "http://localhost"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
+    # Install Drupal flag
+    INSTALL_DRUPAL: "1"
     # Install Drupal from config in ./config/sync with config_installer.
     #SETUP_FROM_CONFIG: "1"
   artifacts:
@@ -204,19 +226,20 @@ Build:
     - testing
     - tags
   script:
-    # Download Drupal project, change with install if providing composer.json file.
+    # [COMPOSER.JSON]
+    # Download Drupal project when no composer.json.
     - robo download:drupal-project
     # Because create-project need an empty folder we copy the downloaded drupal.
     - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR} || true
     #
-    # Check composer first, then install.
+    # Check composer.json file first, then install.
     # - composer --verbose --no-check-all --no-check-publish validate
     # - robo install:drupal
   # On build we cache the composer, web folders.
   cache:
     key: drupal-$CI_BUILD_REF_NAME
     paths:
-      # Remove drupal if install and not create on previous script.
+      # [COMPOSER.JSON] Remove drupal if iyou are using your composer.json
       - drupal
       - vendor
       - web
@@ -229,7 +252,7 @@ Build:
       - scripts
       - composer.json
       - composer.lock
-      # Specific to drupal-composer/drupal-project.
+      # [COMPOSER.JSON]  Specific to drupal-composer/drupal-project.
       - .env.example
       - load.environment.php
     expire_in: 1 day
@@ -285,19 +308,18 @@ Functional:
     - Build
 
 # https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
-# Fail with:
-# WebDriver\Exception\UnableToSetCookie: unable to set cookie
-.Functional Js:
+Functional Js:
+  image: mogtofu33/drupal8ci:8.6-selenium-no-drupal
   stage: tests
   <<: *test_template
   services:
     - mariadb:latest
-    - name: selenium/standalone-chrome:latest
-      alias: chromedriver
   script:
-    # Test selenium is up.
-    #- test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
-    #- curl -s http://chromedriver:4444/wd/hub/status | jq '.'
+    - /scripts/start-selenium-standalone.sh&
+    - sleep 5s
+    # Test selenium is running.
+    - test=$(curl -s http://localhost:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
+    - curl -s http://localhost:4444/wd/hub/status | jq '.'
     - robo test:suite "${TESTS}functional-javascript" "${REPORT_DIR}"
   dependencies:
     - Build
@@ -308,43 +330,37 @@ Functional:
     SIMPLETEST_BASE_URL: "http://localhost"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
-    MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless","--no-sandbox"]}}, "http://chromedriver:4444/wd/hub"]'
+    MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}, "http://localhost:4444/wd/hub"]'
     APACHE_RUN_USER: "www-data"
     APACHE_RUN_GROUP: "www-data"
-  # Because current core tests failed.
-  allow_failure: true
 
 # Job to run Functional Javascript tests with Nightwatch.
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 # https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
 Nightwatch Js:
+  image: mogtofu33/drupal8ci:8.6-selenium-no-drupal
   stage: tests
   <<: *test_template
   dependencies:
     - Build
   services:
     - mariadb:latest
-    - name: selenium/standalone-chrome:latest
-      alias: chromedriver
   script:
-    # Test selenium is up.
-    #- test=$(curl -s http://chromedriver:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
-    #- curl -s http://chromedriver:4444/wd/hub/status | jq '.'
     - cp .gitlab-ci/.env.ci ${WEB_ROOT}/core/.env || true
     # Patch for Nightwatch to allow install profile.
+    - cd ${WEB_ROOT}
     - curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o 3017176-7.patch
-    - git apply -v 3017176-7.patch
-    - cd ${WEB_ROOT}/core
+    - patch -p1 < 3017176-7.patch || true
+    - cd core
     - yarn install
-    - yarn test:nightwatch --tag custom
+    # - yarn test:nightwatch --tag ${TESTS} --verbose
+    - yarn test:nightwatch --tag ${TESTS}
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  # Because current core tests failed.
-  allow_failure: true
+    # No need to pre-install Drupal.
+    INSTALL_DRUPAL: "0"
 
 ################################################################################
 # Code quality jobs for Drupal 8+
@@ -536,7 +552,7 @@ Php stats All:
   when: manual
   
 ################################################################################
-# Deploy jobs definition.
+# [DEPLOY] Deploy jobs definition.
 #
 # This is a sample workflow, testing is run on master and testing branches
 # pushes or merge, other deploy are manual. Using a basic bash deploy, you must

@@ -6,6 +6,7 @@
 /web/themes/contrib/
 /web/profiles/contrib/
 /web/libraries/
+/nightwatch
 
 # Ignore sensitive information
 /web/sites/*/settings.php

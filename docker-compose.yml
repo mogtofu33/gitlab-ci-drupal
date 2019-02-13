@@ -1,24 +1,27 @@
 ################################################################################
 # Docker Compose Drupal 8 CI stack.
 #
-# This is an helper stack to run tests locally on *unix systems.
+# This is an helper stack to run Nightwatch.js tests locally on *unix systems.
 #
 # Project page:
 #   https://gitlab.com/mogtofu33/drupal8ci
 # Usage:
-#   https://developpeur-drupal.com/en/article/drupal-8-javascript-tests-nightwatchjs-and-docker-without-pain
+#   http://dev-drupal.com/en/node/36
 ################################################################################
 version: '3'
 services:
   drupal:
-    image: mogtofu33/drupal8ci:8.6
+    # Choose if you have a Drupal core side of this file.
+    # image: mogtofu33/drupal8ci:8.6-selenium-no-drupal
+    image: mogtofu33/drupal8ci:8.6-selenium
     ports:
       - "88:80"
     links:
       - mariadb
     volumes:
-      # Relative custom code folder.
-      - ./drupal:/var/www/html/
+      # Choose your Drupal folder or custom code folder.
+      # - ./drupal:/var/www/html/
+      - ./web/modules/custom:/var/www/html/modules/custom
       # Nightwatch.js report folder for results.
       - ./nightwatch:/var/www/reports/nightwatch
     working_dir: /var/www/html/core
@@ -37,7 +40,7 @@ services:
     expose:
       - 3306
     volumes:
-      - ./.config/mysql:/etc/mysql:ro
+      - ./.gitlab-ci/mysql:/etc/mysql:ro
     container_name: ci-mariadb
     environment:
       - MYSQL_ROOT_PASSWORD=root
@@ -52,7 +55,7 @@ services:
   #     - "5432"
   #   volumes:
   #     # Add pg_pass to ease drush access.
-  #     - ./.config/pgsql/.pg_pass:/home/postgres/.pg_pass
+  #     - ./.gitlab-ci/pgsql/.pg_pass:/home/postgres/.pg_pass
   #   container_name: ci-pgsql
   #   environment:
   #     - POSTGRES_USER=drupal
