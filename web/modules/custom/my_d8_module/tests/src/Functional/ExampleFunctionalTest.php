@@ -14,7 +14,7 @@ class ExampleFunctionalTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['block'];
+  public static $modules = ['node', 'block'];
 
   /**
    * {@inheritdoc}
