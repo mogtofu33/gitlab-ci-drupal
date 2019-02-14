@@ -450,9 +450,9 @@ Css lint:
   script:
     # Css report.
     - stylelint --config-basedir /root/node_modules/
-      --config core/.stylelintrc.json -f verbose "${CSS_FILES}"
+      --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}"
     - stylelint --config-basedir /root/node_modules/
-      --config core/.stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+      --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
 
 # This is a sass lint report, default rules used here for Bootstrap based sass.
 Sass lint:
@@ -462,7 +462,6 @@ Sass lint:
     paths:
       - ${REPORT_DIR}/sass-lint-report.html
   script:
-    - echo "[Note] If sass-lint succeed without errors, no report or message will appear."
     # Terminal result.
     - sass-lint --config ${SASS_CONFIG} --verbose --no-exit
     # Html report.
@@ -471,6 +470,7 @@ Sass lint:
         --no-exit
         --format html
         --output ${REPORT_DIR}/sass-lint-report.html
+    - echo "[Note] If sass-lint succeed without errors, no report or message will appear."
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
