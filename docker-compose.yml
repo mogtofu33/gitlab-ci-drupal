@@ -42,6 +42,7 @@ services:
     expose:
       - 3306
     volumes:
+      # Add my.cnf for better performance.
       - ./.gitlab-ci/mysql:/etc/mysql:ro
     container_name: ci-mariadb
     environment:
@@ -51,6 +52,7 @@ services:
       - MYSQL_PASSWORD=drupal
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
   # Is ~15% faster than MySQL for site install.
+  # Must be set in .gitlab-ci/.env.ci if used.
   # pgsql:
   #   image: postgres:alpine
   #   expose:

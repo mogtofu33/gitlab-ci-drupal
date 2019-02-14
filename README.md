@@ -1,10 +1,14 @@
-# Gitlab CI with Drupal
+# Gitlab CI with Drupal 8
 
 [![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
 [![pipeline status testing](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing)
+[![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
 
-Gitlab CI for a Drupal 8 project. Include Build, Unit testing, Code
-quality, metrics and deploy samples.
+<img src="https://www.drupal.org/sites/all/themes/drupalorg_themes/blueprint/images/logo-d8.svg"  width="120" height="120"> +
+<img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png"  width="120" height="120">
+
+[Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a [Drupal 8](https://www.drupal.org) project. Include **Build**,
+**Unit testing**, **Code quality**, **metrics** and **deploy** samples.
 
 A lot of help and inspiration from those wonderful projects:
 
@@ -23,7 +27,7 @@ A lot of help and inspiration from those wonderful projects:
   - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
 - [Workflow proposed](#workflow-proposed)
 - [Included tools](#included-tools)
-- [Running the jobs locally](#running-the-jobs-locally)
+- [Running the jobs locally with docker](#running-the-jobs-locally-with-docker)
 - [Openstack runner](#openstack-runner)
 - [Testing your jobs with gitlab-runner](#testing-your-jobs-with-gitlab-runner)
 - [Advanced usage](#advanced-usage)
@@ -49,13 +53,13 @@ RoboFile.php
 
 Put some code in you Drupal `modules/custom` and `themes/custom` folders or use
 included demo code in `web/`
-Run a pipeline from Gitlab UI or push to master!
+[Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines) or push to master!
 
 ## Basic usage
 
 **Note**: The `.gitlab-ci.yml` file is a bit big, this is meant to be a starting
-point for working jobs with Drupal 8, feel free to cherry pick what you need but
-be careful about dependencies between some jobs.
+point for working jobs with [Drupal 8](https://www.drupal.org), feel free to
+cherry pick what you need but be careful about dependencies between some jobs.
 
 If your commit message contains **[ci skip]** or **[skip ci]**, using any
 capitalization, the commit will be created but the pipeline will be skipped.
@@ -159,10 +163,10 @@ quality and analysis tools:
   - [Pdepend](https://pdepend.org/)
   - [Phpmetrics](https://www.phpmetrics.org)
 
-## Running the jobs locally
+## Running the jobs locally with Docker
 
 You can perform most of the tests locally (on `*unix`) without installing any tool
-or Drupal code using `docker-compose.yml` file in this project, require:
+or Drupal code using [docker-compose.yml](docker-compose.yml) file in this project, require:
 
 - [Docker engine 18+](https://docs.docker.com/install)
 - [Docker compose 1.23+](https://docs.docker.com/compose/install)
@@ -171,7 +175,11 @@ or Drupal code using `docker-compose.yml` file in this project, require:
 docker-compose up -d
 ```
 
-Run the tests (will copy config files from this folder and run in the container):
+An helper bash script can help you run the tests using docker, this is a copy
+of the jobs from the [.gitlab-ci.yml](.gitlab-ci.yml) file.
+
+The script will copy config files from this folder and ensure folders to run the 
+tests properly.
 
 ```bash
 test/run-tests-ci-locally.sh all
