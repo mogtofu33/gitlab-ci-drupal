@@ -122,7 +122,7 @@ image: mogtofu33/drupal8ci:8.6-no-drupal
   # Name will be based on job and branch.
   name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
   # How long do we keep reports files?
-  expire_in: 1 day
+  expire_in: 2 day
   # Force artifacts even if the job fail.
   when: always
 
@@ -313,8 +313,8 @@ Functional Js:
     - /scripts/start-selenium-standalone.sh&
     - sleep 5s
     # Test selenium is running.
-    - test=$(curl -s http://localhost:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
-    - curl -s http://localhost:4444/wd/hub/status | jq '.'
+    #- test=$(curl -s http://localhost:4444/wd/hub/status | jq '.status'); if ! [ $__test=0 ]; then exit 1; fi
+    #- curl -s http://localhost:4444/wd/hub/status | jq '.'
     - robo test:suite "${TESTS}functional-javascript" "${REPORT_DIR}"
   dependencies:
     - Build
@@ -328,6 +328,7 @@ Functional Js:
     MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}, "http://localhost:4444/wd/hub"]'
     APACHE_RUN_USER: "www-data"
     APACHE_RUN_GROUP: "www-data"
+    SE_OPTS: ""
 
 # Job to run Functional Javascript tests with Nightwatch.
 # We need a specific image here including selenium.
@@ -357,6 +358,7 @@ Nightwatch Js:
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
     # No need to pre-install Drupal.
     INSTALL_DRUPAL: "0"
+    SE_OPTS: ""
 
 ################################################################################
 # Code quality jobs for Drupal 8+
