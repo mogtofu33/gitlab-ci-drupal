@@ -329,7 +329,7 @@ class RoboFile extends Tasks {
    */
   private function phpUnit($module = null, $testsuite = null) {
     $task = $this->taskPhpUnit('vendor/bin/phpunit')
-      ->option('verbose')
+      // ->option('verbose')
       // ->option('debug')
       ->configFile($this->webRoot . '/core');
 
