@@ -121,6 +121,14 @@ A branch _master_ trigger qa, lint, manual deploy
 You can adapt _only_ and _except_ for your own workflow, see
 [Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
 
+### Branch master
+
+![pipeline_master](/uploads/d2fdb3c36bb89243d4d763290bfef77c/pipeline_master.png)
+
+### Branch testing
+
+![pipeline_testing](/uploads/612e6445d2e4af2e8235d8515fdada08/pipeline_testing.png)
+
 ## Included tools
 
 All tools are included in a specific [docker image](https://gitlab.com/mog33/drupal8ci).
