@@ -9,7 +9,7 @@
   }
 
   /**
-   * Initialise the JS.
+   * Init the JS.
    */
   Drupal.behaviors.testing = {
     attach(context) {

@@ -1,6 +1,7 @@
 // Dummy styles for test.
 
 @import 'base';
+@import 'subfolder/test_sub';
 
 $font-stack: Helvetica, Arial, Verdana, Tahoma, sans-serif;
 $primary-color: #333;
