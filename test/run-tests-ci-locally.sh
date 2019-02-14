@@ -312,6 +312,9 @@ _main() {
   elif [ "${_CMD}" == "cp_to_docker" ]; then
     _cp_to_docker
     exit 0
+  elif [ "${_CMD}" == "clean" ]; then
+    _clean
+    exit 0
   fi
 
   # Run command if exist.
