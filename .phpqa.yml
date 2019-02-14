@@ -22,18 +22,6 @@ phpcpd:
     minLines: 5
     minTokens: 70
 
-phpstan:
-    allowedErrorsCount: null
-    level: 7
-    # https://github.com/phpstan/phpstan#configuration
-    standard: phpstan.neon
-
-psalm:
-    config: psalm.xml
-    deadCode: false
-    threads: 1
-    showInfo: true
-
 # Php file extensions to parse.
 extensions:
     - php
