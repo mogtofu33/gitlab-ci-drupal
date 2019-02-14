@@ -462,7 +462,7 @@ Sass lint:
     paths:
       - ${REPORT_DIR}/sass-lint-report.html
   script:
-    - echo "Note: If sass-lint succeed without errors, no report or message will appear."
+    - echo "[Note] If sass-lint succeed without errors, no report or message will appear."
     # Terminal result.
     - sass-lint --config ${SASS_CONFIG} --verbose --no-exit
     # Html report.
