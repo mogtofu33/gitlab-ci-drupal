@@ -19,11 +19,13 @@ services:
     links:
       - mariadb
     volumes:
-      # Choose your Drupal folder or custom code folder.
+      # Choose your Drupal folder or custom / theme code folder.
       # - ./drupal:/var/www/html/
       - ./web/modules/custom:/var/www/html/modules/custom
-      # Nightwatch.js report folder for results.
-      - ./nightwatch:/var/www/reports/nightwatch
+      - ./web/themes/custom:/var/www/html/themes/custom
+      # Reports folder for results.
+      - ./reports:/var/www/reports
+      - ./test/run-tests-ci-locally.sh:/scripts/run-tests-ci-locally.sh
     working_dir: /var/www/html/core
     container_name: ci-drupal
   chromedriver:

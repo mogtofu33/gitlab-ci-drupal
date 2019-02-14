@@ -6,23 +6,6 @@
 # Author: Jean Valverde contact@dev-drupal.com
 # License: GPL-3
 #
-# This file is way too huge for a normal CI process, this is just a commented
-# example of working jobs for Drupal 8, feel free to cherry pick what you need.
-#
-# Two scenarios:
-#   (Default) You are using this project side of your custom modules / themes /
-#   profile WITHOUT a composer.json file for Drupal. Then this process will
-#   install Drupal composer template project for you.
-#     You need to configure / adapt or delete the deploy part, search [DEPLOY] 
-#     in this file.
-#
-#   You are using this project side of your custom modules / themes /
-#   profile WITH a composer.json file.
-#     You need to switch the CI action that manage the installation of Drupal
-#     search [COMPOSER.JSON] in this file.
-#     You need to configure / adapt or delete the deploy part, search [DEPLOY] 
-#     in this file.
-#
 # For Gilab CI help on this file see:
 #   https://docs.gitlab.com/ee/ci/yaml
 #
@@ -35,27 +18,31 @@ variables:
   # Make CI more verbose in case of problem.
   # CI_DEBUG_TRACE: "1"
   #
-  # Path is relative to project root, web/ is for Drupal Composer template,
-  # change it if you are using docroot/ or any other web root.
+  # [COMPOSER.JSON] Path is relative to project root, 'web' is for Drupal
+  # Composer template, change it if you are using 'docroot'.
   WEB_ROOT: "web"
-
-  # See Phpqa available tools:
-  #   https://github.com/EdgedesignCZ/phpqa#available-tools
-  # Allow some errors, this will stop the pipeline if a limit is reached.
-  TOOLS: "--tools phpcs:0,phpmd,phpcpd,parallel-lint"
 
   # Phpunit tests to run, only custom code or empty for all code.
   # see .gitlab-ci/phpunit.xml for settings.
   TESTS: "custom"
 
+  # See Phpqa available tools:
+  #   https://github.com/EdgedesignCZ/phpqa#available-tools
+  # Allow some errors, this will stop the pipeline if a limit is reached.
+  TOOLS: "--tools phpcs:0,phpmd,phpcpd,parallel-lint"
+  # Coding best practices limit, ~10 could be reasonable, to adapt for your
+  # project. Current is strict and do not allow errors.
+  BEST_PRATICES: "phpcs:0"
+
   ##############################################################################
   # [DEPLOY] Global settings for all env used for deploy.
+  # Just an example, adapt with 'Deploy jobs definition' at the end of this
+  # file.
   ##############################################################################
-  # 
+  #
+  # Remote machine access and information.
   # USER_NAME: "ubuntu"
-  # DRUPAL_FOLDER: "/var/www/htdocs/MY_DRUPAL_ROOT"
-  # For Scss support when build in case of a Drupal Bootstrap sub theme.
-  # THEME: "MY_THEME_NAME"
+  # DRUPAL_FOLDER: "/var/www/html/MY_DRUPAL_ROOT"
   # Deploy environments configuration, add or remove depending deploy jobs.
   # Testing config, set host or ip
   TESTING_HOST: "localhost"
@@ -73,9 +60,9 @@ variables:
   # Comma separated for phpqa and phpmetrics.
   PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
-  JS_CODE: "${WEB_ROOT}/modules/custom/**/*.js ${WEB_ROOT}/themes/custom/**/*.js"
-  CSS_FILES: "${WEB_ROOT}/themes/contrib/**/css/*.css ${WEB_ROOT}/themes/custom/**/css/**/*.css"
-  SCSS_FILES: "${WEB_ROOT}/themes/contrib/**/scss/*.scss ${WEB_ROOT}/themes/custom/**/scss/**/*.scss"
+  JS_CODE: "${WEB_ROOT}/**/custom/**/*.js"
+  CSS_FILES: "${WEB_ROOT}/(themes|modules|profiles)/custom/**/css/*.css"
+  SCSS_FILES: "${WEB_ROOT}/(themes|modules|profiles)/custom/**/scss/*.scss"
   SASS_CONFIG: "./.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap,tests"
@@ -111,6 +98,12 @@ stages:
   - deploy to staging
   # [DEPLOY] Manual if branch production or master.
   - deploy to production
+
+################################################################################
+# Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
+################################################################################
+
+image: mogtofu33/drupal8ci:8.6-no-drupal
 
 ################################################################################
 # Gitlab ci templates for common jobs to avoid repeat, see
@@ -180,16 +173,16 @@ before_script:
         robo check:drupal;
       fi
   variables:
+    # Install Drupal flag, some jobs do not need an install.
+    INSTALL_DRUPAL: "1"
+    # Install Drupal from config in ./config/sync with config_installer profile.
+    #SETUP_FROM_CONFIG: "1"
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
     DB_DUMP: "dump/dump.sql"
     SIMPLETEST_BASE_URL: "http://localhost"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
-    # Install Drupal flag
-    INSTALL_DRUPAL: "1"
-    # Install Drupal from config in ./config/sync with config_installer.
-    #SETUP_FROM_CONFIG: "1"
   artifacts:
     <<: *default_artifacts
     paths:
@@ -232,14 +225,14 @@ Build:
     # Because create-project need an empty folder we copy the downloaded drupal.
     - cp -rf drupal/* ${CI_PROJECT_DIR} && cp -f drupal/.e* ${CI_PROJECT_DIR} && cp -f drupal/.g* ${CI_PROJECT_DIR} || true
     #
-    # Check composer.json file first, then install.
+    # If a composer.json is present, validate file and install.
     # - composer --verbose --no-check-all --no-check-publish validate
     # - robo install:drupal
   # On build we cache the composer, web folders.
   cache:
     key: drupal-$CI_BUILD_REF_NAME
     paths:
-      # [COMPOSER.JSON] Remove drupal if iyou are using your composer.json
+      # [COMPOSER.JSON] Remove drupal if you are using your composer.json
       - drupal
       - vendor
       - web
@@ -252,7 +245,7 @@ Build:
       - scripts
       - composer.json
       - composer.lock
-      # [COMPOSER.JSON]  Specific to drupal-composer/drupal-project.
+      # [COMPOSER.JSON] Specific to drupal-composer/drupal-project.
       - .env.example
       - load.environment.php
     expire_in: 1 day
@@ -307,7 +300,9 @@ Functional:
   dependencies:
     - Build
 
+# Job to run Functional Javascript tests.
 # https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
+# We need a specific image here including selenium.
 Functional Js:
   image: mogtofu33/drupal8ci:8.6-selenium-no-drupal
   stage: tests
@@ -335,6 +330,7 @@ Functional Js:
     APACHE_RUN_GROUP: "www-data"
 
 # Job to run Functional Javascript tests with Nightwatch.
+# We need a specific image here including selenium.
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 # https://cgit.drupalcode.org/drupal/tree/core/tests/README.md
 Nightwatch Js:
@@ -353,8 +349,8 @@ Nightwatch Js:
     - patch -p1 < 3017176-7.patch || true
     - cd core
     - yarn install
-    # - yarn test:nightwatch --tag ${TESTS} --verbose
-    - yarn test:nightwatch --tag ${TESTS}
+    # - yarn test:nightwatch --tag ${TESTS}
+    - yarn test:nightwatch --skiptags core
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
@@ -391,9 +387,8 @@ Best practices:
     <<: *default_artifacts
   script:
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
-    # Coding best practices limit, ~20 could be reasonable, to adapt for your project.
     - phpqa ${PHPQA_REPORT}
-      --tools phpcs:0
+      --tools ${BEST_PRATICES}
       ${PHPQA_PHP_CODE}
   # Allow failure to produce report and warning.
   allow_failure: true
@@ -431,12 +426,11 @@ Js lint:
     # Run the eslint command to generate a report.
     # Terminal result.
     - eslint
-        --config ./${WEB_ROOT}/core/.eslintrc.passing.json
-        --debug
+        --config ${WEB_ROOT}/core/.eslintrc.passing.json
         ${JS_CODE}
     # Html report.
     - eslint
-        --config ./${WEB_ROOT}/core/.eslintrc.passing.json
+        --config ${WEB_ROOT}/core/.eslintrc.passing.json
         --format html
         --output-file ${REPORT_DIR}/js-lint-report.html
         ${JS_CODE}
@@ -449,14 +443,16 @@ Css lint:
     paths:
       - ${REPORT_DIR}/*.txt
   script:
-    # Terminal result.
-    - stylelint --config-basedir /root/node_modules/ --config .stylelintrc.json "./${CSS_FILES}"
-    # Txt report.
-    - stylelint --config-basedir /root/node_modules/ --config .stylelintrc.json "./${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
-    # Scss version, Terminal result.
-    - stylelint -s scss --config-basedir /root/node_modules/ --config .stylelintrc.json "./${SCSS_FILES}"
-    # Txt report.
-    - stylelint -s scss --config-basedir /root/node_modules/ --config .stylelintrc.json "./${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
+    # Css report.
+    - stylelint --config-basedir /root/node_modules/
+      --config .stylelintrc.json -f verbose "${CSS_FILES}"
+    - stylelint --config-basedir /root/node_modules/
+      --config .stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+    # Scss report.
+    - stylelint -s scss --config-basedir /root/node_modules/
+      --config .stylelintrc.json -f verbose "${SCSS_FILES}"
+    - stylelint -s scss --config-basedir /root/node_modules/
+      --config .stylelintrc.json -f verbose "${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
 
 # This is a sass lint report, default rules used here.
 Sass lint:
@@ -482,6 +478,7 @@ Sass lint:
 # Common definition for all metrics jobs.
 .metrics_template: &metrics_template
   stage: php code metrics
+  # Could use only on tag release.
   # only:
   #   - tags
   tags:
@@ -628,6 +625,3 @@ Deploy to production:
     # We can now ssh and run any deploy script.
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
-
-# Base image for all ci, see https://gitlab.com/mog33/drupal8ci
-image: mogtofu33/drupal8ci:8.6

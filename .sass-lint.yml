@@ -2,10 +2,10 @@
 # https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml
 files:
   include:
-    - 'web/themes/custom/**/scss/*.scss'
-    - 'web/themes/custom/**/**/scss/*.scss'
+    - 'web/**/custom/**/scss/*.scss'
+    - 'web/**/custom/**/scss/**/*.scss'
   ignore:
-    - 'web/themes/custom/**/bootstrap/**/*.scss'
+    - 'web/**/custom/**/bootstrap/**/*.scss'
 rules:
   border-zero: 2
   brace-style: 2
