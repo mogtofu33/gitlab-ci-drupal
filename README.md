@@ -1,6 +1,7 @@
 # Gitlab CI with Drupal
 
-[![pipeline status](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master) [![coverage report](https://gitlab.com/mog33/gitlab-ci-drupal/badges/testing/coverage.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing)
+[![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
+[![pipeline status testing](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing)
 
 Gitlab CI for a Drupal 8 project. Include Build, Unit testing, Code
 quality, metrics and deploy samples.
@@ -36,7 +37,7 @@ A lot of help and inspiration from those wonderful projects:
 
 Copy those files in the root of your Drupal project (same level as _web/_ folder):
 
-- Folder .gitlab-ci
+- Folder .gitlab-ci/
 - .eslintignore
 - .phpmd.xml
 - .phpqa.yml
@@ -123,11 +124,11 @@ You can adapt _only_ and _except_ for your own workflow, see
 
 ### Branch master
 
-![pipeline_master](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/d2fdb3c36bb89243d4d763290bfef77c/pipeline_master.png)
+[![pipeline_master](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/d2fdb3c36bb89243d4d763290bfef77c/pipeline_master.png)](https://gitlab.com/mog33/gitlab-ci-drupal/pipelines/47581470)
 
 ### Branch testing
 
-![pipeline_testing](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/612e6445d2e4af2e8235d8515fdada08/pipeline_testing.png)
+[![pipeline_testing](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/612e6445d2e4af2e8235d8515fdada08/pipeline_testing.png)](https://gitlab.com/mog33/gitlab-ci-drupal/pipelines/47487091)
 
 ## Included tools
 
@@ -209,3 +210,7 @@ In the same time using the variable __CI_DEBUG_TRACE__ in any job can help you.
 
 If you want to test your Drupal from an existing config, you have to create a
 _./config/sync_ folder with your config and set _SETUP_FROM_CONFIG_ in _.gitlab-ci.yml_.
+
+----
+
+Want some help implementing this on your project? I provide Drupal 8 expertise as a freelance, just [contact me](https://developpeur-drupal.com/en).
