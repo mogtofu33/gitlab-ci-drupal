@@ -123,11 +123,11 @@ You can adapt _only_ and _except_ for your own workflow, see
 
 ### Branch master
 
-![pipeline_master](/uploads/d2fdb3c36bb89243d4d763290bfef77c/pipeline_master.png)
+![pipeline_master](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/d2fdb3c36bb89243d4d763290bfef77c/pipeline_master.png)
 
 ### Branch testing
 
-![pipeline_testing](/uploads/612e6445d2e4af2e8235d8515fdada08/pipeline_testing.png)
+![pipeline_testing](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/612e6445d2e4af2e8235d8515fdada08/pipeline_testing.png)
 
 ## Included tools
 
