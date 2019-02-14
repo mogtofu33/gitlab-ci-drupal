@@ -448,11 +448,11 @@ Css lint:
       --config .stylelintrc.json -f verbose "${CSS_FILES}"
     - stylelint --config-basedir /root/node_modules/
       --config .stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
-    # Scss report.
-    - stylelint -s scss --config-basedir /root/node_modules/
-      --config .stylelintrc.json -f verbose "${SCSS_FILES}"
-    - stylelint -s scss --config-basedir /root/node_modules/
-      --config .stylelintrc.json -f verbose "${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
+    # Scss report with stylelint.
+    #- stylelint -s scss --config-basedir /root/node_modules/
+    #  --config .stylelintrc.json -f verbose "${SCSS_FILES}"
+    #- stylelint -s scss --config-basedir /root/node_modules/
+    #  --config .stylelintrc.json -f verbose "${SCSS_FILES}" > ${REPORT_DIR}/scss-lint-report.txt
 
 # This is a sass lint report, default rules used here.
 Sass lint:
