@@ -18,6 +18,9 @@ variables:
   # Make CI more verbose in case of problem.
   # CI_DEBUG_TRACE: "1"
   #
+  # Minor Drupal version to work with.
+  DRUPAL_VERSION: "8.7"
+  #
   # [COMPOSER.JSON] Path is relative to project root, 'web' is for Drupal
   # Composer template, change it if you are using 'docroot'.
   WEB_ROOT: "web"
@@ -103,7 +106,7 @@ stages:
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
 
-image: mogtofu33/drupal8ci:8.6-no-drupal
+image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-no-drupal
 
 ################################################################################
 # Gitlab ci templates for common jobs to avoid repeat, see
@@ -301,10 +304,10 @@ Functional:
     - Build
 
 # Job to run Functional Javascript tests.
-# https://raw.githubusercontent.com/drupal/drupal/8.6.x/core/tests/README.md
+# https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 # We need a specific image here including selenium.
 Functional Js:
-  image: mogtofu33/drupal8ci:8.6-selenium-no-drupal
+  image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium-no-drupal
   stage: tests
   <<: *test_template
   services:
@@ -333,9 +336,9 @@ Functional Js:
 # Job to run Functional Javascript tests with Nightwatch.
 # We need a specific image here including selenium.
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-# hhttps://raw.githubusercontent.com/drupal/drupal/8.6.x/core/tests/README.md
+# https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 Nightwatch Js:
-  image: mogtofu33/drupal8ci:8.6-selenium-no-drupal
+  image: mogtofu33/drupal8ci:8.-selenium-no-drupal
   stage: tests
   <<: *test_template
   dependencies:
@@ -409,7 +412,7 @@ Best practices:
   # Allow failure to produce report and warning, not a critical job.
   allow_failure: true
 
-# This is a eslint report based on Drupal 8.6+ standards.
+# This is a eslint report based on Drupal 8.x standards.
 Js lint:
   <<: *lint_template
   artifacts:
@@ -419,10 +422,10 @@ Js lint:
   before_script:
     # We grab the latest eslint rules for Drupal 8.
     - mkdir -p ${WEB_ROOT}/core
-    - curl -fsSL https://raw.githubusercontent.com/drupal/drupal/8.6.x/core/.eslintrc.json
+    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.json
       -o ${WEB_ROOT}/core/.eslintrc.json
-    # Drupal 8.6.x specfic rules override for passing.
-    - curl -fsSL https://raw.githubusercontent.com/drupal/drupal/8.6.x/core/.eslintrc.passing.json
+    # Drupal 8.x specfic rules override for passing.
+    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
       -o ${WEB_ROOT}/core/.eslintrc.passing.json
   script:
     # Run the eslint command to generate a report.
@@ -437,7 +440,7 @@ Js lint:
         --output-file ${REPORT_DIR}/js-lint-report.html
         ${JS_CODE}
 
-# Drupal 8.6+ rules used here for stylelint to check css.
+# Drupal 8.x rules used here for stylelint to check css.
 Css lint:
   <<: *lint_template
   artifacts:
@@ -447,7 +450,7 @@ Css lint:
   before_script:
     # We grab the latest stylelint rules for Drupal 8.
     - mkdir -p ${WEB_ROOT}/core
-    - curl -fsSL https://raw.githubusercontent.com/drupal/drupal/8.6.x/core/.stylelintrc.json
+    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json
       -o ${WEB_ROOT}/core/.stylelintrc.json
   script:
     # Css report.

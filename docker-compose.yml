@@ -12,8 +12,8 @@ version: '3'
 services:
   drupal:
     # Choose if you have a Drupal core side of this file.
-    # image: mogtofu33/drupal8ci:8.6-selenium-no-drupal
-    image: mogtofu33/drupal8ci:8.6-selenium
+    # image: mogtofu33/drupal8ci:8.7-selenium-no-drupal
+    image: mogtofu33/drupal8ci:8.7-selenium
     ports:
       - "88:80"
     links:

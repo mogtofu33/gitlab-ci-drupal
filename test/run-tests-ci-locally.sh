@@ -219,7 +219,7 @@ _eslint() {
 
 _stylelint() {
   printf "\\n%s[info] Perform job 'Css lint'%s\\n\\n" "${blu}" "${end}"
-  _dkexec curl -fsSL https://raw.githubusercontent.com/drupal/drupal/8.6.x/core/.stylelintrc.json -o ${WEB_ROOT}/.stylelintrc.json
+  _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/8.7.x/core/.stylelintrc.json -o ${WEB_ROOT}/.stylelintrc.json
   _dkexec stylelint --config-basedir /root/node_modules/ \
     --config .stylelintrc.json -f verbose "${CSS_FILES}"
 }

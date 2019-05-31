@@ -26,8 +26,10 @@ A lot of help and inspiration from those wonderful projects:
   - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
   - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
 - [Workflow proposed](#workflow-proposed)
+  - [Branch master](#branch-master)
+  - [Branch testing](#branch-testing)
 - [Included tools](#included-tools)
-- [Running the jobs locally with docker](#running-the-jobs-locally-with-docker)
+- [Running the jobs locally with Docker](#running-the-jobs-locally-with-docker)
 - [Openstack runner](#openstack-runner)
 - [Testing your jobs with gitlab-runner](#testing-your-jobs-with-gitlab-runner)
 - [Advanced usage](#advanced-usage)
@@ -104,9 +106,9 @@ More options see:
 - [Phpqa configuration](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
 - [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
 
-_Eslint_ is based on the official [Drupal 8 eslintrc.passing.json](https://github.com/drupal/drupal/tree/8.6.x/core/.eslintrc.passing.json)
+Eslint is based on the official [Drupal 8 eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
 
-_Stylelint_ is based on the official [Drupal 8 stylelintrc.json](https://github.com/drupal/drupal/tree/8.6.x/core/.stylelintrc.json)
+Stylelint is based on the official [Drupal 8 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
 [Sass-lint](./.sass-lint.yml) is based on [Wolox](https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml)
 
@@ -115,7 +117,7 @@ _Stylelint_ is based on the official [Drupal 8 stylelintrc.json](https://github.
 The pipeline in this project support Unit, Kernel, Functional, [Functional Javascript](https://www.drupal.org/docs/8/phpunit/phpunit-javascript-testing-tutorial)
 tests in Drupal 8, see [Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
-For Drupal 8.6+ [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
+For Drupal 8 (since 8.6) [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
 is working.
 
 ## Workflow proposed
