@@ -39,10 +39,12 @@ Usage:
   ${_ME} cp_to_docker
   ${_ME} all
   ${_ME} lint
+  ${_ME} status
 
 Arguments:
   cp_to_docker        Helper to copy files in the container after up.
   all                 Run all tests.
+  status              Give information and versions of tools.
 
   Grouped tests:
     unit              Run unit tests.
@@ -65,6 +67,7 @@ Arguments:
     sass_lint
     phpmetrics
     phpstat
+
 HEREDOC
 }
 
@@ -121,7 +124,7 @@ _set_variables() {
   # Variables used in gitlab-ci.yml except the previous.
   TESTS="custom"
   TOOLS="--tools phpcs:0,phpmd,phpcpd,parallel-lint"
-  BEST_PRATICES="phpcs:0"
+  BEST_PRACTICES="phpcs:0"
   PHP_CODE="${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   JS_CODE="${WEB_ROOT}/**/custom/**/*.js"
   CSS_FILES="${WEB_ROOT}/(themes|modules|profiles)/custom/**/css/*.css"
@@ -141,6 +144,11 @@ _prepare() {
   _dkexec mkdir -p ${WEB_ROOT}/sites/simpletest/browser_output
   _dkexec chmod -R 777 ${WEB_ROOT}/sites/simpletest
   _dkexec chown -R www-data:www-data ${WEB_ROOT}/sites/simpletest
+}
+
+_status() {
+  _dkexec robo check:drush
+  _dkexec vendor/bin/drush status
 }
 
 _security_checker() {
@@ -184,7 +192,7 @@ _functional() {
 _functional_js() {
   printf "\\n%s[info] Perform job 'Functional Js'%s\\n\\n" "${blu}" "${end}"
 
-  docker exec -d /scripts/start-selenium-standalone.sh
+  docker exec -d ci-drupal /scripts/start-selenium-standalone.sh
   sleep 5s
   # curl -s http://localhost:4444/wd/hub/status | jq '.'
 
@@ -207,7 +215,7 @@ _best_practices() {
   printf "\\n%s[info] Perform job 'Best practices'%s\\n\\n" "${blu}" "${end}"
 
   _dkexec sed -i 's/Drupal/DrupalPractice/g' .phpqa.yml
-  _dkexec phpqa ${PHPQA_REPORT}/best_practices --tools ${BEST_PRATICES} ${PHPQA_PHP_CODE}
+  _dkexec phpqa ${PHPQA_REPORT}/best_practices --tools ${BEST_PRACTICES} ${PHPQA_PHP_CODE}
 }
 
 _eslint() {

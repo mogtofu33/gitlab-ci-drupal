@@ -77,13 +77,13 @@ For any scenario you need to configure / adapt or delete the deploy part, search
 #### (Default) No composer.json file and base project is Drupal composer template
 
 You are using this project side of your custom modules / themes **WITHOUT** a
-composer.json file for Drupal. Then the ci process will install
+composer.json file for Drupal. Then the ci process will install latest version of
 [Drupal composer template project](https://github.com/drupal-composer/drupal-project)
 for you.
 
-This is a good way to only test your custom code.
+This is a good way to only test your custom code or theme.
 
-- Push something to master and on a testing branch, check the CI pipeline!
+- Push something to master, create a _testing_ branch, check the CI pipeline!
 
 #### Included composer.json file for your project
 
@@ -167,21 +167,23 @@ quality and analysis tools:
 
 ## Running the jobs locally with Docker
 
-You can perform most of the tests locally (on `*unix`) without installing any tool
-or Drupal code using [docker-compose.yml](docker-compose.yml) file in this project, require:
+You can perform most of the tests locally (on `*Unix`) without installing any tool or Drupal code using included [docker-compose.yml](docker-compose.yml) file in this project, require:
 
 - [Docker engine 18+](https://docs.docker.com/install)
 - [Docker compose 1.23+](https://docs.docker.com/compose/install)
+
+Default scenario is to have only your custom code modules / themes in a `/web` folder, from there run
 
 ```bash
 docker-compose up -d
 ```
 
+If you include your own `composer.json` file to include Drupal, you must first install the Drupal code (composer install) and edit the [docker-compose.yml](docker-compose.yml) to use an image without Drupal and fix the code paths.
+
 An helper bash script can help you run the tests using docker, this is a copy
 of the jobs from the [.gitlab-ci.yml](.gitlab-ci.yml) file.
 
-The script will copy config files from this folder and ensure folders to run the 
-tests properly.
+The script will copy configuration files from this folder and ensure folders to run the tests properly.
 
 ```bash
 test/run-tests-ci-locally.sh all
@@ -189,7 +191,7 @@ test/run-tests-ci-locally.sh all
 
 ## Openstack runner
 
-If you have access to _openstack_ you can use the cloud config script in `openstack/` to quickly set-up a VM for a Gitlab runner.
+If you have access to _openstack_ you can use the cloud configuration script in `openstack/` to quickly set-up a VM for a Gitlab runner.
 
 Get your runner token on Gitlab (_>> Settings >> CI / CD >> Runners settings_)
 
@@ -221,8 +223,8 @@ In the same time using the variable `CI_DEBUG_TRACE` in any job can help you.
 
 ## Advanced usage
 
-If you want to test your Drupal from an existing config, you have to create a
-`./config/sync` folder with your config and set _SETUP_FROM_CONFIG_ in `.gitlab-ci.yml`.
+If you want to test your Drupal from an existing configuration, you have to create a
+`./config/sync` folder with your configuration and set _SETUP_FROM_CONFIG_ in `.gitlab-ci.yml`.
 
 ----
 

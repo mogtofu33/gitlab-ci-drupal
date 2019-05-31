@@ -35,7 +35,7 @@ variables:
   TOOLS: "--tools phpcs:0,phpmd,phpcpd,parallel-lint"
   # Coding best practices limit, ~10 could be reasonable, to adapt for your
   # project. Current is strict and do not allow errors.
-  BEST_PRATICES: "phpcs:0"
+  BEST_PRACTICES: "phpcs:0"
 
   ##############################################################################
   # [DEPLOY] Global settings for all env used for deploy.
@@ -393,7 +393,7 @@ Best practices:
   script:
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
     - phpqa ${PHPQA_REPORT}
-      --tools ${BEST_PRATICES}
+      --tools ${BEST_PRACTICES}
       ${PHPQA_PHP_CODE}
   # Allow failure to produce report and warning.
   allow_failure: true
