@@ -5,7 +5,7 @@ package_update: true
 package_upgrade: true
 runcmd:
   # Adjust timezone.
-  - cp /usr/share/zoneinfo/Pacific/Auckland /etc/localtime
+  - cp /usr/share/zoneinfo/Europe/Paris /etc/localtime
   # Add Docker recommended packages and add user to Docker group, should not be
   # edited. this is required for Docker.
   - usermod -aG docker ubuntu
