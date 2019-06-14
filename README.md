@@ -178,7 +178,7 @@ Default scenario is to have only your custom code modules / themes in a `/web` f
 docker-compose up -d
 ```
 
-If you include your own `composer.json` file to include Drupal, you must first install the Drupal code (composer install) and edit the [docker-compose.yml](docker-compose.yml) to use an image without Drupal and fix the code paths.
+If you include your own `composer.json` file to include _Drupal_, you must first install the Drupal code (`composer install`) and edit the [docker-compose.yml](docker-compose.yml) to use an image without Drupal and fix the code paths.
 
 An helper bash script can help you run the tests using docker, this is a copy
 of the jobs from the [.gitlab-ci.yml](.gitlab-ci.yml) file.
