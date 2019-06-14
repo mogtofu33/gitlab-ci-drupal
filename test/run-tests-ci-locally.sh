@@ -268,8 +268,7 @@ _all() {
   _code_quality
   _best_practices
   _eslint
-  _stylelint_css
-  _stylelint_scss
+  _stylelint
   _sass_lint
   _phpmetrics
   _phpstat
@@ -286,8 +285,7 @@ _unit() {
 
 _lint() {
   _eslint
-  _stylelint_css
-  _stylelint_scss
+  _stylelint
   _sass_lint
 }
 
@@ -332,7 +330,9 @@ _main() {
     _set_variables
     _prepare
     $__call
-    printf "\\n%s -- Done, visit reports/ for results%s\\n\\n" "${blu}" "${end}"
+    printf "\\n%s -- Done%s\\n\\n" "${blu}" "${end}"
+    printf "\\n%s -- Visit local folder reports/ for results%s\\n\\n" "${blu}" "${end}"
+    printf "\\n%s -- Happy testing!%s\\n\\n" "${blu}" "${end}"
   else
     _help
   fi
