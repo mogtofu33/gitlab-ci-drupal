@@ -36,7 +36,6 @@ Locally run Gitlab-ci tests with a docker-compose stack.
 Most commands are executed in the ci-drupal container.
 
 Usage:
-  ${_ME} cp_to_docker
   ${_ME} all
   ${_ME} lint
   ${_ME} status
