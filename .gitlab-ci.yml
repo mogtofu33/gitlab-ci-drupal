@@ -78,8 +78,8 @@ variables:
   # Options for Phpqa to build a report to download, need artifacts set on the
   # job, see '.report' below.
   PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
-  PHPQA_PHP_CODE: "--config ./gitlab-ci/ --analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
-  PHPQA_ALL_CODE: "--config ./gitlab-ci/ --analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  PHPQA_PHP_CODE: "--config ./gitlab-ci --analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  PHPQA_ALL_CODE: "--config ./gitlab-ci --analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
@@ -392,7 +392,7 @@ Best practices:
   artifacts:
     <<: *default_artifacts
   script:
-    - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
+    - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml
     - phpqa ${PHPQA_REPORT}
       --tools ${BEST_PRACTICES}
       ${PHPQA_PHP_CODE}
