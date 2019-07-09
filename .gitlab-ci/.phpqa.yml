@@ -13,7 +13,7 @@ phpcs:
             checkstyle: checkstyle.xml
 
 phpmd:
-    standard: ./gitlab-ci/.phpmd.xml
+    standard: .phpmd.xml
 
 pdepend:
     # coverageReport: build/coverage-clover.xml
