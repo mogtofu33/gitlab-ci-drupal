@@ -1,6 +1,6 @@
 <?php
 
-$settings['hash_salt'] = '3UL8ExXBWWviBsr-ZaQ_PgQ6CTzdUNkZq--LmvV-h0WTLxEAobV5rP_ZgBhA6H2kvtBkYaM_6w';
+$settings['hash_salt'] = 'not_safe_salt_just_for_ci';
 $settings['update_free_access'] = FALSE;
 $settings['container_yamls'][] = $app_root . '/' . $site_path . '/services.yml';
 $settings['file_scan_ignore_directories'] = [
@@ -17,9 +17,12 @@ $databases['default']['default'] = array (
   'password' => '',
   'prefix' => '',
   'host' => 'mariadb',
+  // 'host' => 'pgsql',
   'port' => '',
   'namespace' => 'Drupal\\Core\\Database\\Driver\\mysql',
+  // 'namespace' => 'Drupal\\Core\\Database\\Driver\\pgsql',
   'driver' => 'mysql',
+  // 'driver' => 'pgsql',
 );
 
 # https://www.drupal.org/project/drupal/issues/2867042

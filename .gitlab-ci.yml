@@ -29,6 +29,20 @@ variables:
   # see .gitlab-ci/phpunit.xml for settings.
   TESTS: "custom"
 
+  # Nightwatch.js tests to run, only tag, core, all except core.
+  # see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+  # NIGHTWATCH_TESTS: "--tag my_tags"
+  NIGHTWATCH_TESTS: "--skiptags core"
+
+  # Comma separated for phpqa and phpmetrics.
+  PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+
+  # All reports will be available in artifacts from this folder.
+  REPORT_DIR: "reports"
+
+  ##############################################################################
+  # [NO TESTING] Can be removed for testing only.
+  #
   # See Phpqa available tools:
   #   https://github.com/EdgedesignCZ/phpqa#available-tools
   # Allow some errors, this will stop the pipeline if a limit is reached.
@@ -57,29 +71,22 @@ variables:
   ##############################################################################
   # Next part do not need to be edited for a first quick run.
   ##############################################################################
-  # Drupal custom code / theme / all code. We are checking our code quality,
-  # and optionally Drupal core.
   #
-  # Comma separated for phpqa and phpmetrics.
-  PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/**/custom/**/*.js"
   CSS_FILES: "${WEB_ROOT}/(themes|modules|profiles)/custom/**/css/*.css"
   SCSS_FILES: "${WEB_ROOT}/(themes|modules|profiles)/custom/**/scss/*.scss"
   SASS_CONFIG: "./.gitlab-ci/.sass-lint.yml"
+
+  # PhpQA specific variables to prepare run
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap,tests"
   PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css,*Test.php"
-
-  ##############################################################################
-  # All reports will be available in artifacts from this folder.
-  REPORT_DIR: "reports"
-
   # Options for Phpqa to build a report to download, need artifacts set on the
   # job, see '.report' below.
   PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
-  PHPQA_PHP_CODE: "--config ./gitlab-ci --analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
-  PHPQA_ALL_CODE: "--config ./gitlab-ci --analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  PHPQA_PHP_CODE: "--analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  PHPQA_ALL_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
@@ -90,6 +97,7 @@ stages:
   - build
   # Only on branch testing.
   - tests
+  # [NO TESTING] Can be removed for testing only.
   # On each push.
   - code quality
   - code lint
@@ -133,9 +141,8 @@ image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-no-drupal
 before_script:
   - *ensure_report
 
-# Testing template for phpunit, this provide Apache / Php.
-.test_template: &test_template
-  # Build is not for master but only branch testing or tags for release.
+.test_except_only: &test_except_only
+  # Build and tests are not for master but only branch testing or tags for release.
   # Limit to branch push, for more options see
   # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
   except:
@@ -143,14 +150,19 @@ before_script:
   only:
     - testing
     - tags
+
+# Testing template for phpunit, this provide Apache / Php.
+.test_template: &test_template
   tags:
     - docker
+  <<: *test_except_only
   services:
     - mariadb:latest
   before_script:
     - *ensure_report
     # Copy CI settings.
     - cp .gitlab-ci/phpunit.xml ${WEB_ROOT}/core/ || true
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}/RoboFile.php || true
     # Prepare Drupal installation.
     - cp .gitlab-ci/settings-ci.php ${WEB_ROOT}/sites/default/settings.php || true
     - mkdir -p /var/www/html
@@ -216,13 +228,9 @@ Build:
   stage: build
   tags:
     - docker
-  except:
-    - master
-  only:
-    - testing
-    - tags
+  <<: *test_except_only
   script:
-    - cp ./gitlab-ci/Robofile.php .
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}/RoboFile.php || true
     # [COMPOSER.JSON]
     # Download Drupal project when no composer.json.
     - robo download:drupal-project
@@ -253,23 +261,6 @@ Build:
       - .env.example
       - load.environment.php
     expire_in: 1 day
-
-Security report:
-  stage: tests
-  tags:
-    - docker
-  except:
-    - master
-  only:
-    - testing
-    - tags
-  script:
-    - if [ -f "composer.lock" ];
-      then
-        security-checker security:check;
-      fi
-  dependencies:
-    - Build
 
 # Job to run Unit and Kernel tests.
 Unit and kernel tests:
@@ -345,10 +336,11 @@ Nightwatch Js:
   dependencies:
     - Build
   services:
+    # - postgres:latest
     - mariadb:latest
   script:
     - cp .gitlab-ci/.env.ci ${WEB_ROOT}/core/.env || true
-    # Patch for Nightwatch to allow install profile.
+    # [TEMPORARY] Patch for Nightwatch to allow install profile.
     - cd ${WEB_ROOT}
     - curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o 3017176-7.patch
     - patch -p1 < 3017176-7.patch || true
@@ -359,13 +351,31 @@ Nightwatch Js:
   variables:
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
     MYSQL_DATABASE: "drupal"
+    # POSTGRES_USER: "drupal"
+    # POSTGRES_PASSWORD: "drupal"
+    # POSTGRES_DB: "drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "/var/www/html/web/sites/simpletest"
     # No need to pre-install Drupal.
     INSTALL_DRUPAL: "0"
     SE_OPTS: ""
 
+Security report:
+  stage: tests
+  tags:
+    - docker
+  <<: *test_except_only
+  script:
+    - if [ -f "composer.lock" ];
+      then
+        security-checker security:check;
+      fi
+  dependencies:
+    - Build
+
 ################################################################################
 # Code quality jobs for Drupal 8+
+#
+# [NO TESTING] Can be removed for testing only.
 ################################################################################
 
 # Automated quality check job when something is pushed/merged on master.
@@ -379,6 +389,9 @@ Code quality:
     - branches
   artifacts:
     <<: *default_artifacts
+  before_script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.phpmd.xml || true
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
   script:
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
 
@@ -391,8 +404,10 @@ Best practices:
     - branches
   artifacts:
     <<: *default_artifacts
+  before_script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
+    - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
   script:
-    - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml
     - phpqa ${PHPQA_REPORT}
       --tools ${BEST_PRACTICES}
       ${PHPQA_PHP_CODE}
@@ -401,6 +416,8 @@ Best practices:
 
 ################################################################################
 # Code  lint jobs for Drupal 8+
+#
+# [NO TESTING] Can be removed for testing only.
 ################################################################################
 
 # Common definition for all lint jobs.
@@ -428,16 +445,15 @@ Js lint:
     # Drupal 8.x specfic rules override for passing.
     - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
       -o ${WEB_ROOT}/core/.eslintrc.passing.json
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}/.eslintignore || true
   script:
     # Run the eslint command to generate a report.
     # Terminal result.
     - eslint
-        --ignore-path ./.gitlab-ci/.eslintignore
         --config ${WEB_ROOT}/core/.eslintrc.passing.json
         ${JS_CODE}
     # Html report.
     - eslint
-        --ignore-path ./.gitlab-ci/.eslintignore
         --config ${WEB_ROOT}/core/.eslintrc.passing.json
         --format html
         --output-file ${REPORT_DIR}/js-lint-report.html
@@ -482,6 +498,8 @@ Sass lint:
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
+#
+# [NO TESTING] Can be removed for testing only.
 ################################################################################
 
 # Common definition for all metrics jobs.
@@ -495,6 +513,8 @@ Sass lint:
     - docker
   artifacts:
     <<: *default_artifacts
+  before_script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
 
 # Phpmetrics report, no pass or failure as it's just informative.
 Php metrics:
@@ -519,13 +539,9 @@ Php stats:
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
 Php metrics All:
-  # Need same constaint as Build job.
-  except:
-    - master
-  only:
-    - testing
-    - tags
   <<: *metrics_template
+  # Need same constraint as Build job.
+  <<: *test_except_only
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phpmetrics
@@ -541,13 +557,9 @@ Php metrics All:
   when: manual
 
 Php stats All:
-  # Need same constaint as Build job.
-  except:
-    - master
-  only:
-    - testing
-    - tags
   <<: *metrics_template
+  # Need same constraint as Build job.
+  <<: *test_except_only
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phploc,pdepend
@@ -560,6 +572,8 @@ Php stats All:
   
 ################################################################################
 # [DEPLOY] Deploy jobs definition.
+#
+# [NO TESTING] Can be removed for testing only.
 #
 # This is a sample workflow, testing is run on master and testing branches
 # pushes or merge, other deploy are manual. Using a basic bash deploy, you must

@@ -17,7 +17,8 @@ services:
     ports:
       - "88:80"
     links:
-      - mariadb
+      - pgsql
+      # - mariadb
     volumes:
       # Choose your Drupal folder or custom / theme code folder.
       # - ./drupal:/var/www/html/
@@ -50,7 +51,9 @@ services:
       - POSTGRES_PASSWORD=drupal
       - POSTGRES_DB=drupal
   # Is ~15% slower than PostgreSQL for site install.
-  # Must be set in .gitlab-ci/.env.ci if used.
+  # If set must adapt files:
+  # .gitlab-ci/.env.ci
+  # .gitlab-ci/phpunit.local.xml
   # mariadb:
   #   image: mariadb:latest
   #   expose:

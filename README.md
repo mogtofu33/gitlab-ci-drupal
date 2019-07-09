@@ -2,37 +2,32 @@
 
 [![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
 [![pipeline status testing](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing)
-[![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
 
 <img src="https://www.drupal.org/sites/all/themes/drupalorg_themes/blueprint/images/logo-d8.svg"  width="120" height="120"> +
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png"  width="120" height="120">
 
-[Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a [Drupal 8](https://www.drupal.org) project. Include **Build**,
-**Unit testing**, **Code quality**, **metrics** and **deploy** samples.
-
-A lot of help and inspiration from those wonderful projects:
-
-- [https://github.com/AcroMedia/commerce-demo](https://github.com/AcroMedia/commerce-demo)
-- [https://github.com/Lullabot/drupal8ci](https://github.com/Lullabot/drupal8ci)
-- [https://gitlab.com/Lullabot/d8cidemo/tree/gitlab](https://gitlab.com/Lullabot/d8cidemo/tree/gitlab)
-- [https://github.com/manumilou/gitlab-ci-example-drupal](https://github.com/manumilou/gitlab-ci-example-drupal)
+[Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a [Drupal 8](https://www.drupal.org) project or module. Include **Build**,
+**Unit testing**, **Code quality**, **Metrics** and **Deploy** samples.
 
 **Table of contents**
 
-- [Prerequisites](#prerequisites)
-- [Quick how to](#quick-how-to)
-- [Basic usage](#basic-usage)
-  - [Drupal 8 code](#drupal-8-code)
-  - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
-  - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
-- [Workflow proposed](#workflow-proposed)
-  - [Branch master](#branch-master)
-  - [Branch testing](#branch-testing)
-- [Included tools](#included-tools)
-- [Running the jobs locally with Docker](#running-the-jobs-locally-with-docker)
-- [Openstack runner](#openstack-runner)
-- [Testing your jobs with gitlab-runner](#testing-your-jobs-with-gitlab-runner)
-- [Advanced usage](#advanced-usage)
+- [Prerequisites](#Prerequisites)
+- [Quick how to](#Quick-how-to)
+  - [Use Gitlab CI to test your module](#Use-Gitlab-CI-to-test-your-module)
+  - [Use Gitlab CI to test your Drupal project](#Use-Gitlab-CI-to-test-your-Drupal-project)
+- [Basic usage](#Basic-usage)
+  - [Drupal 8 code](#Drupal-8-code)
+  - [Rules for linting / Code standards / QA](#Rules-for-linting--Code-standards--QA)
+  - [PHPunit tests for Drupal 8](#PHPunit-tests-for-Drupal-8)
+- [Workflow proposed](#Workflow-proposed)
+  - [Branch master](#Branch-master)
+  - [Branch testing](#Branch-testing)
+- [Included tools](#Included-tools)
+- [Running the jobs locally with Docker](#Running-the-jobs-locally-with-Docker)
+- [Openstack runner](#Openstack-runner)
+- [Testing your jobs with gitlab-runner](#Testing-your-jobs-with-gitlab-runner)
+- [Advanced usage](#Advanced-usage)
+- [Credits](#Credits)
 
 ## Prerequisites
 
@@ -41,21 +36,47 @@ A lot of help and inspiration from those wonderful projects:
 
 ## Quick how to
 
-Copy those files in the root of your Drupal project (same level as `web/` folder):
+### Use Gitlab CI to test your module
 
-```shell
-.gitlab-ci/
-.eslintignore
-.phpmd.xml
-.phpqa.yml
-.sass-lint.yml
-gitlab-ci.yml
-RoboFile.php
+Support only for **Drupal 8**.
+
+Push your module to a Gitlab with CI and runners enabled. [https://gitlab.com](Gitlab.com) offer free runners and CI.
+
+Copy `gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal module.
+
+Edit`gitlab-ci.yml` file to match the tests you need, mostly:
+
+```yaml
+DRUPAL_VERSION: "8.7"
+...
+NIGHTWATCH_TESTS: "--tag my_module"
 ```
 
-Put some code in you Drupal `modules/custom` and `themes/custom` folders or use
+Create a branch **testing** and check the pipeline.
+
+If you want to choose when to run the CI, for example on a branch master or on a tag, adapt the section with
+
+```yaml
+.test_except_only: &test_except_only
+  # Build and tests are not for master but only branch testing or tags for release.
+  # Limit to branch push, for more options see
+  # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
+  except:
+    - master
+  only:
+    - testing
+    - tags
+```
+
+### Use Gitlab CI to test your Drupal project
+
+Copy `gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal project (same level as `web/` folder).
+
+Put some code in your Drupal `modules/custom` and `themes/custom` folders or use
 included demo code in `web/`
 [Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines) or push to master!
+
+As an example you can check my project on a Drupal 8 template: [https://gitlab.com/mog33/drupal-composer-advanced-template](Drupal 8 project template)
 
 ## Basic usage
 
@@ -209,7 +230,7 @@ sudo gitlab-runner register -n \
 
 ## Testing your jobs with gitlab-runner
 
-If you have access to a runner, you can run a single job (if don't need a build)
+If you have access to a local [https://docs.gitlab.com/runner/#install-gitlab-runner](Gitlab-runner), you can run a single job (if don't need a build)
 
 ```bash
 sudo gitlab-runner exec docker 'code quality'
@@ -229,3 +250,12 @@ If you want to test your Drupal from an existing configuration, you have to crea
 ----
 
 Want some help implementing this on your project? I provide Drupal 8 expertise as a freelance, just [contact me](https://developpeur-drupal.com/en).
+
+## Credits
+
+A lot of help and inspiration from those wonderful projects:
+
+- [https://github.com/AcroMedia/commerce-demo](https://github.com/AcroMedia/commerce-demo)
+- [https://github.com/Lullabot/drupal8ci](https://github.com/Lullabot/drupal8ci)
+- [https://gitlab.com/Lullabot/d8cidemo/tree/gitlab](https://gitlab.com/Lullabot/d8cidemo/tree/gitlab)
+- [https://github.com/manumilou/gitlab-ci-example-drupal](https://github.com/manumilou/gitlab-ci-example-drupal)
