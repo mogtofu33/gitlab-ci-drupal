@@ -66,7 +66,7 @@ variables:
   JS_CODE: "${WEB_ROOT}/**/custom/**/*.js"
   CSS_FILES: "${WEB_ROOT}/(themes|modules|profiles)/custom/**/css/*.css"
   SCSS_FILES: "${WEB_ROOT}/(themes|modules|profiles)/custom/**/scss/*.scss"
-  SASS_CONFIG: "./.sass-lint.yml"
+  SASS_CONFIG: "./.gitlab-ci/.sass-lint.yml"
   # Ignore files and dir for all Phpqa tools.
   PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap,tests"
   PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css,*Test.php"
@@ -78,8 +78,8 @@ variables:
   # Options for Phpqa to build a report to download, need artifacts set on the
   # job, see '.report' below.
   PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
-  PHPQA_PHP_CODE: "--analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
-  PHPQA_ALL_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  PHPQA_PHP_CODE: "--config ./gitlab-ci/ --analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  PHPQA_ALL_CODE: "--config ./gitlab-ci/ --analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
@@ -222,6 +222,7 @@ Build:
     - testing
     - tags
   script:
+    - cp ./gitlab-ci/Robofile.php .
     # [COMPOSER.JSON]
     # Download Drupal project when no composer.json.
     - robo download:drupal-project
@@ -431,10 +432,12 @@ Js lint:
     # Run the eslint command to generate a report.
     # Terminal result.
     - eslint
+        --ignore-path ./.gitlab-ci/.eslintignore
         --config ${WEB_ROOT}/core/.eslintrc.passing.json
         ${JS_CODE}
     # Html report.
     - eslint
+        --ignore-path ./.gitlab-ci/.eslintignore
         --config ${WEB_ROOT}/core/.eslintrc.passing.json
         --format html
         --output-file ${REPORT_DIR}/js-lint-report.html
