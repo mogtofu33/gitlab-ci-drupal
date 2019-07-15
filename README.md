@@ -6,7 +6,9 @@
 <img src="https://www.drupal.org/sites/all/themes/drupalorg_themes/blueprint/images/logo-d8.svg"  width="120" height="120"> +
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png"  width="120" height="120">
 
-[Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a [Drupal 8](https://www.drupal.org) project or module. Include **Build**,
+[Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a [Drupal 8](https://www.drupal.org) module / theme or project.
+
+Include **Build**,
 **Unit testing**, **Code quality**, **Metrics** and **Deploy** samples.
 
 **Table of contents**
@@ -38,7 +40,7 @@
 
 ### Use Gitlab CI to test your module
 
-Support only for **Drupal 8**.
+_Note:_ Support only for **Drupal 8** at the moment.
 
 Push your module to a Gitlab with CI and runners enabled. [https://gitlab.com](Gitlab.com) offer free runners and CI.
 
