@@ -6,7 +6,6 @@
 /web/themes/contrib/
 /web/profiles/contrib/
 /web/libraries/
-/reports
 
 # Ignore sensitive information
 /web/sites/*/settings.php
@@ -23,3 +22,31 @@
 
 # Ignore .env files as they are personal
 /.env
+
+# Ignore downloaded Drupal project.
+composer.*
+/drupal/
+/drush/
+/scripts/
+/web/profiles/
+/web/sites/
+/web/*.*
+.editorconfig
+.env.example
+.eslintignore
+.gitattributes
+load.*
+
+# Ignore reports from this project.
+/reports/
+
+# Ignore files created by this project when copying ./gitlab-ci/
+.env.ci
+.phpmd.xml
+.phpqa.yml
+.sass-lint.yml
+.travis.yml
+phpunit.local.xml
+phpunit.xml
+phpunit.xml.dist
+RoboFile.php

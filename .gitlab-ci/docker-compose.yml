@@ -1,0 +1,65 @@
+################################################################################
+# Docker Compose Drupal 8 CI stack.
+#
+# This is an helper stack to run tests locally on *unix systems.
+#
+# Project page:
+#   https://gitlab.com/mogtofu33/drupal8ci
+# Usage:
+#   http://dev-drupal.com/en/node/36
+################################################################################
+version: '3'
+services:
+  drupal:
+    # Drupal included from official docker image + ci tools.
+    # see https://gitlab.com/mog33/drupal8ci
+    # image: mogtofu33/drupal8ci:8.7-selenium
+    image: mogtofu33/drupal8ci:8.7-selenium-no-drupal
+    ports:
+      - "88:80"
+    links:
+      # - pgsql
+      - mariadb
+    volumes:
+      - ../:/var/www/html
+      # Mount current module or theme, mimic Gitlab-ci.
+      - ../:/builds
+      # Reports folder for results.
+      - ../reports:/var/www/reports
+    container_name: ci-drupal
+    env_file: .docker-compose.env
+  chromedriver:
+    image: selenium/standalone-chrome:latest
+    volumes:
+      - /dev/shm:/dev/shm
+    ports:
+      - "4444:4444"
+    links:
+      - drupal
+    container_name: ci-chromedriver
+  mariadb:
+    image: mariadb:latest
+    expose:
+      - 3306
+    # volumes:
+      # Add my.cnf for better performance.
+      - ./mysql:/etc/mysql:ro
+    container_name: ci-mariadb
+    environment:
+      - MYSQL_DATABASE=drupal
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+  # If used, must adapt files:
+  #   .env.ci
+  #   phpunit.local.xml
+  # pgsql:
+  #   image: postgres:alpine
+  #   expose:
+  #     - "5432"
+  #   volumes:
+  #     # Add pg_pass to ease drush access.
+  #     - ./pgsql/.pg_pass:/home/postgres/.pg_pass
+  #   container_name: ci-pgsql
+  #   environment:
+  #     - POSTGRES_USER=drupal
+  #     - POSTGRES_PASSWORD=drupal
+  #     - POSTGRES_DB=drupal
