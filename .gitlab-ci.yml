@@ -42,17 +42,19 @@ variables:
   #     A single Drupal theme.
   #   custom
   #     A Codebase modules/themes/profile for a Drupal project without a
-  #     composer.json file based on Drupal project.
-  CI_TYPE: "project"
+  #     composer.json file based on Drupal project. The main use case is for
+  #     this module.
+  CI_TYPE: "custom"
+
+  # Nightwatch.js tests to run, only tag, core, all except core.
+  # see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+  # Add --verbose for a full log from Nightwatch if it fail.
+  # NIGHTWATCH_TESTS: "--tag my_module_tags"
+  NIGHTWATCH_TESTS: "--skiptags core"
 
   # Phpunit tests to run, only custom code or empty for all code.
   # see .gitlab-ci/phpunit.xml for settings.
   PHPUNIT_TESTS: "custom"
-
-  # Nightwatch.js tests to run, only tag, core, all except core.
-  # see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-  # NIGHTWATCH_TESTS: "--tag my_module_tags"
-  NIGHTWATCH_TESTS: "--skiptags core"
 
   # All reports will be available in artifacts from this folder.
   REPORT_DIR: "reports"
@@ -184,25 +186,28 @@ stages:
 .test_template: &test_template
   tags:
     - docker
-  <<: *test_except_only
   services:
     - mariadb:latest
+  <<: *test_except_only
   before_script:
-    # Copy CI settings and RoboFile.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${WEB_ROOT}/core/ || true
+    # Copy RoboFile.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    # Prepare tests folder and ensure permissions.
+    # Symlink Drupal codebase or the module/theme to the web root of the ci
+    # image.
+    - robo prepare:folders
+    # Start Apache.
+    - apache2-foreground&
+    # Copy files and prepare test folder with permissions.
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${WEB_ROOT}/core || true
     - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
-    # - robo perform:build
-    - apache2-foreground&
-    - robo symlink:folders
   <<: *test_variables
   artifacts:
     <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/*
+
 ################################################################################
 # Build and tests jobs, not for master.
 ################################################################################
@@ -215,18 +220,18 @@ Build:
   <<: *test_except_only
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
+    # check Drupal codebase and composer install if needed.
     - robo perform:build
-  # On build we cache the composer, web folders.
+  <<: *test_variables
+  # On build we cache the composer and web folders to speed up the tests.
   cache:
     key: drupal-$CI_BUILD_REF_NAME
     paths:
-      # [COMPOSER.JSON] Remove drupal if you are using your composer.json
-      # - drupal
       - vendor
       - web
   artifacts:
     paths:
-      # Build files for deploy/release.
+      # Build files for next steps and deploy/release.
       - vendor
       - web
       - drush
@@ -263,15 +268,10 @@ Functional:
   stage: tests
   <<: *test_template
   script:
-    # Permissions error, can not run robo as www-data.
-    - robo test:suite "${PHPUNIT_TESTS}functional"
-    # - mkdir -p ${REPORT_DIR}/functional/
-    # - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}/functional/
-    # - sudo -E -u ${APACHE_RUN_USER} /usr/local/bin/phpunit
-    #   -c ${WEB_ROOT}/core
-    #   --testsuite ${PHPUNIT_TESTS}functional
-    #   --testdox-html ${REPORT_DIR}/functional/phpunit.html
-    #   --testdox-xml ${REPORT_DIR}/functional/phpunit.xml
+    # To test if /simpletest is enough
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
+    # For functional tests the user need to be the Apache user.
+    - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
   after_script:
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/
   dependencies:
@@ -280,9 +280,8 @@ Functional:
 Functional Js:
   stage: tests
   <<: *test_template
-  services:
-    - mariadb:latest
   script:
+    # Ensure selenium is up.
     - /scripts/start-selenium-standalone.sh&
     - sleep 5s
     - robo test:suite "${PHPUNIT_TESTS}functional-javascript"
@@ -295,19 +294,26 @@ Functional Js:
 Nightwatch Js:
   stage: tests
   <<: *test_template
-  dependencies:
-    - Build
-  services:
-    - mariadb:latest
   script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.ci ${WEB_ROOT}/core/.env || true
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
     # [TEMPORARY] Patch for Nightwatch to allow install profile.
     - cd ${WEB_ROOT}
     - curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o 3017176-7.patch
-    - patch -p1 < 3017176-7.patch || true
-    - cd core
+    - patch -N -p1 < 3017176-7.patch || true
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
+    - robo prepare:folders
+    - cd ${WEB_ROOT}/core
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}
     - yarn install
+    # - yarn upgrade
     - yarn test:nightwatch ${NIGHTWATCH_TESTS}
+  dependencies:
+    - Build
+  artifacts:
+    <<: *default_artifacts
+    paths:
+      - ${REPORT_DIR}
+  allow_failure: true
 
 # [TESTING] Next part can be removed for testing only.
 Security report:
@@ -315,11 +321,11 @@ Security report:
   tags:
     - docker
   <<: *test_except_only
+  before_script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
+    - robo prepare:folders
   script:
-    - if [ -f "composer.lock" ];
-      then
-        security-checker security:check;
-      fi
+    - security-checker security:check;
   dependencies:
     - Build
 
@@ -344,7 +350,7 @@ Code quality:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.phpmd.xml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo fix:folder
+    - robo prepare:folders
   script:
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
 
@@ -361,7 +367,7 @@ Best practices:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo fix:folder
+    - robo prepare:folders
   script:
     - phpqa ${PHPQA_REPORT}
       --tools ${BEST_PRACTICES}
@@ -393,16 +399,9 @@ Js lint:
     paths:
       - ${REPORT_DIR}/js-lint-report.html
   before_script:
-    # We grab the latest eslint rules for Drupal 8.
-    # - mkdir -p ${WEB_ROOT}/core
-    # - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.json
-      # -o ${WEB_ROOT}/core/.eslintrc.json
-    # Drupal 8.x specfic rules override for passing.
-    # - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
-      # -o ${WEB_ROOT}/core/.eslintrc.passing.json
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}/.eslintignore || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo fix:folder
+    - robo prepare:folders
   script:
     # Run the eslint command to generate a report.
     # Terminal result.
@@ -421,21 +420,17 @@ Css lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
-    paths:
-      - ${REPORT_DIR}/*.txt
+    # paths:
+      # - ${REPORT_DIR}/*.txt
   before_script:
-    # We grab the latest stylelint rules for Drupal 8.
-    # - mkdir -p ${WEB_ROOT}/core
-    # - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json
-      # -o ${WEB_ROOT}/core/.stylelintrc.json
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo fix:folder
+    - robo prepare:folders
   script:
     # Css report.
     - stylelint --config-basedir /var/www/.node/node_modules/
       --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}"
-    - stylelint --config-basedir /var/www.node/node_modules/
-      --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
+    # - stylelint --config-basedir /var/www.node/node_modules/
+      # --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
 
 # This is a sass lint report, default rules used here for Bootstrap based sass.
 Sass lint:
@@ -446,7 +441,9 @@ Sass lint:
       - ${REPORT_DIR}/sass-lint-report.html
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo fix:folder
+    - robo prepare:folders
+    - cd ${WEB_ROOT}/core
+    - npm install --no-audit git://github.com/sasstools/sass-lint.git#develop
   script:
     # Terminal result.
     - sass-lint --config ${SASS_CONFIG} --verbose --no-exit
@@ -457,6 +454,7 @@ Sass lint:
         --format html
         --output ${REPORT_DIR}/sass-lint-report.html
     - echo "[Note] If sass-lint succeed without errors, no report or message will appear."
+  allow_failure: true
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
@@ -478,7 +476,7 @@ Sass lint:
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo fix:folder
+    - robo prepare:folders
 
 # Phpmetrics report, no pass or failure as it's just informative.
 Php metrics:
@@ -502,7 +500,7 @@ Php stats:
 
 # Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
-Php metrics All:
+.Php metrics All:
   <<: *metrics_template
   # Need same constraint as Build job.
   <<: *test_except_only
@@ -520,7 +518,7 @@ Php metrics All:
     - Build
   when: manual
 
-Php stats All:
+.Php stats All:
   <<: *metrics_template
   # Need same constraint as Build job.
   <<: *test_except_only
@@ -563,7 +561,7 @@ Php stats All:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   when: manual
 
-.Deploy to testing:
+Deploy to testing:
   stage: deploy to testing
   <<: *deploy_template
   only:
@@ -580,7 +578,7 @@ Php stats All:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-.Deploy to staging:
+Deploy to staging:
   stage: deploy to staging
   <<: *deploy_template
   only:
@@ -596,7 +594,7 @@ Php stats All:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-.Deploy to production:
+Deploy to production:
   stage: deploy to production
   <<: *deploy_template
   only:

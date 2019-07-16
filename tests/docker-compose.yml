@@ -21,11 +21,13 @@ services:
       # - pgsql
       - mariadb
     volumes:
-      - ../:/var/www/html
-      # Mount current module or theme, mimic Gitlab-ci.
+      # Mount current module, theme or project, mimic Gitlab-ci.
       - ../:/builds
       # Reports folder for results.
       - ../reports:/var/www/reports
+      # [OPTIONAL] composer cache folder to speed up the process.
+      # - ${HOME}/.composer/cache:/var/www/.composer/cache
+    working_dir: /builds
     container_name: ci-drupal
     env_file: .docker-compose.env
   chromedriver:
@@ -41,7 +43,7 @@ services:
     image: mariadb:latest
     expose:
       - 3306
-    # volumes:
+    volumes:
       # Add my.cnf for better performance.
       - ./mysql:/etc/mysql:ro
     container_name: ci-mariadb
@@ -49,7 +51,7 @@ services:
       - MYSQL_DATABASE=drupal
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
   # If used, must adapt files:
-  #   .env.ci
+  #   .env.nightwatch
   #   phpunit.local.xml
   # pgsql:
   #   image: postgres:alpine
