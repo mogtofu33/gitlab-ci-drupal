@@ -6,30 +6,27 @@
 <img src="https://www.drupal.org/sites/all/themes/drupalorg_themes/blueprint/images/logo-d8.svg"  width="120" height="120"> +
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png"  width="120" height="120">
 
-[Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a [Drupal 8](https://www.drupal.org) module / theme or project.
+[Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a
+[Drupal 8](https://www.drupal.org) module / theme or project.
 
 Include **Build**,
 **Unit testing**, **Code quality**, **Metrics** and **Deploy** samples.
 
 **Table of contents**
 
-- [Prerequisites](#Prerequisites)
-- [Quick how to](#Quick-how-to)
-  - [Use Gitlab CI to test your module](#Use-Gitlab-CI-to-test-your-module)
-  - [Use Gitlab CI to test your Drupal project](#Use-Gitlab-CI-to-test-your-Drupal-project)
-- [Basic usage](#Basic-usage)
-  - [Drupal 8 code](#Drupal-8-code)
-  - [Rules for linting / Code standards / QA](#Rules-for-linting--Code-standards--QA)
-  - [PHPunit tests for Drupal 8](#PHPunit-tests-for-Drupal-8)
-- [Workflow proposed](#Workflow-proposed)
-  - [Branch master](#Branch-master)
-  - [Branch testing](#Branch-testing)
-- [Included tools](#Included-tools)
-- [Running the jobs locally with Docker](#Running-the-jobs-locally-with-Docker)
-- [Openstack runner](#Openstack-runner)
-- [Testing your jobs with gitlab-runner](#Testing-your-jobs-with-gitlab-runner)
-- [Advanced usage](#Advanced-usage)
-- [Credits](#Credits)
+- [Prerequisites](#prerequisites)
+- [Quick how to](#quick-how-to)
+  - [Use Gitlab CI to test your module](#use-gitlab-ci-to-test-your-module)
+  - [Use Gitlab CI to test your Drupal project](#use-gitlab-ci-to-test-your-drupal-project)
+- [Basic usage](#basic-usage)
+  - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
+  - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
+- [Workflow proposed](#workflow-proposed)
+  - [Branch master](#branch-master)
+  - [Branch testing](#branch-testing)
+- [Included tools](#included-tools)
+- [Running the jobs locally with Docker](#running-the-jobs-locally-with-docker)
+- [Credits](#credits)
 
 ## Prerequisites
 
@@ -42,21 +39,37 @@ Include **Build**,
 
 _Note:_ Support only for **Drupal 8** at the moment.
 
-Push your module to a Gitlab with CI and runners enabled. [https://gitlab.com](Gitlab.com) offer free runners and CI.
+Push your module to a Gitlab with CI and runners enabled.
+[Gitlab.com](https://gitlab.com) offer 2,000 CI pipeline minutes/month on free
+accounts.
 
-Copy `gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal module.
+Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
+module or theme.
 
-Edit`gitlab-ci.yml` file to match the tests you need, mostly:
+Edit`.gitlab-ci.yml` file to match the tests you need, mostly:
 
 ```yaml
-DRUPAL_VERSION: "8.7"
+image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium
+#image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium-no-drupal
 ...
-NIGHTWATCH_TESTS: "--tag my_module"
+variables:
+  DRUPAL_VERSION: "8.7"
+...
+  CI_TYPE: "module"
+  # CI_TYPE: "project"
+...
+  NIGHTWATCH_TESTS: "--tag my_module"
+...
+  PHP_CODE: "${WEB_ROOT}/modules/custom"
 ```
 
-Create a branch **testing** and check the pipeline.
+Create a branch **testing**
 
-If you want to choose when to run the CI, for example on a branch master or on a tag, adapt the section with
+Push to **testing** and Check your project pipeline or
+[Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines)
+
+If you want to choose when to run the CI, for example on a branch master or on a
+tag, adapt the section with:
 
 ```yaml
 .test_except_only: &test_except_only
@@ -70,75 +83,59 @@ If you want to choose when to run the CI, for example on a branch master or on a
     - tags
 ```
 
-### Use Gitlab CI to test your Drupal project
+### Use Gitlab CI to test your full Drupal project
 
-Copy `gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal project (same level as `web/` folder).
+Assuming your project include a `composer.json` file from a Drupal project
+template.
 
-Put some code in your Drupal `modules/custom` and `themes/custom` folders or use
-included demo code in `web/`
-[Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines) or push to master!
+Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
+project (same level as `composer.json` file).
 
-As an example you can check my project on a Drupal 8 template: [https://gitlab.com/mog33/drupal-composer-advanced-template](Drupal 8 project template)
+Put some code in your Drupal `web/modules/custom` and `web/themes/custom`
+folders or use included demo code in `web/`
+
+[Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines)
+or push to master!
+
+As an example you can check my project on a Drupal 8 template:
+[Drupal 8 project template](https://gitlab.com/mog33/drupal-composer-advanced-template)
 
 ## Basic usage
 
-**Note**: The `.gitlab-ci.yml` file is a bit big, this is meant to be a starting
-point for working jobs with [Drupal 8](https://www.drupal.org), feel free to
-cherry pick what you need but be careful about dependencies between some jobs.
+**Note**: The `.gitlab-ci.yml` file is meant to be a starting point for working
+jobs with [Drupal 8](https://www.drupal.org), feel free to cherry pick what you
+need but be careful about dependencies between some jobs.
 
 If your commit message contains **[ci skip]** or **[skip ci]**, using any
 capitalization, the commit will be created but the pipeline will be skipped.
-
-### Drupal 8 code
-
-There is currently 2 ways to use this Gitlab-ci sample, there is some tags in the
-`.gitlab-ci.yml` for sections to edit.
-
-For any scenario you need to configure / adapt or delete the deploy part, search
-`[DEPLOY]` sections in `.gitlab-ci.yml`.
-
-#### (Default) No composer.json file and base project is Drupal composer template
-
-You are using this project side of your custom modules / themes **WITHOUT** a
-composer.json file for Drupal. Then the ci process will install latest version of
-[Drupal composer template project](https://github.com/drupal-composer/drupal-project)
-for you.
-
-This is a good way to only test your custom code or theme.
-
-- Push something to master, create a _testing_ branch, check the CI pipeline!
-
-#### Included composer.json file for your project
-
-You are using this project side of your _custom modules / themes / profile_
-**WITH** a composer.json file, preferably based on [Drupal composer template project](https://github.com/drupal-composer/drupal-project)
-but can work with other distributions.
-
-- You need to switch the CI action that manage the installation of Drupal search
-  `[COMPOSER.JSON]` sections.
-- Optional: Set properly `WEB_ROOT` if not `./web/`
 
 ### Rules for linting / Code standards / QA
 
 All rules match mostly a Drupal 8 project.
 
-To adapt some rules, first look at `.phpqa.yml`, `.phpmd.xml` and `.sass-lint.yml` files with `.gitlab-ci.yml`.
+To adapt some rules, first look at `.phpqa.yml`, `.phpmd.xml` and
+`.sass-lint.yml` files with `.gitlab-ci.yml`.
 
 More options see:
 
 - [Phpqa configuration](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
 - [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
 
-Eslint is based on the official [Drupal 8 eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
+Eslint is based on the official
+[Drupal 8 eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
 
-Stylelint is based on the official [Drupal 8 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
+Stylelint is based on the official
+[Drupal 8 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
-[Sass-lint](./.sass-lint.yml) is based on [Wolox](https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml)
+[Sass-lint](.gitlab-ci/.sass-lint.yml) is based on
+[Wolox](https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml)
 
 ### PHPunit tests for Drupal 8
 
-The pipeline in this project support Unit, Kernel, Functional, [Functional Javascript](https://www.drupal.org/docs/8/phpunit/phpunit-javascript-testing-tutorial)
-tests in Drupal 8, see [Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
+The pipeline in this project support Unit, Kernel, Functional,
+[Functional Javascript](https://www.drupal.org/docs/8/phpunit/phpunit-javascript-testing-tutorial)
+tests in Drupal 8, see
+[Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
 For Drupal 8 (since 8.6) [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
 is working.
@@ -190,68 +187,33 @@ quality and analysis tools:
 
 ## Running the jobs locally with Docker
 
-You can perform most of the tests locally (on `*Unix`) without installing any tool or Drupal code using included [docker-compose.yml](docker-compose.yml) file in this project, require:
+You can perform most of the tests locally (on `*Unix`) without installing any
+tool or Drupal code using included [docker-compose.yml](tests/docker-compose.yml)
+file in this project, require:
 
 - [Docker engine 18+](https://docs.docker.com/install)
-- [Docker compose 1.23+](https://docs.docker.com/compose/install)
+- [Docker compose 1.24+](https://docs.docker.com/compose/install)
 
-Default scenario is to have only your custom code modules / themes in a `/web` folder, from there run
+Default scenario is to have only your custom code modules / themes in a `/web`
+folder, then run:
 
 ```bash
-docker-compose up -d
+docker-compose -f tests/docker-compose.yml up -d
 ```
 
-If you include your own `composer.json` file to include _Drupal_, you must first install the Drupal code (`composer install`) and edit the [docker-compose.yml](docker-compose.yml) to use an image without Drupal and fix the code paths.
+If you include your own `composer.json` file for_Drupal_, you must edit the
+[docker-compose.yml](tests/docker-compose.yml) to use an image without Drupal
+and [.docker-compose.env](tests/.docker-compose.env).
 
 An helper bash script can help you run the tests using docker, this is a copy
 of the jobs from the [.gitlab-ci.yml](.gitlab-ci.yml) file.
 
-The script will copy configuration files from this folder and ensure folders to run the tests properly.
+The script will copy configuration files from this folder and ensure folders to
+run the tests properly.
 
 ```bash
-test/run-tests-ci-locally.sh all
+tests/run-tests-ci-locally.sh all
 ```
-
-## Openstack runner
-
-If you have access to _openstack_ you can use the cloud configuration script in `openstack/` to quickly set-up a VM for a Gitlab runner.
-
-Get your runner token on Gitlab (_>> Settings >> CI / CD >> Runners settings_)
-
-Create the instance on openstack, ssh and run:
-
-```bash
-sudo gitlab-runner register -n \
-  --executor docker \
-  --description "My first runner" \
-  --docker-image "docker:stable" \
-  --docker-privileged \
-  --url https://MY_GITLAB_URL \
-  --registration-token YOUR_RUNNER_TOKEN_ON_GITLAB
-```
-
-## Testing your jobs with gitlab-runner
-
-If you have access to a local [https://docs.gitlab.com/runner/#install-gitlab-runner](Gitlab-runner), you can run a single job (if don't need a build)
-
-```bash
-sudo gitlab-runner exec docker 'code quality'
-```
-
-More information on the documentation:
-
-- [Gitlab-runner-exec](https://docs.gitlab.com/runner/commands/#gitlab-runner-exec)
-
-In the same time using the variable `CI_DEBUG_TRACE` in any job can help you.
-
-## Advanced usage
-
-If you want to test your Drupal from an existing configuration, you have to create a
-`./config/sync` folder with your configuration and set _SETUP_FROM_CONFIG_ in `.gitlab-ci.yml`.
-
-----
-
-Want some help implementing this on your project? I provide Drupal 8 expertise as a freelance, just [contact me](https://developpeur-drupal.com/en).
 
 ## Credits
 
@@ -261,3 +223,8 @@ A lot of help and inspiration from those wonderful projects:
 - [https://github.com/Lullabot/drupal8ci](https://github.com/Lullabot/drupal8ci)
 - [https://gitlab.com/Lullabot/d8cidemo/tree/gitlab](https://gitlab.com/Lullabot/d8cidemo/tree/gitlab)
 - [https://github.com/manumilou/gitlab-ci-example-drupal](https://github.com/manumilou/gitlab-ci-example-drupal)
+
+----
+
+Want some help implementing this on your project? I provide Drupal 8 expertise
+as a freelance, just [contact me](https://developpeur-drupal.com/en).

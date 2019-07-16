@@ -44,8 +44,8 @@ class RoboFile extends \Robo\Tasks {
    * Drupal docroot folder.
    *
    * @var string
-   *   The docroot folder. This can be overridden by specifying a $DOC_ROOT
-   *   environment variable.
+   *   The docroot folder of Drupal. This can be overridden by specifying a
+   *   $DOC_ROOT environment variable.
    */
   protected $docRoot = '/var/www/html';
 
@@ -53,8 +53,8 @@ class RoboFile extends \Robo\Tasks {
    * Drupal webroot folder.
    *
    * @var string
-   *   The webroot folder. This can be overridden by specifying a $WEB_ROOT
-   *   environment variable.
+   *   The webroot folder of Drupal. This can be overridden by specifying a
+   *   $WEB_ROOT environment variable.
    */
   protected $webRoot = '/var/www/html';
 
@@ -139,6 +139,9 @@ class RoboFile extends \Robo\Tasks {
     if (getenv('CI_PROJECT_DIR')) {
       $this->ciProjectDir = getenv('CI_PROJECT_DIR');
     }
+    if (empty($this->ciProjectDir)) {
+      $this->ciProjectDir = getcwd();
+    }
     if (getenv('CI_PROJECT_NAME')) {
       $this->ciProjectName = getenv('CI_PROJECT_NAME');
     }
@@ -173,27 +176,33 @@ class RoboFile extends \Robo\Tasks {
     if (getenv('INSTALL_DRUPAL')) {
       $this->installDrupal = getenv('INSTALL_DRUPAL');
     }
-
   }
 
   /**
    * Updates Composer dependencies.
+   * 
+   * @param string|null $dir
+   *   (optional) Working dir for this task.
    */
   public function updateDependencies($dir = null) {
     if (!$dir) {
       $dir = $this->docRoot;
     }
+
     // The git checkout includes a composer.lock, and running Composer update
     // on it fails for the first time.
     $this->taskFilesystemStack()->remove('composer.lock')->run();
     $task = $this->taskComposerUpdate()
+      ->workingDir($dir)
       ->optimizeAutoloader()
       ->noInteraction()
       ->ignorePlatformRequirements()
-      ->option('no-suggest')
-      ->option('profile');
+      ->option('no-suggest');
     if ($this->verbose) {
       $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--quiet');
     }
     if ($this->noAnsi) {
       $task->noAnsi();
@@ -203,16 +212,19 @@ class RoboFile extends \Robo\Tasks {
 
   /**
    * Download Drupal 8 project with Composer.
+   *
+   * @param string|null $destination
+   *   (optional) Where is copied the downloaded Drupal.
    */
-  public function downloadDrupalProject($replace = true, $destination = NULL) {
+  public function downloadDrupalProject($destination = null) {
 
     $tempnam = tempnam(sys_get_temp_dir(), 'drupal.');
     $archive = $tempnam . '.zip';
 
     if (!$destination) {
-      $destination = $this->docRoot;
+      $destination = $this->ciProjectDir;
     }
-    $tmp_destination = $destination. '/drupal';
+    $tmp_destination = 'tmp_drupal';
 
     $client =  new Client();
     $remote = 'https://github.com/drupal-composer/drupal-project/archive/8.x.zip';
@@ -221,62 +233,92 @@ class RoboFile extends \Robo\Tasks {
     $this->say('Downloading Drupal 8 project...');
     $client->get($remote, ['save_to' => $archive]);
 
-    if (file_exists($archive)) {
-      if (file_exists($tmp_destination)) {
-        $this->taskFilesystemStack()
-          ->remove($tmp_destination)
-          ->run();
-      }
-      $this->taskExtract($archive)
-        ->to($tmp_destination)
+    if (!file_exists($archive)) {
+      $this->io()->warning('Failed to download Drupal project!');
+      exit();
+    }
+
+    if (file_exists($tmp_destination)) {
+      $this->taskFilesystemStack()
+        ->remove($tmp_destination)
         ->run();
+    }
 
-      # Replace existing Drupal.
-      if ($replace) {
-        $this->taskFilesystemStack()
-          // ->remove($destination)
-          // ->mkdir($destination)
-          ->mirror($tmp_destination, $destination)
-          ->run();
-      }
+    $this->taskExtract($archive)
+      ->to($tmp_destination)
+      ->run();
 
+    // Remove unused files.
+    $files = [
+      $tmp_destination . '/README.md',
+      $tmp_destination . '/LICENSE',
+      $tmp_destination . '/.gitignore',
+      $tmp_destination . '/.travis.yml',
+      $tmp_destination . '/phpunit.xml.dist',
+    ];
+    $this->taskFilesystemStack()
+      ->remove($files)
+      ->run();
+
+    $this->mirror($tmp_destination, $destination);
+    $this->taskFilesystemStack()
+      ->remove($tmp_destination)
+      ->run();
+
+    if (!file_exists($destination . '/web/index.php')) {
+      $this->composerInstall($destination);
     }
     else {
-      $this->io()->warning('Failed to download Drupal project!');
+      $this->say("Drupal already installed!");
+      $this->updateDependencies($destination);
     }
   }
 
   /**
    * Install Vanilla Drupal 8 project with Composer.
+   *
+   * @param string|null $destination
+   *   (optional) Where is copied the downloaded Drupal.
    */
   public function createDrupalProject($destination = null) {
     if (!$destination) {
-      $destination = $this->docRoot();
+      $destination = $this->docRoot;
     }
-    if (file_exists($destination)) {
+    $tmp_destination = 'tmp_drupal';
+
+    if (file_exists($tmp_destination)) {
       $this->taskFilesystemStack()
-        ->remove($destination)
-        ->mkdir($destination)
+        ->remove($tmp_destination)
         ->run();
     }
+
     $task = $this->taskComposerCreateProject()
       ->source('drupal-composer/drupal-project:8.x-dev')
-      ->target($destination)
+      ->target($tmp_destination)
       ->preferDist()
       ->noInteraction()
-      ->ignorePlatformRequirements()
-      ->option('profile');
+      ->ignorePlatformRequirements();
     if ($this->verbose) {
       $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--quiet');
     }
     if ($this->noAnsi) {
       $task->noAnsi();
     }
     $task->run();
+
+    // Copy to the destination.
+    $this->mirror($tmp_destination, $destination);
+    
   }
 
   /**
    * Download Drupal from a composer.json file.
+   *
+   * @param string|null $dir
+   *   (optional) Working dir for this task.
    */
   public function composerInstall($dir = null) {
     if (!$dir) {
@@ -287,10 +329,12 @@ class RoboFile extends \Robo\Tasks {
       ->preferDist()
       ->noInteraction()
       ->ignorePlatformRequirements()
-      ->option('no-suggest')
-      ->option('profile');
+      ->option('no-suggest');
     if ($this->verbose) {
       $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--quiet');
     }
     if ($this->noAnsi) {
       $task->noAnsi();
@@ -356,10 +400,7 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Status of Drupal.
-   *
-   * @return string
-   *   Drupal bootstrap result.
+   * Check if Drush is here.
    */
   public function checkDrush() {
     $this->ensureDrush();
@@ -486,6 +527,12 @@ class RoboFile extends \Robo\Tasks {
    * Depending the type of project, composer will install the codebase from a 
    * composer.json, or a Drupal project template will be created, or nothing
    * will be installed and we use an included Drupal.
+   *
+   * @param string|null $dir
+   *   (optional) Working dir for this task.
+   *
+   * @param bool $forceInstall
+   *   (optional) Flag to force the drupal setup.
    */
   public function performBuild($dir = null, $forceInstall = false) {
     $this->say("Perform build for type: $this->ciType");
@@ -503,35 +550,29 @@ class RoboFile extends \Robo\Tasks {
         if ($this->verbose) {
           $task->arg('--verbose');
         }
+        else {
+          $task->arg('--quiet');
+        }
         if ($this->noAnsi) {
           $task->noAnsi();
         }
         $task->run();
+
+        $this->composerInstall();
+
         if (!file_exists($this->webRoot . '/index.php')) {
-          $this->io()->error("Missing Drupal, did you rn composer install?");
+          $this->io()->error("Missing Drupal, did composer install failed?");
         }
         if ($forceInstall || $this->installDrupal) {
           $this->installDrupal();
         }
         break;
       case "custom":
-        // Check if already a Drupal project ready.
-        if (!file_exists($this->docRoot . '/load.environment.php')) {
-          $this->downloadDrupalProject();
-        }
-        else {
-          $this->say("[SKIP] Drupal project already downloaded.");
-        }
-        if (!file_exists($this->webRoot . '/index.php')) {
-          $this->composerInstall();
-        }
-        else {
-          $this->say("[SKIP] Drupal already downloaded.");
-        }
+        $this->downloadDrupalProject();
       break;
       case "module":
       case "theme":
-      $this->say("[SKIP] No needed build.");
+        $this->say("[SKIP] No needed build.");
         break;
       default:
         $this->io()->error("Invalid ci type: $this->ciType");
@@ -539,43 +580,62 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Symlink our module/theme in the Drupal.
+   * Symlink our module/theme in the Drupal or the project.
    */
-  public function symlinkFolders() {
-    $this->say("Symlink folders for type: $this->ciType");
+  public function prepareFolders() {
+    $this->say("Prepare folders for type: $this->ciType");
 
     // Handle CI values.
     switch($this->ciType) {
-      case "project":
       case "custom":
+        // Root is the Drupal with a web/ folder.
+        $targetFolder = $this->docRoot;
+        $folder = $this->ciProjectDir;
+        if (!file_exists($this->webRoot . '/index.php')) {
+          $this->mirror($folder, $this->docRoot);
+        }
+        else {
+          $this->say("[SKIP] Drupal exist in: $this->webRoot/index.php");
+        }
+        break;
+      case "project":
         // Root contain a web/ folder, we symlink each folders.
         $targetFolder = $this->webRoot . '/modules/custom';
         $folder = $this->ciProjectDir . '/web/modules/custom';
-        if (file_exists($folder)) {
-          $this->linkDrupal($folder, $targetFolder, $targetFolder);
-        }
+        $this->symlink($folder, $targetFolder);
         $targetFolder = $this->webRoot . '/themes/custom';
         $folder = $this->ciProjectDir . '/web/themes/custom';
-        if (file_exists($folder)) {
-          $this->linkDrupal($folder, $targetFolder, $targetFolder);
-        }
+        $this->symlink($folder, $targetFolder);
         break;
       case "module":
       case "theme":
         // Root contain the theme / module, we symlink with project name.
-        $targetFolder = $this->webRoot . '/' . $this->ciType . 's/custom';
-        $target = $targetFolder . '/' . $this->ciProjectName;
-        $this->linkDrupal($this->ciProjectDir, $targetFolder, $target);
+        $folder = $this->ciProjectDir;
+        $target = $this->webRoot . '/' . $this->ciType . 's/custom';
+        $this->symlink($folder, $target);
         break;
     }
   }
 
-  private function linkDrupal($folder, $targetFolder, $target) {
-    if (file_exists($folder) && !file_exists($target)) {
-      $this->say("Symlink $folder to $target");
-      // Symlink our folder in the Drupal.
+  /**
+   * Helper to symlink.
+   *
+   * @param string $src
+   *   Folder source.
+   *
+   * @param string $target
+   *   Symlink target.
+   */
+  private function symlink($src, $target) {
+    if (file_exists($target)) {
+      $this->io()->error("Existing target: $target");
+    }
+    if (file_exists($src) && !file_exists($target)) {
+
+      $this->say("Symlink $src to $target");
+      // Symlink our folder in the target.
       $this->taskFilesystemStack()
-        ->symlink($folder, $target)
+        ->symlink($src, $target)
         ->run();
     }
     else {
@@ -584,7 +644,34 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
+   * Helper to mirror files and folders.
+   *
+   * @param string $src
+   *   Folder source.
+   *
+   * @param string $target
+   *   Folder target.
+   */
+  private function mirror($src, $target) {
+    if (!file_exists($src)) {
+      $this->io()->error("Missing src folder: $src");
+    }
+    if (!file_exists($target)) {
+      $this->io()->error("Missing target folder: $target");
+    }
+
+    $this->say("Mirror $src to $target");
+    // Mirror our folder in the target.
+    $this->taskFilesystemStack()
+      ->mirror($src, $target)
+      ->run();
+  }
+
+  /**
    * Return drush with default arguments.
+   *
+   * @param string $cmd
+   *   (Optional) Folder source.
    *
    * @return \Robo\Task\Base\Exec
    *   A drush exec command.
@@ -613,8 +700,8 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Return drush with default arguments.
    *
-   * @return \Robo\Task\Base\Exec
-   *   A drush exec command.
+   * @param string|null $dir
+   *   (optional) Working dir for this task.
    */
   protected function ensureDrush($dir = null) {
     // if (!file_exists($this->docRoot . '/vendor/bin/drush')) {

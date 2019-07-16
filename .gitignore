@@ -25,7 +25,6 @@
 
 # Ignore downloaded Drupal project.
 composer.*
-/drupal/
 /drush/
 /scripts/
 /web/profiles/
@@ -33,7 +32,6 @@ composer.*
 /web/*.*
 .editorconfig
 .env.example
-.eslintignore
 .gitattributes
 load.*
 
@@ -41,12 +39,6 @@ load.*
 /reports/
 
 # Ignore files created by this project when copying ./gitlab-ci/
-.env.ci
-.phpmd.xml
-.phpqa.yml
-.sass-lint.yml
-.travis.yml
-phpunit.local.xml
-phpunit.xml
-phpunit.xml.dist
 RoboFile.php
+
+/tmp*
