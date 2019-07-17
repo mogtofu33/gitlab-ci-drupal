@@ -572,7 +572,7 @@ class RoboFile extends \Robo\Tasks {
       break;
       case "module":
       case "theme":
-        $this->say("[SKIP] No needed build.");
+        $this->say("[SKIP] No needed build, you can ignore next Gitlab CI warnings on cache and artifacts.");
         break;
       default:
         $this->io()->error("Invalid ci type: $this->ciType");
