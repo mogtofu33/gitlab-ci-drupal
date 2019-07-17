@@ -46,22 +46,24 @@ accounts.
 Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
 module or theme.
 
-Edit`.gitlab-ci.yml` file to match the tests you need, mostly:
+Edit `.gitlab-ci.yml` file to match the tests you need, mainly:
 
 ```yaml
 image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium
-#image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium-no-drupal
 ...
 variables:
-  DRUPAL_VERSION: "8.7"
 ...
   CI_TYPE: "module"
-  # CI_TYPE: "project"
 ...
   NIGHTWATCH_TESTS: "--tag my_module"
 ...
+  WEB_ROOT: "/var/www/html"
+...
   PHP_CODE: "${WEB_ROOT}/modules/custom"
 ```
+
+You can remove the `[DEPLOY]` parts and probably the `Security report` job if
+you don't have dependencies to other projects in your composer.json.
 
 Create a branch **testing**
 
