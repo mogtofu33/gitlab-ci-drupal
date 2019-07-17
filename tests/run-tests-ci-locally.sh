@@ -104,7 +104,12 @@ _tests_prepare() {
   _dkexec apache2-foreground&
 
   # Prepare needed folders, reproduce .test_template
-  _dkexec bash -c "cp -u ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.local.xml ${CI_PROJECT_DIR}/web/core/phpunit.xml"
+  if [ ${CI_TYPE} == 'custom' ];
+  then
+    _dkexec bash -c "cp -u ${CI_PROJECT_DIR}/tests/phpunit.local.xml ${CI_PROJECT_DIR}/web/core/phpunit.xml"
+  else
+    _dkexec bash -c "cp -u ${CI_PROJECT_DIR}/tests/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml"
+  fi
 
   # RoboFile.php is already at root.
   _dkexec mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
@@ -129,12 +134,12 @@ _create_artifacts() {
 
   printf ">>> [NOTICE] Uploading artifacts...\\n"
 
-  if ! [ -f tmp/artifacts.tgz ]
+  if ! [ -f tmp/artifacts.tgz ] && [ -f web/index.php ]
   then
     mkdir -p tmp
     tar -czf tmp/artifacts.tgz vendor web drush scripts composer.json composer.lock .env.example load.environment.php
   else
-    printf ">>> [SKIP] artifacts already exist.\\n"
+    printf ">>> [SKIP] artifacts already exist or not a project.\\n"
   fi
 }
 
@@ -222,8 +227,6 @@ _nightwatch() {
   _dkexec robo prepare:folders
 
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}
-
-  # _dkexec bash -c "ln -s /var/www/.node/node_modules ${WEB_ROOT}/core/node_modules"
 
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn test:nightwatch ${NIGHTWATCH_TESTS}
