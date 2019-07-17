@@ -420,6 +420,13 @@ Js lint:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}/.eslintignore || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
+    # We grab the latest eslint rules for Drupal 8.
+    - mkdir -p ${WEB_ROOT}/core
+    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.json
+      -o ${WEB_ROOT}/core/.eslintrc.json
+    # Drupal 8.x specific rules override for passing.
+    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
+      -o ${WEB_ROOT}/core/.eslintrc.passing.json
   script:
     # Run the eslint command to generate a report.
     # Terminal result.
@@ -443,6 +450,10 @@ Css lint:
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
+    # We grab the latest stylelint rules for Drupal 8.
+    - mkdir -p ${WEB_ROOT}/core
+    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json
+      -o ${WEB_ROOT}/core/.stylelintrc.json
   script:
     # Css report.
     - stylelint --config-basedir /var/www/.node/node_modules/
@@ -460,13 +471,13 @@ Sass lint:
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
-    - cd ${WEB_ROOT}/core
+    - cd /var/www/.node/
     - npm install --no-audit git://github.com/sasstools/sass-lint.git#develop
   script:
     # Terminal result.
-    - sass-lint --config ${SASS_CONFIG} --verbose --no-exit
+    - /var/www/.node/node_modules/.bin/sass-lint --config ${SASS_CONFIG} --verbose --no-exit
     # Html report.
-    - sass-lint --config ${SASS_CONFIG}
+    - /var/www/.node/node_modules/.bin/sass-lint --config ${SASS_CONFIG}
         --verbose
         --no-exit
         --format html
