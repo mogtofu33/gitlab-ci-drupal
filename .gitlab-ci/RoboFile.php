@@ -211,7 +211,10 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Download Drupal 8 project with Composer.
+   * Download Drupal 8 project with Composer and install.
+   *
+   * This is basically the same as create-project. But because this command
+   * need a new folder we use this one to install Drupal in an existing folder.
    *
    * @param string|null $destination
    *   (optional) Where is copied the downloaded Drupal.
@@ -343,7 +346,7 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Install Drupal from a composer.json file.
+   * Setup Drupal or import a db dump if available.
    */
   public function installDrupal() {
     $this->say('Installing Drupal...');
@@ -400,14 +403,7 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Check if Drush is here.
-   */
-  public function checkDrush() {
-    $this->ensureDrush();
-  }
-
-  /**
-   * Dump Drupal DB.
+   * Dump Drupal DB with Drush.
    */
   public function dumpDrupal() {
     if (!file_exists($this->dbDump)) {
@@ -572,7 +568,9 @@ class RoboFile extends \Robo\Tasks {
       break;
       case "module":
       case "theme":
-        $this->say("[SKIP] No needed build, you can ignore next Gitlab CI warnings on cache and artifacts.");
+        if ($this->verbose) {
+          $this->say("[SKIP] No needed build.");
+        }
         break;
       default:
         $this->io()->error("Invalid ci type: $this->ciType");
@@ -594,7 +592,7 @@ class RoboFile extends \Robo\Tasks {
         if (!file_exists($this->webRoot . '/index.php')) {
           $this->mirror($folder, $this->docRoot);
         }
-        else {
+        elseif ($this->verbose) {
           $this->say("[SKIP] Drupal exist in: $this->webRoot/index.php");
         }
         break;
@@ -638,7 +636,7 @@ class RoboFile extends \Robo\Tasks {
         ->symlink($src, $target)
         ->run();
     }
-    else {
+    elseif ($this->verbose) {
       $this->say("[SKIP] Folder already exist: $target");
     }
   }
