@@ -609,7 +609,12 @@ class RoboFile extends \Robo\Tasks {
       case "theme":
         // Root contain the theme / module, we symlink with project name.
         $folder = $this->ciProjectDir;
-        $target = $this->webRoot . '/' . $this->ciType . 's/custom';
+        $target = $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName;
+        // if (file_exists($target)) {
+        //   $this->taskFilesystemStack()
+        //     ->remove($target)
+        //     ->run();
+        // }
         $this->symlink($folder, $target);
         break;
     }
@@ -626,7 +631,7 @@ class RoboFile extends \Robo\Tasks {
    */
   private function symlink($src, $target) {
     if (file_exists($target)) {
-      $this->io()->error("Existing target: $target");
+      $this->say("[SKIP] Existing target: $target, is it a problem?");
     }
     if (file_exists($src) && !file_exists($target)) {
 
