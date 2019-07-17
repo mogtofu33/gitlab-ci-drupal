@@ -18,14 +18,15 @@ Include **Build**,
 - [Quick how to](#quick-how-to)
   - [Use Gitlab CI to test your module](#use-gitlab-ci-to-test-your-module)
   - [Use Gitlab CI to test your Drupal project](#use-gitlab-ci-to-test-your-drupal-project)
-- [Basic usage](#basic-usage)
-  - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
+- [Usage details](#usage-details)
   - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
+  - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
 - [Workflow proposed](#workflow-proposed)
   - [Branch master](#branch-master)
   - [Branch testing](#branch-testing)
-- [Included tools](#included-tools)
+- [CI image including tools](#ci-image-including-tools)
 - [Running the jobs locally with Docker](#running-the-jobs-locally-with-docker)
+- [Future plan](#future-plan)
 - [Credits](#credits)
 
 ## Prerequisites
@@ -46,7 +47,8 @@ accounts.
 Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
 module or theme.
 
-Edit `.gitlab-ci.yml` file to match the tests you need, mainly:
+Edit `.gitlab-ci.yml` file to match the tests you need, search for the text
+`CI_TYPE` and adapt. Basic settings to change are:
 
 ```yaml
 image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium
@@ -55,10 +57,12 @@ variables:
 ...
   CI_TYPE: "module"
 ...
+  # If you have Nightwatch tests you can use a tag.
   NIGHTWATCH_TESTS: "--tag my_module"
 ...
   WEB_ROOT: "/var/www/html"
 ...
+  # Not for testing only for QA.
   PHP_CODE: "${WEB_ROOT}/modules/custom"
 ```
 
@@ -85,24 +89,35 @@ tag, adapt the section with:
     - tags
 ```
 
+If you want only testing and not QA or lint, look for the text `[TESTING]`.
+
 ### Use Gitlab CI to test your full Drupal project
 
-Assuming your project include a `composer.json` file from a Drupal project
-template.
+Assuming your project include a `composer.json` file from the [Drupal project
+template](https://github.com/drupal-composer/drupal-project).
+
+Could work with other distributions or project but this is not tested yet.
 
 Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
 project (same level as `composer.json` file).
 
-Put some code in your Drupal `web/modules/custom` and `web/themes/custom`
-folders or use included demo code in `web/`
+Put your code in the `web/modules/custom` and `web/themes/custom`
+folders of your project.
 
+Create a branch **testing**
+
+Push to **testing** and Check your project pipeline or
 [Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines)
-or push to master!
+
+Create a branch **master** and push, see the pipeline running!
 
 As an example you can check my project on a Drupal 8 template:
 [Drupal 8 project template](https://gitlab.com/mog33/drupal-composer-advanced-template)
 
-## Basic usage
+See next part for more details on adapting the `.gitlab-ci.yml` file to your
+project.
+
+## Usage details
 
 **Note**: The `.gitlab-ci.yml` file is meant to be a starting point for working
 jobs with [Drupal 8](https://www.drupal.org), feel free to cherry pick what you
@@ -111,9 +126,25 @@ need but be careful about dependencies between some jobs.
 If your commit message contains **[ci skip]** or **[skip ci]**, using any
 capitalization, the commit will be created but the pipeline will be skipped.
 
+Look in `.gitlab-ci.yml` for the text `[CI_TYPE] [DEPLOY] [TESTING]` as a first
+step of editing to match your project.
+
+I use [Robo.li](https://robo.li/) with this [RoboFile](.gitlab-ci/RoboFile.php)
+for running composer, phpunit and some specific tasks.
+
+### PHPunit tests for Drupal 8
+
+The pipeline in this project support Unit, Kernel, Functional,
+[Functional Javascript](https://www.drupal.org/docs/8/phpunit/phpunit-javascript-testing-tutorial)
+tests in Drupal 8, see
+[Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
+
+For Drupal 8 (since 8.6) [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
+is working.
+
 ### Rules for linting / Code standards / QA
 
-All rules match mostly a Drupal 8 project.
+All rules match a [Drupal 8](https://www.drupal.org) project.
 
 To adapt some rules, first look at `.phpqa.yml`, `.phpmd.xml` and
 `.sass-lint.yml` files with `.gitlab-ci.yml`.
@@ -131,16 +162,6 @@ Stylelint is based on the official
 
 [Sass-lint](.gitlab-ci/.sass-lint.yml) is based on
 [Wolox](https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml)
-
-### PHPunit tests for Drupal 8
-
-The pipeline in this project support Unit, Kernel, Functional,
-[Functional Javascript](https://www.drupal.org/docs/8/phpunit/phpunit-javascript-testing-tutorial)
-tests in Drupal 8, see
-[Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
-
-For Drupal 8 (since 8.6) [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
-is working.
 
 ## Workflow proposed
 
@@ -161,7 +182,7 @@ You can adapt _only_ and _except_ for your own workflow, see
 
 [![pipeline_testing](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/612e6445d2e4af2e8235d8515fdada08/pipeline_testing.png)](https://gitlab.com/mog33/gitlab-ci-drupal/pipelines/47487091)
 
-## Included tools
+## CI image including tools
 
 All tools are included in a specific [docker image](https://gitlab.com/mog33/drupal8ci).
 
@@ -216,6 +237,23 @@ run the tests properly.
 ```bash
 tests/run-tests-ci-locally.sh all
 ```
+
+## Future plan
+
+You want to help me make this better? Good! just PR!
+
+I would like to:
+
+- Move to Nightwatch 1+ when this [issue](https://www.drupal.org/project/drupal/issues/3059356)
+resolved and on Drupal core.
+
+- Add a Drupal dev version so you can test your module for the next version.
+
+- Add a matrix option like Travis to test against multiple Php versions and
+databases
+
+- Test if all of this is working with some distributions like Lightning or
+Varbase
 
 ## Credits
 

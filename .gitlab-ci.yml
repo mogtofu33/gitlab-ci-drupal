@@ -14,7 +14,10 @@
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
 
-# For a module or theme.
+# [CI_TYPE] Select the base image for all tests and actions.
+
+# For a module or theme, this image include Drupal from the official Docker
+# image with tools for CI.
 # image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium
 
 # For a project including a composer.json file.
@@ -23,17 +26,18 @@ image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium-no-drupal
 variables:
   ##############################################################################
   #
-  # Make CI more verbose in case of problem.
+  # Make CI very verbose in case of problem.
   # CI_DEBUG_TRACE: "1"
   #
-  # Verbose scripts.
+  # Verbose scripts, mostly composer and phpunit. 1|0.
   VERBOSE: "1"
+  # No ansi flag for composer.
   NO_ANSI: "1"
 
   # Minor Drupal version to work with.
   DRUPAL_VERSION: "8.7"
 
-  # Select if you are using CI to test, options are:
+  # [CI_TYPE] Select if you are using CI to test, options are:
   #   project
   #     A full Drupal project with a composer.json file.
   #   module
@@ -46,25 +50,32 @@ variables:
   #     this module.
   CI_TYPE: "custom"
 
+  # Path is relative to project root, for included Drupal in the
+  # image, DOC_ROOT and WEB_ROOT must be the same. For a project based on Drupal
+  # project this is 'web'. Can be 'docroot' on some distributions.
+  #
+  # If using the image with Drupal for a module or a theme.
+  # WEB_ROOT: "/var/www/html"
+  #
+  # [CI_TYPE] If using a Drupal project with a composer.json or custom.
+  WEB_ROOT: "/var/www/html/web"
+
+  # Do not need editing when using ci image.
+  DOC_ROOT: "/var/www/html"
+
   # Nightwatch.js tests to run, only tag, core, all except core.
   # see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
   # Add --verbose for a full log from Nightwatch if it fail.
   # NIGHTWATCH_TESTS: "--tag my_module_tags"
   NIGHTWATCH_TESTS: "--skiptags core"
 
-  # Phpunit tests to run, only custom code or empty for all code.
-  # see .gitlab-ci/phpunit.xml for settings.
+  # Phpunit tests to run, only custom code or empty for all 
+  # (included Drupal) see .gitlab-ci/phpunit.xml for settings.
   PHPUNIT_TESTS: "custom"
 
   # All reports will be available in artifacts from this folder.
+  # Do not need any editing as it's for CI only.
   REPORT_DIR: "reports"
-
-  # [COMPOSER.JSON] Path is relative to project root, for included Drupal in the
-  # image, DOC_ROOT and WEB_ROOT must be the same. For a project based on Drupal
-  # project this is 'web'. Can be 'docroot' on some distributions.
-  DOC_ROOT: "/var/www/html"
-  # WEB_ROOT: "/var/www/html"
-  WEB_ROOT: "/var/www/html/web"
 
   ##############################################################################
   # [TESTING] Next part can be removed for testing only.
@@ -213,6 +224,10 @@ stages:
 ################################################################################
 
 # Build job for all tests.
+# For a project, the build part use composer install to get the Drupal code.
+# For a theme this can be used with a specific script to build something
+# (grunt, webpack, yarn...). You must add your script and adapt the cache and
+# artifacts.
 Build:
   stage: build
   tags:
@@ -223,6 +238,10 @@ Build:
     # check Drupal codebase and composer install if needed.
     - robo perform:build
   <<: *test_variables
+  # [CI_TYPE] When using included Drupal for a module or a theme, the
+  # cache and artifacts can be removed as we don't install the Drupal with
+  # composer.
+  #
   # On build we cache the composer and web folders to speed up the tests.
   cache:
     key: drupal-$CI_BUILD_REF_NAME
@@ -238,7 +257,6 @@ Build:
       - scripts
       - composer.json
       - composer.lock
-      # [COMPOSER.JSON] Specific to drupal-composer/drupal-project.
       - .env.example
       - load.environment.php
     expire_in: 1 day
@@ -302,10 +320,10 @@ Nightwatch Js:
     - patch -N -p1 < 3017176-7.patch || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
-    - cd ${WEB_ROOT}/core
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}
+    - chmod -R 777 ${DOC_ROOT}
+    - cd ${WEB_ROOT}/core
     - yarn install
-    # - yarn upgrade
     - yarn test:nightwatch ${NIGHTWATCH_TESTS}
   dependencies:
     - Build
@@ -313,9 +331,9 @@ Nightwatch Js:
     <<: *default_artifacts
     paths:
       - ${REPORT_DIR}
-  allow_failure: true
 
-# [TESTING] Next part can be removed for testing only.
+# [CI_TYPE] [TESTING] Next part can be removed for testing only or no
+# dependencies for a single module / theme.
 Security report:
   stage: tests
   tags:
@@ -498,7 +516,7 @@ Php stats:
         --tools phploc,pdepend
         ${PHPQA_PHP_CODE}
 
-# Same reports for all Drupal code including our custom.
+# [CI_TYPE] Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
 .Php metrics All:
   <<: *metrics_template
@@ -534,7 +552,7 @@ Php stats:
 
 ################################################################################
 # [DEPLOY] Deploy jobs definition.
-#
+# [CI_TYPE] Next part could be used only for a project with deploy.
 # [TESTING] Next part can be removed for testing only.
 #
 # This is a sample workflow, testing is run on master and testing branches
