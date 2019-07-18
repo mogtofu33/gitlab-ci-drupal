@@ -536,7 +536,7 @@ class RoboFile extends \Robo\Tasks {
     $this->taskFilesystemStack()->mkdir($this->docRoot . '/tests')->run();
 
     $this->taskFilesystemStack()
-      ->copy('.gitlab-ci/behat.yml', $this->docRoot . '/tests/behat.yml', true)
+      ->copy('tests/behat.yml', $this->docRoot . '/tests/behat.yml', true)
       ->run();
 
     if (!file_exists($this->docRoot . '/vendor/bin/behat')) {
