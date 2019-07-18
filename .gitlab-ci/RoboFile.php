@@ -532,7 +532,8 @@ class RoboFile extends \Robo\Tasks {
    * Runs Behat tests from a tests folder.
    */
   public function testBehat() {
-    $this->taskFilesystemStack()->mkdir($this->reportDir . '/behat')->run();
+    $reportDir = $this->ciProjectDir . '/' . $this->reportDir . '/behat';
+    $this->taskFilesystemStack()->mkdir($reportDir)->run();
     $this->taskFilesystemStack()->mkdir($this->docRoot . '/tests')->run();
 
     $this->taskFilesystemStack()
@@ -561,7 +562,7 @@ class RoboFile extends \Robo\Tasks {
       ->config('tests/behat.yml')
       ->noInteraction()
       ->option('format', 'html', '=')
-      ->option('out', $this->reportDir . '/behat', '=');
+      ->option('out', $reportDir, '=');
     if ($this->verbose) {
       $task->verbose('v');
     }
