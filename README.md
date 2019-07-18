@@ -19,6 +19,7 @@ Include **Build**,
   - [Use Gitlab CI to test your module](#use-gitlab-ci-to-test-your-module)
   - [Use Gitlab CI to test your Drupal project](#use-gitlab-ci-to-test-your-drupal-project)
 - [Usage details](#usage-details)
+  - [Behat tests for Drupal 8](#behat-tests-for-drupal-8)
   - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
   - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
 - [Workflow proposed](#workflow-proposed)
@@ -68,6 +69,10 @@ variables:
 
 You can remove the `[DEPLOY]` parts and probably the `Security report` job if
 you don't have dependencies to other projects in your composer.json.
+
+To use Behat tests, you must copy the `tests/` that include a `behat.yml`
+configuration to work with this project. If not you can remove the `Behat tests`
+job.
 
 Create a branch **testing**
 
@@ -131,6 +136,20 @@ step of editing to match your project.
 
 I use [Robo.li](https://robo.li/) with this [RoboFile](.gitlab-ci/RoboFile.php)
 for running composer, phpunit and some specific tasks.
+
+### Behat tests for Drupal 8
+
+Tests for [Behat](http://behat.org) are executed from the `tests/` folder of the
+project.
+
+Copy this folder on the root of your project and adapt `tests/features` to your
+tests.
+
+For Behat, Selenium is not needed thanks to the
+[Behat Chrome extension.](https://gitlab.com/DMore/behat-chrome-extension.git).
+
+Html output of the Behat report is done thanks to
+[Behat Html formatter plugin](https://github.com/dutchiexl/BehatHtmlFormatterPlugin).
 
 ### PHPunit tests for Drupal 8
 
@@ -245,12 +264,12 @@ You want to help me make this better? Good! just PR!
 I would like to:
 
 - Move to Nightwatch 1+ when this [issue](https://www.drupal.org/project/drupal/issues/3059356)
-resolved and on Drupal core.
+resolved and on Drupal core. And then get rid of Selenium!
 
 - Add a Drupal dev version so you can test your module for the next version.
 
 - Add a matrix option like Travis to test against multiple Php versions and
-databases
+databases when [Gitlab-ci support it](https://gitlab.com/gitlab-org/gitlab-ce/issues/49557).
 
 - Test if all of this is working with some distributions like Lightning or
 Varbase
