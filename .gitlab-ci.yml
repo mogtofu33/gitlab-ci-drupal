@@ -365,7 +365,7 @@ Behat tests:
       --no-sandbox --disable-gpu --headless
       --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
       --window-size=1920,1080&
-    - curl -s http://localhost:9222/json/version | jq '.'
+    - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
     - robo test:behat
   dependencies:
     - Build
