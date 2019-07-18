@@ -348,6 +348,7 @@ Build:
     paths:
       - ${REPORT_DIR}
 
+# Behat tests from tests/ folder.
 Behat tests:
   stage: tests
   <<: *test_template
@@ -357,12 +358,11 @@ Behat tests:
     - robo install:drupal standard
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
     # Starting Chrome, we are not using Selenium.
-    - /usr/bin/chromium
-      --no-sandbox --disable-gpu --headless
+    - chromium --no-sandbox --disable-gpu --headless
       --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
       --window-size=1920,1080&
-    - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
-    - robo test:behat
+    - sleep 1s && curl -s http://localhost:9222/json/version | jq '.'
+    - robo test:behat ${CI_PROJECT_DIR}/${REPORT_DIR}
   dependencies:
     - Build
 

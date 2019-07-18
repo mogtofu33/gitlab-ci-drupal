@@ -7,9 +7,6 @@ default:
         - Drupal\DrupalExtension\Context\MinkContext
         - Drupal\DrupalExtension\Context\MessageContext
         - Drupal\DrupalExtension\Context\DrushContext
-  # formatters:
-  #   html:
-  #     output_path: /var/www/reports/behat/
 
   extensions:
     DMore\ChromeExtension\Behat\ServiceContainer\ChromeExtension: ~
@@ -36,12 +33,6 @@ default:
       print_args: true
       print_outp: true
       loop_break: true
-
-    # Bex Screenshot
-    # Bex\Behat\ScreenshotExtension:
-    #   image_drivers:
-    #     local:
-    #       screenshot_directory: "/var/www/reports/behat/"
 
     Drupal\DrupalExtension:
       api_driver: 'drupal'
