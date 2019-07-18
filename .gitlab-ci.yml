@@ -358,7 +358,7 @@ Behat tests:
     - robo install:drupal standard
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
     # Starting Chrome, we are not using Selenium.
-    - chromium --no-sandbox --disable-gpu --headless
+    - /usr/bin/chromium --no-sandbox --disable-gpu --headless
       --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
       --window-size=1920,1080&
     - sleep 1s && curl -s http://localhost:9222/json/version | jq '.'
