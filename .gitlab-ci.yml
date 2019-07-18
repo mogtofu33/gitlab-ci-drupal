@@ -10,9 +10,6 @@
 #
 ################################################################################
 
-include:
-  - local: '/.gitlab-ci/.gitlab-ci-variables.yml'
-
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
@@ -168,7 +165,6 @@ stages:
   except:
     - master
   only:
-    - behat
     - testing
     - tags
 
@@ -280,7 +276,7 @@ Build:
 # Drupal tests see
 # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 
-.Unit and kernel:
+Unit and kernel:
   stage: tests
   <<: *test_template
   script:
@@ -288,7 +284,7 @@ Build:
   dependencies:
     - Build
 
-.Code coverage:
+Code coverage:
   stage: tests
   <<: *test_template
   script:
@@ -298,7 +294,7 @@ Build:
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-.Functional:
+Functional:
   stage: tests
   <<: *test_template
   script:
@@ -311,7 +307,7 @@ Build:
   dependencies:
     - Build
 
-.Functional Js:
+Functional Js:
   stage: tests
   <<: *test_template
   script:
@@ -325,7 +321,7 @@ Build:
     - Build
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-.Nightwatch Js:
+Nightwatch Js:
   stage: tests
   <<: *test_template
   script:
@@ -368,7 +364,7 @@ Behat tests:
 
 # [CI_TYPE] [TESTING] Next part can be removed for testing only or no
 # dependencies for a single module / theme.
-.Security report:
+Security report:
   stage: tests
   tags:
     - docker
@@ -390,7 +386,7 @@ Behat tests:
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
-.Code quality:
+Code quality:
   stage: code quality
   tags:
     - docker
@@ -407,7 +403,7 @@ Behat tests:
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
 
 # Drupal coding standard best practices report.
-.Best practices:
+Best practices:
   stage: code quality
   tags:
     - docker
@@ -444,7 +440,7 @@ Behat tests:
   allow_failure: true
 
 # This is a eslint report based on Drupal 8.x standards.
-.Js lint:
+Js lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -475,7 +471,7 @@ Behat tests:
         ${JS_CODE}
 
 # Drupal 8.x rules used here for stylelint to check css.
-.Css lint:
+Css lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -496,7 +492,7 @@ Behat tests:
       # --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
 
 # This is a sass lint report, default rules used here for Bootstrap based sass.
-.Sass lint:
+Sass lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -542,7 +538,7 @@ Behat tests:
     - robo prepare:folders
 
 # Phpmetrics report, no pass or failure as it's just informative.
-.Php metrics:
+Php metrics:
   <<: *metrics_template
   artifacts:
     <<: *default_artifacts
@@ -554,7 +550,7 @@ Behat tests:
         ${PHPQA_PHP_CODE}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
-.Php stats:
+Php stats:
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -563,7 +559,7 @@ Behat tests:
 
 # [CI_TYPE] Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
-.Php metrics All:
+Php metrics All:
   <<: *metrics_template
   # Need same constraint as Build job.
   <<: *test_except_only
@@ -581,7 +577,7 @@ Behat tests:
     - Build
   when: manual
 
-.Php stats All:
+Php stats All:
   <<: *metrics_template
   # Need same constraint as Build job.
   <<: *test_except_only
@@ -624,7 +620,7 @@ Behat tests:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   when: manual
 
-.Deploy to testing:
+Deploy to testing:
   stage: deploy to testing
   <<: *deploy_template
   only:
@@ -641,7 +637,7 @@ Behat tests:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-.Deploy to staging:
+Deploy to staging:
   stage: deploy to staging
   <<: *deploy_template
   only:
@@ -657,7 +653,7 @@ Behat tests:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-.Deploy to production:
+sDeploy to production:
   stage: deploy to production
   <<: *deploy_template
   only:
