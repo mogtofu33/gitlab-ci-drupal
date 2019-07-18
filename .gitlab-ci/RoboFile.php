@@ -552,6 +552,10 @@ class RoboFile extends \Robo\Tasks {
       $task->run();
     }
 
+    if (!file_exists('/usr/local/bin/behat')) {
+      $this->symlink($this->docRoot . '/vendor/bin/behat', '/usr/local/bin/behat');
+    }
+
     $task = $this->taskBehat()
       ->colors()
       ->dir($this->docRoot)
