@@ -387,7 +387,7 @@ class RoboFile extends \Robo\Tasks {
         $profile = $this->setupProfile;
       }
       $task = $this->drush()
-        ->args('site-install', $$profile)
+        ->args('site-install', $profile)
         ->option('yes')
         ->option('db-url', $this->dbUrl, '=');
     }
