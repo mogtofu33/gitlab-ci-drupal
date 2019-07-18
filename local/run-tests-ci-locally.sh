@@ -18,8 +18,8 @@ _blu=$'\e[1;34m'
 _end=$'\e[0m'
 
 # Grab .docker-compose.env files to simulate CI variables.
-if [ -f "tests/.docker-compose.env" ]; then
-  source tests/.docker-compose.env
+if [ -f "local/.docker-compose.env" ]; then
+  source local/.docker-compose.env
 else
   if [ -f ".docker-compose.env" ]; then
     source .docker-compose.env
@@ -58,7 +58,7 @@ Arguments:
 
   Grouped tests:
     security          Run security tests (if any composer.json file).
-    unit              Run unit tests.
+    unit              Run unit tests + nightwatch + behat.
     lint              Run linters.
     qa                Run code quality.
     metrics           Rum stats and metrics.
@@ -70,6 +70,7 @@ Arguments:
     functional
     functional_js
     nightwatch
+    behat
     code_quality
     best_practices
     eslint
@@ -90,6 +91,9 @@ _status() {
   docker exec -d ci-drupal /scripts/start-selenium-standalone.sh
   sleep 2s
   _dkexec bash -c "curl -s http://localhost:4444/wd/hub/status | jq '.'"
+  docker exec -d ci-drupal bash -c "/usr/bin/chromium --no-sandbox --disable-gpu --headless --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --window-size=1920,1080"
+  sleep 1s
+  _dkexec bash -c "curl -s http://localhost:9222/json/version | jq '.'"
 }
 
 # Replicate Gitlab-ci.yml .test_template
@@ -106,9 +110,9 @@ _tests_prepare() {
   # Prepare needed folders, reproduce .test_template
   if [ ${CI_TYPE} == 'custom' ];
   then
-    _dkexec bash -c "cp -u ${CI_PROJECT_DIR}/tests/phpunit.local.xml ${CI_PROJECT_DIR}/web/core/phpunit.xml"
+    _dkexec bash -c "cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${CI_PROJECT_DIR}/web/core/phpunit.xml"
   else
-    _dkexec bash -c "cp -u ${CI_PROJECT_DIR}/tests/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml"
+    _dkexec bash -c "cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml"
   fi
 
   # RoboFile.php is already at root.
@@ -196,13 +200,12 @@ _functional() {
 
 _functional_js() {
   printf "\\n%s[INFO]%s Perform job 'Functional Js' (functional_js)\\n\\n" "${_blu}" "${_end}"
+  # Starting Selenium.
+  docker exec -d ci-drupal /scripts/start-selenium-standalone.sh
 
   _build
   _tests_prepare
 
-  # Starting Selenium.
-  docker exec -d ci-drupal /scripts/start-selenium-standalone.sh
-  sleep 5s
   _dkexec bash -c "curl -s http://localhost:4444/wd/hub/status | jq '.'"
 
   _dkexec robo test:suite "${PHPUNIT_TESTS}functional-javascript"
@@ -230,6 +233,25 @@ _nightwatch() {
 
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn test:nightwatch ${NIGHTWATCH_TESTS}
+}
+
+_behat() {
+  printf "\\n%s[INFO]%s Perform job 'Behat' (behat)\\n\\n" "${_blu}" "${_end}"
+
+  _build
+  _tests_prepare
+
+  _dkexec bash -c "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
+  _dkexec robo prepare:folders
+  _dkexec robo install:drupal standard
+
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
+
+  # Starting Chrome.
+  docker exec -d ci-drupal bash -c "/usr/bin/chromium --no-sandbox --disable-gpu --headless --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --window-size=1920,1080"
+  _dkexec bash -c "curl -s http://localhost:9222/json/version | jq '.'"
+
+  _dkexec robo test:behat
 }
 
 _security_checker() {
@@ -349,12 +371,11 @@ _nuke() {
   printf "\\n%s[INFO]%s Full reset!\\n" "${_blu}" "${_end}"
   _down
   _clean_full
-  rm -rf tmp
 }
 
 _up() {
-  if [ -f "tests/docker-compose.yml" ]; then
-    docker-compose -f tests/docker-compose.yml up -d
+  if [ -f "local/docker-compose.yml" ]; then
+    docker-compose -f local/docker-compose.yml up -d
   else
     if [ -f "docker-compose.yml" ]; then
       docker-compose up -d
@@ -367,8 +388,8 @@ _up() {
 }
 
 _down() {
-  if [ -f "tests/docker-compose.yml" ]; then
-    docker-compose -f tests/docker-compose.yml down
+  if [ -f "local/docker-compose.yml" ]; then
+    docker-compose -f local/docker-compose.yml down
   else
     if [ -f "docker-compose.yml" ]; then
       docker-compose down
@@ -416,18 +437,10 @@ _clean_unit() {
 
 _all() {
   _security_checker
-  _unit_kernel
-  _code_coverage
-  _functional
-  _functional_js
-  _nightwatch
-  _code_quality
-  _best_practices
-  _eslint
-  _stylelint
-  _sass_lint
-  _phpmetrics
-  _phpstat
+  _unit
+  _qa
+  _lint
+  _metrics
 }
 
 _security() {
@@ -440,6 +453,7 @@ _unit() {
   _functional
   _functional_js
   _nightwatch
+  _behat
 }
 
 _lint() {

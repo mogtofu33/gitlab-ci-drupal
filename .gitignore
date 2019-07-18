@@ -35,8 +35,9 @@ composer.*
 .gitattributes
 load.*
 
-# Ignore reports from this project.
+# Ignore reports and dump from this project.
 /reports/
+/dump/
 
 # Ignore files created by this project when copying ./gitlab-ci/
 RoboFile.php

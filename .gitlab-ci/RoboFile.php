@@ -347,16 +347,19 @@ class RoboFile extends \Robo\Tasks {
 
   /**
    * Setup Drupal or import a db dump if available.
+   *
+   * @param string $profile
+   *   (optional) The profile to install, default to minimal.
    */
-  public function installDrupal() {
+  public function installDrupal($profile = null) {
     $this->say('Installing Drupal...');
 
     if (file_exists($this->dbDump . '/dump.sql')) {
       $this->say("Import dump $this->dbDump/dump.sql");
-      $this->_exec('mysql -hmariadb -udrupal -pdrupal drupal < ' . $this->dbDump . '/dump.sql;');
+      $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump.sql;');
     }
     else {
-      $this->setupDrupal();
+      $this->setupDrupal($profile);
       $this->dumpDrupal();
     }
     $this->checkDrupal();
@@ -364,8 +367,11 @@ class RoboFile extends \Robo\Tasks {
 
   /**
    * Install Drupal from profile or config with config_installer.
+   *
+   * @param string $profile
+   *   (optional) The profile to install, default to minimal.
    */
-  public function setupDrupal() {
+  public function setupDrupal($profile = null) {
     $this->say('Setup Drupal...');
 
     if ($this->setupFromConfig) {
@@ -377,8 +383,11 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
     else {
+      if (!$profile) {
+        $profile = $this->setupProfile;
+      }
       $task = $this->drush()
-        ->args('site-install', $this->setupProfile)
+        ->args('site-install', $profile)
         ->option('yes')
         ->option('db-url', $this->dbUrl, '=');
     }
@@ -495,11 +504,13 @@ class RoboFile extends \Robo\Tasks {
    *
    * @return \Robo\Task\Testing\PHPUnit
    */
-  public function phpUnit($module = null, $testsuite = null) {
+  protected function phpUnit($module = null, $testsuite = null) {
 
     $this->taskFilesystemStack()->mkdir($this->reportDir)->run();
 
-    $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
+    // $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
+    //   ->configFile($this->webRoot . '/core');
+    $task = $this->taskPhpUnit('/var/www/.composer/vendor/bin/phpunit')
       ->configFile($this->webRoot . '/core');
 
     if ($this->verbose) {
@@ -515,6 +526,54 @@ class RoboFile extends \Robo\Tasks {
     }
   
     return $task;
+  }
+
+  /**
+   * Runs Behat tests from a tests folder.
+   *
+   * @param string|null $reportRootDir
+   *   (optional) Report root dir for this task.
+   */
+  public function testBehat($reportRootDir = null) {
+    if (!$reportRootDir) {
+      $reportRootDir = $this->reportDir;
+    }
+    $this->say("[NOTICE] Behat tests on $reportRootDir");
+
+    $this->taskFilesystemStack()->mkdir($reportRootDir . '/behat')->run();
+    $this->taskFilesystemStack()->mkdir($this->docRoot . '/tests')->run();
+
+    $this->taskFilesystemStack()
+      ->copy('tests/behat.yml', $this->docRoot . '/tests/behat.yml', true)
+      ->run();
+
+    if (!file_exists($this->docRoot . '/vendor/bin/behat')) {
+      $task = $this->taskComposerRequire()
+        ->workingDir($this->docRoot)
+        ->dependency('dmore/behat-chrome-extension')
+        ->dependency('bex/behat-screenshot', '^1.2')
+        ->dependency('emuse/behat-html-formatter', '0.1.*')
+        ->dependency('drupal/drupal-extension', '^4.0');
+      if ($this->verbose) {
+        $task->arg('--verbose');
+      }
+      $task->run();
+    }
+
+    if (!file_exists('/usr/local/bin/behat')) {
+      $this->symlink($this->docRoot . '/vendor/bin/behat', '/usr/local/bin/behat');
+    }
+
+    $task = $this->taskBehat()
+      ->dir($this->docRoot)
+      ->config('tests/behat.yml')
+      ->noInteraction()
+      ->option('format', 'html', '=')
+      ->option('out', $reportRootDir . '/behat', '=');
+    if ($this->verbose) {
+      $task->verbose('v');
+    }
+    $task->run();
   }
 
   /**
@@ -610,11 +669,6 @@ class RoboFile extends \Robo\Tasks {
         // Root contain the theme / module, we symlink with project name.
         $folder = $this->ciProjectDir;
         $target = $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName;
-        // if (file_exists($target)) {
-        //   $this->taskFilesystemStack()
-        //     ->remove($target)
-        //     ->run();
-        // }
         $this->symlink($folder, $target);
         break;
     }
@@ -673,42 +727,29 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Return drush with default arguments.
    *
-   * @param string $cmd
-   *   (Optional) Folder source.
-   *
    * @return \Robo\Task\Base\Exec
    *   A drush exec command.
    */
-  public function drush($cmd = null) {
-    // Need some testing.
-    // $this->ensureDrush();
+  public function drush() {
     // Drush needs an absolute path to the docroot.
-    $cmd = $this->taskExec($this->docRoot . '/vendor/bin/drush')
+    $cmd = $this->taskExec('/var/www/.composer/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {
       $cmd->arg('--verbose');
     }
 
-    if ($cmd) {
-      $task = $this->drush()
-        ->arg($cmd)
-        ->run();
-    }
-    else {
-      return $cmd;
-    }
+    return $cmd;
   }
 
   /**
-   * Return drush with default arguments.
+   * Test if drush exist, if not install.
    *
    * @param string|null $dir
    *   (optional) Working dir for this task.
    */
   protected function ensureDrush($dir = null) {
-    // if (!file_exists($this->docRoot . '/vendor/bin/drush')) {
-    if (!file_exists('/usr/local/bin/drush')) {
+    if (!file_exists('/var/www/.composer/vendor/bin/drush')) {
       if (!$dir) {
         $dir = $this->docRoot;
       }
