@@ -197,6 +197,7 @@ stages:
     APACHE_RUN_USER: "www-data"
     APACHE_RUN_GROUP: "www-data"
     SE_OPTS: ""
+    CHROMIUM_OPTS: ""
     BEHAT_PARAMS: >
       {
         "extensions" : {
@@ -204,11 +205,6 @@ stages:
             "image_drivers" : {
               "local" : { "screenshot_directory" : "${REPORT_DIR}/behat" }
             }
-          }
-        },
-        "formatters" : {
-          "html" : {
-            "output_path" : "${REPORT_DIR}/behat/"
           }
         }
       }

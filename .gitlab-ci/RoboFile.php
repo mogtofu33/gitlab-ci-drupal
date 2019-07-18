@@ -560,7 +560,8 @@ class RoboFile extends \Robo\Tasks {
       ->dir($this->docRoot)
       ->config('tests/behat.yml')
       ->noInteraction()
-      ->option('format', 'html', '=');
+      ->option('format', 'html', '=')
+      ->option('out', $this->reportDir . '/behat', '=');
     if ($this->verbose) {
       $task->verbose('v');
     }
