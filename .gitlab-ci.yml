@@ -10,6 +10,9 @@
 #
 ################################################################################
 
+include:
+  - local: '/.gitlab-ci/.gitlab-ci-variables.yml'
+
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
@@ -165,6 +168,7 @@ stages:
   except:
     - master
   only:
+    - behat
     - testing
     - tags
 
@@ -185,6 +189,7 @@ stages:
   variables:
     MYSQL_DATABASE: "drupal"
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+    DB_DUMP: "${CI_PROJECT_DIR}/dump"
     SIMPLETEST_BASE_URL: "http://localhost"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
     BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
@@ -192,6 +197,21 @@ stages:
     APACHE_RUN_USER: "www-data"
     APACHE_RUN_GROUP: "www-data"
     SE_OPTS: ""
+    BEHAT_PARAMS: >
+      {
+        "extensions" : {
+          "Bex\\Behat\\ScreenshotExtension" : {
+            "image_drivers" : {
+              "local" : { "screenshot_directory" : "${REPORT_DIR}/behat" }
+            }
+          }
+        },
+        "formatters" : {
+          "html" : {
+            "output_path" : "${REPORT_DIR}/behat/"
+          }
+        }
+      }
 
 # Testing template for phpunit, this provide Apache / Php.
 .test_template: &test_template
@@ -264,7 +284,7 @@ Build:
 # Drupal tests see
 # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 
-Unit and kernel:
+.Unit and kernel:
   stage: tests
   <<: *test_template
   script:
@@ -272,7 +292,7 @@ Unit and kernel:
   dependencies:
     - Build
 
-Code coverage:
+.Code coverage:
   stage: tests
   <<: *test_template
   script:
@@ -282,7 +302,7 @@ Code coverage:
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-Functional:
+.Functional:
   stage: tests
   <<: *test_template
   script:
@@ -295,7 +315,7 @@ Functional:
   dependencies:
     - Build
 
-Functional Js:
+.Functional Js:
   stage: tests
   <<: *test_template
   script:
@@ -309,7 +329,7 @@ Functional Js:
     - Build
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-Nightwatch Js:
+.Nightwatch Js:
   stage: tests
   <<: *test_template
   script:
@@ -332,9 +352,27 @@ Nightwatch Js:
     paths:
       - ${REPORT_DIR}
 
+Behat tests:
+  stage: tests
+  <<: *test_template
+  script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
+    - robo prepare:folders
+    - robo install:drupal standard
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
+    # Starting Chrome, we are not using Selenium.
+    - /usr/bin/chromium
+      --no-sandbox --disable-gpu --headless
+      --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
+      --window-size=1920,1080
+    - curl -s http://localhost:9222/json/version | jq '.'
+    - robo test:behat
+  dependencies:
+    - Build
+
 # [CI_TYPE] [TESTING] Next part can be removed for testing only or no
 # dependencies for a single module / theme.
-Security report:
+.Security report:
   stage: tests
   tags:
     - docker
@@ -356,7 +394,7 @@ Security report:
 # Automated quality check job when something is pushed/merged on master.
 # We have a limit on errors we accept on the tools, if failed we run a
 # report and stop.
-Code quality:
+.Code quality:
   stage: code quality
   tags:
     - docker
@@ -373,7 +411,7 @@ Code quality:
     - phpqa ${PHPQA_REPORT} ${TOOLS} ${PHPQA_PHP_CODE}
 
 # Drupal coding standard best practices report.
-Best practices:
+.Best practices:
   stage: code quality
   tags:
     - docker
@@ -410,7 +448,7 @@ Best practices:
   allow_failure: true
 
 # This is a eslint report based on Drupal 8.x standards.
-Js lint:
+.Js lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -441,7 +479,7 @@ Js lint:
         ${JS_CODE}
 
 # Drupal 8.x rules used here for stylelint to check css.
-Css lint:
+.Css lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -462,7 +500,7 @@ Css lint:
       # --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}" > ${REPORT_DIR}/css-lint-report.txt
 
 # This is a sass lint report, default rules used here for Bootstrap based sass.
-Sass lint:
+.Sass lint:
   <<: *lint_template
   artifacts:
     <<: *default_artifacts
@@ -508,7 +546,7 @@ Sass lint:
     - robo prepare:folders
 
 # Phpmetrics report, no pass or failure as it's just informative.
-Php metrics:
+.Php metrics:
   <<: *metrics_template
   artifacts:
     <<: *default_artifacts
@@ -520,7 +558,7 @@ Php metrics:
         ${PHPQA_PHP_CODE}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
-Php stats:
+.Php stats:
   <<: *metrics_template
   script:
     - phpqa ${PHPQA_REPORT}
@@ -590,7 +628,7 @@ Php stats:
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
   when: manual
 
-Deploy to testing:
+.Deploy to testing:
   stage: deploy to testing
   <<: *deploy_template
   only:
@@ -607,7 +645,7 @@ Deploy to testing:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-Deploy to staging:
+.Deploy to staging:
   stage: deploy to staging
   <<: *deploy_template
   only:
@@ -623,7 +661,7 @@ Deploy to staging:
     # - ssh -T $USER_NAME@$TESTING_HOST
     #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
 
-Deploy to production:
+.Deploy to production:
   stage: deploy to production
   <<: *deploy_template
   only:

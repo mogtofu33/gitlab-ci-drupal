@@ -1,0 +1,57 @@
+default:
+  suites:
+    default:
+      contexts:
+        - FeatureContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+  # formatters:
+  #   html:
+  #     output_path: /var/www/reports/behat/
+
+  extensions:
+    DMore\ChromeExtension\Behat\ServiceContainer\ChromeExtension: ~
+    Behat\MinkExtension:
+      goutte: ~
+      default_session: goutte
+      javascript_session: chromium
+      browser_name: chrome
+      base_url: http://localhost
+      sessions:
+        chromium:
+          chrome:
+            api_url: http://localhost:9222
+        selenium:
+          selenium2:
+            wd_host: http://browser:4444/wd/hub
+            capabilities: { "browser": "chrome", "version": "*" }
+
+    # Behat HTML formatter.
+    emuse\BehatHTMLFormatter\BehatHTMLFormatterExtension:
+      name: html
+      renderer: Twig,Minimal
+      file_name: index
+      print_args: true
+      print_outp: true
+      loop_break: true
+
+    # Bex Screenshot
+    # Bex\Behat\ScreenshotExtension:
+    #   image_drivers:
+    #     local:
+    #       screenshot_directory: "/var/www/reports/behat/"
+
+    Drupal\DrupalExtension:
+      api_driver: 'drupal'
+      drupal:
+        drupal_root: '/var/www/html/web'
+      region_map:
+        header: "#header"
+        content: "#content"
+        footer: "#footer"
+      selectors:
+        message_selector: '.messages'
+        error_message_selector: '.messages.messages--error'
+        success_message_selector: '.messages.messages--status'
