@@ -361,8 +361,8 @@ Behat tests:
     - /usr/bin/chromium --no-sandbox --disable-gpu --headless
       --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
       --window-size=1920,1080&
-    - sleep 1s && curl -s http://localhost:9222/json/version | jq '.'
-    - robo test:behat ${CI_PROJECT_DIR}/${REPORT_DIR}
+    - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
+    - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   dependencies:
     - Build
 

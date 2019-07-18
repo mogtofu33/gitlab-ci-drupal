@@ -538,7 +538,8 @@ class RoboFile extends \Robo\Tasks {
     if (!$reportRootDir) {
       $reportRootDir = $this->reportDir;
     }
-    
+    $this->say("[NOTICE] Behat tests on $reportRootDir");
+
     $this->taskFilesystemStack()->mkdir($reportRootDir . '/behat')->run();
     $this->taskFilesystemStack()->mkdir($this->docRoot . '/tests')->run();
 
@@ -668,11 +669,6 @@ class RoboFile extends \Robo\Tasks {
         // Root contain the theme / module, we symlink with project name.
         $folder = $this->ciProjectDir;
         $target = $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName;
-        // if (file_exists($target)) {
-        //   $this->taskFilesystemStack()
-        //     ->remove($target)
-        //     ->run();
-        // }
         $this->symlink($folder, $target);
         break;
     }
