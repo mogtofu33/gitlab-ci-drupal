@@ -181,7 +181,7 @@ stages:
   when: always
 
 # Global tests variables.
-.test_variables:
+.test_variables: &test_variables
   MYSQL_DATABASE: "drupal"
   MYSQL_ALLOW_EMPTY_PASSWORD: "1"
   DB_DUMP: "${CI_PROJECT_DIR}/dump"
@@ -203,7 +203,7 @@ stages:
     - mariadb:latest
   # extends: .test_except_only
   variables:
-    extends: .test_variables
+    <<: *test_variables
   before_script:
     # Copy RoboFile.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
@@ -239,7 +239,7 @@ Build:
     # check Drupal codebase and composer install if needed.
     - robo perform:build
   variables:
-    extends: .test_variables
+    <<: *test_variables
   # [CI_TYPE] When using included Drupal for a module or a theme, the
   # cache and artifacts can be removed as we don't install the Drupal with
   # composer.
@@ -338,7 +338,7 @@ Behat tests:
     - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   variables:
-    extends: .test_variables
+    <<: *test_variables
     CHROMIUM_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
     BEHAT_PARAMS: >
       {
