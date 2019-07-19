@@ -154,11 +154,11 @@ stages:
 
 ################################################################################
 # Gitlab ci templates for common jobs to avoid repeat, see
-#   https://docs.gitlab.com/ee/ci/yaml/#anchors
+#   https://docs.gitlab.com/ee/ci/yaml/#extends
 ################################################################################
 
 # When to run tests, on branch testing and tags.
-.test_except_only: &test_except_only
+.test_except_only:
   # Build and tests are only for branch testing or tags.
   # For more options see
   #   https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
@@ -169,19 +169,20 @@ stages:
     - tags
 
 # Reports produced and visible in job report.
-.default_artifacts: &default_artifacts
-  paths:
-    - ${REPORT_DIR}/*.html
-    - ${REPORT_DIR}/*.svg
-  # Name will be based on job and branch.
-  name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-  # How long do we keep reports files?
-  expire_in: 2 day
-  # Force artifacts even if the job fail.
-  when: always
+.default_artifacts:
+  artifacts:
+    paths:
+      - ${REPORT_DIR}/*.html
+      - ${REPORT_DIR}/*.svg
+    # Name will be based on job and branch.
+    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+    # How long do we keep reports files?
+    expire_in: 2 day
+    # Force artifacts even if the job fail.
+    when: always
 
 # Global tests variables.
-.test_variables: &test_variables
+.test_variables:
   variables:
     MYSQL_DATABASE: "drupal"
     MYSQL_ALLOW_EMPTY_PASSWORD: "1"
@@ -192,26 +193,18 @@ stages:
     MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}, "http://localhost:4444/wd/hub"]'
     APACHE_RUN_USER: "www-data"
     APACHE_RUN_GROUP: "www-data"
+    # Selenium extra options, see
+    # https://github.com/SeleniumHQ/docker-selenium#se_opts-selenium-configuration-options
     SE_OPTS: ""
-    CHROMIUM_OPTS: ""
-    BEHAT_PARAMS: >
-      {
-        "extensions" : {
-          "Bex\\Behat\\ScreenshotExtension" : {
-            "image_drivers" : {
-              "local" : { "screenshot_directory" : "${REPORT_DIR}/behat" }
-            }
-          }
-        }
-      }
 
 # Testing template for phpunit, this provide Apache / Php.
-.test_template: &test_template
-  tags:
-    - docker
+.test_template:
+  dependencies:
+    - Build
   services:
     - mariadb:latest
-  <<: *test_except_only
+  extends: .test_except_only
+  extends: .test_variables
   before_script:
     # Copy RoboFile.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
@@ -225,9 +218,8 @@ stages:
     - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
-  <<: *test_variables
+  extends: .default_artifacts
   artifacts:
-    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/*
 
@@ -242,14 +234,12 @@ stages:
 # artifacts.
 Build:
   stage: build
-  tags:
-    - docker
-  <<: *test_except_only
+  extends: .test_except_only
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # check Drupal codebase and composer install if needed.
     - robo perform:build
-  <<: *test_variables
+  extends: .test_variables
   # [CI_TYPE] When using included Drupal for a module or a theme, the
   # cache and artifacts can be removed as we don't install the Drupal with
   # composer.
@@ -278,38 +268,32 @@ Build:
 
 Unit and kernel:
   stage: tests
-  <<: *test_template
+  extends: .test_template
   script:
     - robo test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
-  dependencies:
-    - Build
 
 Code coverage:
   stage: tests
-  <<: *test_template
+  extends: .test_template
   script:
     - robo test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
-  dependencies:
-    - Build
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
 Functional:
   stage: tests
-  <<: *test_template
+  extends: .test_template
   script:
     # To test if /simpletest is enough
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
+    # - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/simpletest
     # For functional tests the user need to be the Apache user.
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
   after_script:
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/
-  dependencies:
-    - Build
 
 Functional Js:
   stage: tests
-  <<: *test_template
+  extends: .test_template
   script:
     # Ensure selenium is up.
     - /scripts/start-selenium-standalone.sh&
@@ -317,13 +301,11 @@ Functional Js:
     - robo test:suite "${PHPUNIT_TESTS}functional-javascript"
   after_script:
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/
-  dependencies:
-    - Build
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 Nightwatch Js:
   stage: tests
-  <<: *test_template
+  extends: .test_template
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
     # [TEMPORARY] Patch for Nightwatch to allow install profile.
@@ -337,38 +319,42 @@ Nightwatch Js:
     - cd ${WEB_ROOT}/core
     - yarn install
     - yarn test:nightwatch ${NIGHTWATCH_TESTS}
-  dependencies:
-    - Build
+  extends: .default_artifacts
   artifacts:
-    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}
 
 # Behat tests from tests/ folder.
 Behat tests:
   stage: tests
-  <<: *test_template
+  extends: .test_template
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
     - robo install:drupal standard
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
     # Starting Chrome, we are not using Selenium.
-    - /usr/bin/chromium --no-sandbox --disable-gpu --headless
-      --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
-      --window-size=1920,1080&
+    - /scripts/start-chrome&
     - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
-  dependencies:
-    - Build
+  variables:
+    CHROMIUM_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
+    BEHAT_PARAMS: >
+      {
+        "extensions" : {
+          "Bex\\Behat\\ScreenshotExtension" : {
+            "image_drivers" : {
+              "local" : { "screenshot_directory" : "${REPORT_DIR}/behat" }
+            }
+          }
+        }
+      }
 
 # [CI_TYPE] [TESTING] Next part can be removed for testing only or no
 # dependencies for a single module / theme.
 Security report:
   stage: tests
-  tags:
-    - docker
-  <<: *test_except_only
+  extends: .test_except_only
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
@@ -388,12 +374,9 @@ Security report:
 # report and stop.
 Code quality:
   stage: code quality
-  tags:
-    - docker
   only:
     - branches
-  artifacts:
-    <<: *default_artifacts
+  extends: .default_artifacts
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.phpmd.xml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
@@ -405,12 +388,9 @@ Code quality:
 # Drupal coding standard best practices report.
 Best practices:
   stage: code quality
-  tags:
-    - docker
   only:
     - branches
-  artifacts:
-    <<: *default_artifacts
+  extends: .default_artifacts
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
@@ -430,10 +410,7 @@ Best practices:
 ################################################################################
 
 # Common definition for all lint jobs.
-.lint_template: &lint_template
-  stage: code lint
-  tags:
-    - docker
+.lint_template:
   only:
     - branches
   # Allow failure to produce report and warning, not a critical job.
@@ -441,9 +418,10 @@ Best practices:
 
 # This is a eslint report based on Drupal 8.x standards.
 Js lint:
-  <<: *lint_template
+  stage: code lint
+  extends: .lint_template
+  extends: .default_artifacts
   artifacts:
-    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/js-lint-report.html
   before_script:
@@ -472,9 +450,10 @@ Js lint:
 
 # Drupal 8.x rules used here for stylelint to check css.
 Css lint:
-  <<: *lint_template
-  artifacts:
-    <<: *default_artifacts
+  stage: code lint
+  extends: .lint_template
+  extends: .default_artifacts
+  # artifacts:
     # paths:
       # - ${REPORT_DIR}/*.txt
   before_script:
@@ -493,9 +472,10 @@ Css lint:
 
 # This is a sass lint report, default rules used here for Bootstrap based sass.
 Sass lint:
-  <<: *lint_template
+  stage: code lint
+  extends: .lint_template
+  extends: .default_artifacts
   artifacts:
-    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/sass-lint-report.html
   before_script:
@@ -522,16 +502,13 @@ Sass lint:
 ################################################################################
 
 # Common definition for all metrics jobs.
-.metrics_template: &metrics_template
+.metrics_template:
   stage: php code metrics
   # Could use only on tag release.
   only:
     - master
     - tags
-  tags:
-    - docker
-  artifacts:
-    <<: *default_artifacts
+  extends: .default_artifacts
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
@@ -539,54 +516,47 @@ Sass lint:
 
 # Phpmetrics report, no pass or failure as it's just informative.
 Php metrics:
-  <<: *metrics_template
+  extends: .metrics_template
   artifacts:
-    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/
   script:
-    - phpqa ${PHPQA_REPORT}
-        --tools phpmetrics
-        ${PHPQA_PHP_CODE}
+    - phpqa ${PHPQA_REPORT} --tools phpmetrics ${PHPQA_PHP_CODE}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
 Php stats:
-  <<: *metrics_template
+  extends: .metrics_template
   script:
-    - phpqa ${PHPQA_REPORT}
-        --tools phploc,pdepend
-        ${PHPQA_PHP_CODE}
+    - phpqa ${PHPQA_REPORT} --tools phploc,pdepend ${PHPQA_PHP_CODE}
 
 # [CI_TYPE] Same reports for all Drupal code including our custom.
 # Those commands require enough resources from the runner.
 Php metrics All:
-  <<: *metrics_template
+  stage: php code metrics
+  extends: .metrics_template
   # Need same constraint as Build job.
-  <<: *test_except_only
+  extends: .test_except_only
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phpmetrics
         ${PHPQA_ALL_CODE}
+  extends: .default_artifacts
   artifacts:
-    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/
-  cache:
-    key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
   when: manual
 
 Php stats All:
-  <<: *metrics_template
+  stage: php code metrics
+  extends: .metrics_template
   # Need same constraint as Build job.
-  <<: *test_except_only
+  extends: .test_except_only
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phploc,pdepend
         ${PHPQA_ALL_CODE}
-  cache:
-    key: drupal-$CI_BUILD_REF_NAME
   dependencies:
     - Build
   when: manual
@@ -608,63 +578,61 @@ Php stats All:
 
 # Basic docker image with ssh to be able to access a remote.
 # Each access must add a ssh key, see samples below.
-.deploy_template: &deploy_template
+.deploy_template:
   image: alpine:latest
-  tags:
-    - docker
+  only:
+    - master
+    - tags
   before_script:
     - apk --no-cache add openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     # Avoid warning on connection.
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    # Add our private key.
+    - echo -e "${PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
+  variables:
+    PRIVATE_KEY: ""
   when: manual
 
 Deploy to testing:
   stage: deploy to testing
-  <<: *deploy_template
+  extends: .deploy_template
   only:
     - testing
-    - master
-    - tags
   environment:
     name: testing
     url: http://${TESTING_HOST}
   script:
-    - echo -e "${TESTING_PRIVATE_KEY}" > ~/.ssh/id_rsa
-    - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
-    # - ssh -T $USER_NAME@$TESTING_HOST
-    #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+    - ssh -T $USER_NAME@$TESTING_HOST
+        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  variables:
+    PRIVATE_KEY: "${TESTING_PRIVATE_KEY}"
 
 Deploy to staging:
   stage: deploy to staging
-  <<: *deploy_template
-  only:
-    - master
-    - tags
+  extends: .deploy_template
   environment:
     name: staging
     url: http://${STAGING_HOST}
   script:
-    - echo -e "${STAGING_PRIVATE_KEY}" > ~/.ssh/id_rsa
-    - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
-    # - ssh -T $USER_NAME@$TESTING_HOST
-    #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+    - ssh -T $USER_NAME@$TESTING_HOST
+        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  variables:
+    PRIVATE_KEY: "${STAGING_PRIVATE_KEY}"
 
-sDeploy to production:
+Deploy to production:
   stage: deploy to production
-  <<: *deploy_template
-  only:
-    - master
-    - tags
+  extends: .deploy_template
   environment:
     name: production
     url: http://${PRODUCTION_HOST}
   script:
-    - echo -e "${PRODUCTION_PRIVATE_KEY}" > ~/.ssh/id_rsa
-    - chmod 400 ~/.ssh/id_rsa
     # We can now ssh and run any deploy script.
-    # - ssh -T $USER_NAME@$TESTING_HOST
-    #     "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+    - ssh -T $USER_NAME@$TESTING_HOST
+        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  variables:
+    PRIVATE_KEY: "${PRODUCTION_PRIVATE_KEY}"
