@@ -284,8 +284,7 @@ Functional:
   stage: tests
   extends: .test_template
   script:
-    # To test if /simpletest is enough
-    # - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/simpletest
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
     # For functional tests the user need to be the Apache user.
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
   after_script:
@@ -334,7 +333,7 @@ Behat tests:
     - robo install:drupal standard
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
     # Starting Chrome, we are not using Selenium.
-    - /scripts/start-chrome&
+    - /scripts/start-chrome.sh&
     - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   variables:
