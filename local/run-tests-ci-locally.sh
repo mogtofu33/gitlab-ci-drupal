@@ -105,7 +105,7 @@ _tests_prepare() {
   _dkexec robo prepare:folders
   
   # Apache launch is entrypoint.
-  _dkexec apache2-foreground&
+  # docker exec -d ci-drupal bash -c "apache2-foreground"
 
   # Prepare needed folders, reproduce .test_template
   if [ ${CI_TYPE} == 'custom' ];
@@ -248,7 +248,7 @@ _behat() {
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
 
   # Starting Chrome.
-  docker exec -d ci-drupal bash -c "/usr/bin/chromium --no-sandbox --disable-gpu --headless --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --window-size=1920,1080"
+  docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   _dkexec bash -c "curl -s http://localhost:9222/json/version | jq '.'"
 
   _dkexec robo test:behat
