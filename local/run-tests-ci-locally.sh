@@ -119,7 +119,6 @@ _tests_prepare() {
   _dkexec mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
   _dkexec chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
-
 }
 
 # Replicate Build job.
@@ -192,6 +191,7 @@ _functional() {
   _build
   _tests_prepare
 
+
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
   _dkexec sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
 
@@ -208,7 +208,9 @@ _functional_js() {
 
   _dkexec bash -c "curl -s http://localhost:4444/wd/hub/status | jq '.'"
 
-  _dkexec robo test:suite "${PHPUNIT_TESTS}functional-javascript"
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
+  _dkexec sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
+  # _dkexec robo test:suite "${PHPUNIT_TESTS}functional-javascript"
 
   _dkexec bash -c "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript"
 }
@@ -400,9 +402,14 @@ _down() {
   fi
 }
 
+_copy_output() {
+  _dkexec bash -c "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/"
+}
+
 _clean() {
   _clean_config
-  rm -rf reports/*
+  sudo rm -rf reports/*
+  _dkexec bash -c "rm -rf ${DOC_ROOT}/sites/simpletest/browser_output/*.html"
 }
 
 _clean_config() {
