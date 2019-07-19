@@ -28,7 +28,7 @@ default:
     # Behat HTML formatter.
     emuse\BehatHTMLFormatter\BehatHTMLFormatterExtension:
       name: html
-      renderer: Behat2
+      renderer: Twig, Behat2
       file_name: index
       print_args: true
       print_outp: true
@@ -36,8 +36,7 @@ default:
 
     Drupal\DrupalExtension:
       api_driver: 'drupal'
-      drupal:
-        drupal_root: '/var/www/html/web'
+      drupal: ~
       region_map:
         header: "#header"
         content: "#content"

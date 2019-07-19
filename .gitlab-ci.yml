@@ -201,7 +201,7 @@ stages:
     - Build
   services:
     - mariadb:latest
-  # extends: .test_except_only
+  extends: .test_except_only
   variables:
     <<: *test_variables
   before_script:
@@ -345,6 +345,11 @@ Behat tests:
           "Bex\\Behat\\ScreenshotExtension" : {
             "image_drivers" : {
               "local" : { "screenshot_directory" : "${REPORT_DIR}/behat" }
+            }
+          },
+          "Drupal\DrupalExtension" : {
+            "drupal" : {
+              "drupal_root" : "${WEB_ROOT}"
             }
           }
         }
