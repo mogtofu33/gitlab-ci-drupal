@@ -349,7 +349,7 @@ Behat tests:
           },
           "Drupal\\DrupalExtension" : {
             "drupal" : {
-              { "drupal_root" : "${WEB_ROOT}" }
+              "drupal_root" : "${WEB_ROOT}"
             }
           }
         }
