@@ -347,9 +347,9 @@ Behat tests:
               "local" : { "screenshot_directory" : "${REPORT_DIR}/behat" }
             }
           },
-          "Drupal\DrupalExtension" : {
+          "Drupal\\DrupalExtension" : {
             "drupal" : {
-              "drupal_root" : "${WEB_ROOT}"
+              { "drupal_root" : "${WEB_ROOT}" }
             }
           }
         }
