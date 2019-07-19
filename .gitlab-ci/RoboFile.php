@@ -441,7 +441,9 @@ class RoboFile extends \Robo\Tasks {
    */
   public function testSuite($testsuite = 'unit,kernel', $xml = true, $html = true, $module = null) {
     $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
-    $this->taskFilesystemStack()->mkdir($reportDir)->run();
+    if (!file_exists($this->reportDir)) {
+      $this->taskFilesystemStack()->mkdir($reportDir)->run();
+    }
 
     $test = $this->phpUnit($module, $testsuite);
     if ($xml) {
@@ -506,7 +508,9 @@ class RoboFile extends \Robo\Tasks {
    */
   protected function phpUnit($module = null, $testsuite = null) {
 
-    $this->taskFilesystemStack()->mkdir($this->reportDir)->run();
+    if (!file_exists($this->reportDir)) {
+      $this->taskFilesystemStack()->mkdir($this->reportDir)->run();
+    }
 
     // $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
     //   ->configFile($this->webRoot . '/core');
@@ -515,6 +519,7 @@ class RoboFile extends \Robo\Tasks {
 
     if ($this->verbose) {
       $task->arg('--verbose');
+      $task->arg('--debug');
     }
 
     if ($module) {
@@ -687,7 +692,7 @@ class RoboFile extends \Robo\Tasks {
     if (file_exists($target)) {
       $this->say("[SKIP] Existing target: $target, is it a problem?");
     }
-    if (file_exists($src) && !file_exists($target)) {
+    elseif (file_exists($src)) {
 
       $this->say("Symlink $src to $target");
       // Symlink our folder in the target.
@@ -696,7 +701,7 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
     elseif ($this->verbose) {
-      $this->say("[SKIP] Folder already exist: $target");
+      $this->say("[SKIP] Folder do not exist: $src");
     }
   }
 
