@@ -540,6 +540,8 @@ Php metrics All:
   extends: .metrics_template
   # Need same constraint as Build job.
   extends: .test_except_only
+  only:
+    - tags
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phpmetrics
@@ -557,6 +559,8 @@ Php stats All:
   extends: .metrics_template
   # Need same constraint as Build job.
   extends: .test_except_only
+  only:
+    - tags
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phploc,pdepend
