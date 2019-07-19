@@ -169,33 +169,31 @@ stages:
     - tags
 
 # Reports produced and visible in job report.
-.default_artifacts:
-  artifacts:
-    paths:
-      - ${REPORT_DIR}/*.html
-      - ${REPORT_DIR}/*.svg
-    # Name will be based on job and branch.
-    name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-    # How long do we keep reports files?
-    expire_in: 2 day
-    # Force artifacts even if the job fail.
-    when: always
+.default_artifacts: &default_artifacts
+  paths:
+    - ${REPORT_DIR}/*.html
+    - ${REPORT_DIR}/*.svg
+  # Name will be based on job and branch.
+  name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
+  # How long do we keep reports files?
+  expire_in: 2 day
+  # Force artifacts even if the job fail.
+  when: always
 
 # Global tests variables.
 .test_variables:
-  variables:
-    MYSQL_DATABASE: "drupal"
-    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
-    DB_DUMP: "${CI_PROJECT_DIR}/dump"
-    SIMPLETEST_BASE_URL: "http://localhost"
-    SIMPLETEST_DB: "mysql://root@mariadb/drupal"
-    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
-    MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}, "http://localhost:4444/wd/hub"]'
-    APACHE_RUN_USER: "www-data"
-    APACHE_RUN_GROUP: "www-data"
-    # Selenium extra options, see
-    # https://github.com/SeleniumHQ/docker-selenium#se_opts-selenium-configuration-options
-    SE_OPTS: ""
+  MYSQL_DATABASE: "drupal"
+  MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+  DB_DUMP: "${CI_PROJECT_DIR}/dump"
+  SIMPLETEST_BASE_URL: "http://localhost"
+  SIMPLETEST_DB: "mysql://root@mariadb/drupal"
+  BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+  MINK_DRIVER_ARGS_WEBDRIVER: '["chrome", {"browserName":"chrome","chromeOptions":{"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}, "http://localhost:4444/wd/hub"]'
+  APACHE_RUN_USER: "www-data"
+  APACHE_RUN_GROUP: "www-data"
+  # Selenium extra options, see
+  # https://github.com/SeleniumHQ/docker-selenium#se_opts-selenium-configuration-options
+  SE_OPTS: ""
 
 # Testing template for phpunit, this provide Apache / Php.
 .test_template:
@@ -203,8 +201,9 @@ stages:
     - Build
   services:
     - mariadb:latest
-  extends: .test_except_only
-  extends: .test_variables
+  # extends: .test_except_only
+  variables:
+    extends: .test_variables
   before_script:
     # Copy RoboFile.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
@@ -218,8 +217,8 @@ stages:
     - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
-  extends: .default_artifacts
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/*
 
@@ -239,7 +238,8 @@ Build:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # check Drupal codebase and composer install if needed.
     - robo perform:build
-  extends: .test_variables
+  variables:
+    extends: .test_variables
   # [CI_TYPE] When using included Drupal for a module or a theme, the
   # cache and artifacts can be removed as we don't install the Drupal with
   # composer.
@@ -319,8 +319,8 @@ Nightwatch Js:
     - cd ${WEB_ROOT}/core
     - yarn install
     - yarn test:nightwatch ${NIGHTWATCH_TESTS}
-  extends: .default_artifacts
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}
 
@@ -338,6 +338,7 @@ Behat tests:
     - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   variables:
+    extends: .test_variables
     CHROMIUM_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
     BEHAT_PARAMS: >
       {
@@ -376,7 +377,8 @@ Code quality:
   stage: code quality
   only:
     - branches
-  extends: .default_artifacts
+  artifacts:
+    <<: *default_artifacts
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.phpmd.xml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
@@ -390,7 +392,8 @@ Best practices:
   stage: code quality
   only:
     - branches
-  extends: .default_artifacts
+  artifacts:
+    <<: *default_artifacts
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
@@ -420,7 +423,8 @@ Best practices:
 Js lint:
   stage: code lint
   extends: .lint_template
-  extends: .default_artifacts
+  artifacts:
+    <<: *default_artifacts
   artifacts:
     paths:
       - ${REPORT_DIR}/js-lint-report.html
@@ -452,8 +456,8 @@ Js lint:
 Css lint:
   stage: code lint
   extends: .lint_template
-  extends: .default_artifacts
-  # artifacts:
+  artifacts:
+    <<: *default_artifacts
     # paths:
       # - ${REPORT_DIR}/*.txt
   before_script:
@@ -474,8 +478,8 @@ Css lint:
 Sass lint:
   stage: code lint
   extends: .lint_template
-  extends: .default_artifacts
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/sass-lint-report.html
   before_script:
@@ -508,7 +512,8 @@ Sass lint:
   only:
     - master
     - tags
-  extends: .default_artifacts
+  artifacts:
+    <<: *default_artifacts
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
@@ -540,8 +545,8 @@ Php metrics All:
     - phpqa ${PHPQA_REPORT}
         --tools phpmetrics
         ${PHPQA_ALL_CODE}
-  extends: .default_artifacts
   artifacts:
+    <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/
   dependencies:
