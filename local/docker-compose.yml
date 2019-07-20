@@ -29,7 +29,7 @@ services:
       - ${HOME}/.composer/cache:/var/www/.composer/cache
     working_dir: /builds
     container_name: ci-drupal
-    env_file: .docker-compose.env
+    env_file: .gitlab-ci.env
   chromedriver:
     image: selenium/standalone-chrome:latest
     volumes:
