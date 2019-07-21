@@ -441,7 +441,9 @@ class RoboFile extends \Robo\Tasks {
    */
   public function testSuite($testsuite = 'unit,kernel', $xml = true, $html = true, $module = null) {
     $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
-    $this->taskFilesystemStack()->mkdir($reportDir)->run();
+    if (!file_exists($this->reportDir)) {
+      $this->taskFilesystemStack()->mkdir($reportDir)->run();
+    }
 
     $test = $this->phpUnit($module, $testsuite);
     if ($xml) {
@@ -506,7 +508,9 @@ class RoboFile extends \Robo\Tasks {
    */
   protected function phpUnit($module = null, $testsuite = null) {
 
-    $this->taskFilesystemStack()->mkdir($this->reportDir)->run();
+    if (!file_exists($this->reportDir)) {
+      $this->taskFilesystemStack()->mkdir($this->reportDir)->run();
+    }
 
     // $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
     //   ->configFile($this->webRoot . '/core');
@@ -515,6 +519,7 @@ class RoboFile extends \Robo\Tasks {
 
     if ($this->verbose) {
       $task->arg('--verbose');
+      $task->arg('--debug');
     }
 
     if ($module) {
@@ -599,7 +604,7 @@ class RoboFile extends \Robo\Tasks {
     switch($this->ciType) {
       case "project":
         $task = $this->taskComposerValidate()
-          ->workingDir($dir)
+          ->workingDir($this->ciProjectDir)
           ->noCheckAll()
           ->noCheckPublish();
         if ($this->verbose) {
@@ -613,9 +618,9 @@ class RoboFile extends \Robo\Tasks {
         }
         $task->run();
 
-        $this->composerInstall();
+        $this->composerInstall($this->ciProjectDir);
 
-        if (!file_exists($this->webRoot . '/index.php')) {
+        if (!file_exists($this->ciProjectDir . '/web/index.php')) {
           $this->io()->error("Missing Drupal, did composer install failed?");
         }
         if ($forceInstall || $this->installDrupal) {
@@ -645,6 +650,7 @@ class RoboFile extends \Robo\Tasks {
     // Handle CI values.
     switch($this->ciType) {
       case "custom":
+      case "project":
         // Root is the Drupal with a web/ folder.
         $targetFolder = $this->docRoot;
         $folder = $this->ciProjectDir;
@@ -654,7 +660,7 @@ class RoboFile extends \Robo\Tasks {
         elseif ($this->verbose) {
           $this->say("[SKIP] Drupal exist in: $this->webRoot/index.php");
         }
-        break;
+        // break;
       case "project":
         // Root contain a web/ folder, we symlink each folders.
         $targetFolder = $this->webRoot . '/modules/custom';
@@ -687,7 +693,7 @@ class RoboFile extends \Robo\Tasks {
     if (file_exists($target)) {
       $this->say("[SKIP] Existing target: $target, is it a problem?");
     }
-    if (file_exists($src) && !file_exists($target)) {
+    elseif (file_exists($src)) {
 
       $this->say("Symlink $src to $target");
       // Symlink our folder in the target.
@@ -696,7 +702,7 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
     elseif ($this->verbose) {
-      $this->say("[SKIP] Folder already exist: $target");
+      $this->say("[SKIP] Folder do not exist: $src");
     }
   }
 

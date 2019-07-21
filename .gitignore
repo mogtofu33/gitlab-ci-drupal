@@ -39,7 +39,8 @@ load.*
 /reports/
 /dump/
 
-# Ignore files created by this project when copying ./gitlab-ci/
+# Ignore files created by this project.
 RoboFile.php
+.gitlab-ci.env
 
 /tmp*
