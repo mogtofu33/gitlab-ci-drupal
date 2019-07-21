@@ -357,6 +357,16 @@ class RoboFile extends \Robo\Tasks {
     if (file_exists($this->dbDump . '/dump.sql')) {
       $this->say("Import dump $this->dbDump/dump.sql");
       $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump.sql;');
+
+      // When install from dump we need to be sure settings.php is correct.
+      $this->taskFilesystemStack()
+        ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->webRoot . '/sites/default/settings.local.php', true)
+        ->remove($this->webRoot . '/sites/default/settings.php')
+        ->copy($this->webRoot . '/sites/default/default.settings.php', $this->webRoot . '/sites/default/settings.php', true)
+        ->run();
+      $this->taskFilesystemStack()
+        ->appendToFile($this->webRoot . '/sites/default/settings.php', 'include $app_root . "/" . $site_path . "/settings.local.php";')
+        ->run();
     }
     else {
       $this->setupDrupal($profile);
@@ -733,19 +743,28 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Return drush with default arguments.
    *
+   * @param string $cmd
+   *   (optional) Commands for drush.
+   *
    * @return \Robo\Task\Base\Exec
    *   A drush exec command.
    */
-  public function drush() {
-    // Drush needs an absolute path to the docroot.
-    $cmd = $this->taskExec('/var/www/.composer/vendor/bin/drush')
+  public function drush($cmd = null) {
+    // Drush needs an absolute path to the webroot.
+    $task = $this->taskExec('/var/www/.composer/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {
-      $cmd->arg('--verbose');
+      $task->arg('--verbose');
     }
 
-    return $cmd;
+    if ($cmd) {
+      $task->arg($cmd)
+        ->run();
+    }
+    else {
+      return $task;
+    }
   }
 
   /**
