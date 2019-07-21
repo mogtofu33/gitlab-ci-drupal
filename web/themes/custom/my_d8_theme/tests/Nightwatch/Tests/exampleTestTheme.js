@@ -1,5 +1,5 @@
 module.exports = {
-  '@tags': ['custom'],
+  '@tags': ['custom_test'],
   before: function(browser) {
     browser
       .drupalInstall();

@@ -127,18 +127,26 @@ HEREDOC
 
 _status() {
 
-  printf "Init variables\\nCI_TYPE: %s, WEB_ROOT: %s, CI_PROJECT_DIR: %s\\n" ${CI_TYPE} ${WEB_ROOT} ${CI_PROJECT_DIR}
-  printf "APACHE_RUN_USER: %s, APACHE_RUN_GROUP: %s, BROWSERTEST_OUTPUT_DIRECTORY: %s, PHPUNIT_TESTS:%s\\n" ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY} ${PHPUNIT_TESTS}
+  printf "CI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
+  ${CI_TYPE} ${WEB_ROOT} ${DOC_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
+  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\PHPUNIT_TESTS:%s\\n" \
+  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS}
 
   _dkexecb /scripts/run-tests.sh
   # docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.sh"
   # sleep 2s
-  printf "Selenium running? (If nothing, no!)"
+  printf "Selenium running? (If nothing, no!)\\n"
   _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
   # docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   # sleep 1s
-  printf "Chrome running? (If nothing, no!)"
+  printf "Chrome running? (If nothing, no!)\\n"
   _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
+
+  printf "\\n"
+}
+
+_st() {
+  _status
 }
 
 # Replicate Gitlab-ci.yml .test_template
@@ -163,9 +171,9 @@ else
     fi
 
     # RoboFile.php is already at root.
-    _dkexecb "mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
-    _dkexecb "chmod -R g+s ${BROWSERTEST_OUTPUT_DIRECTORY}"
-    _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}"
+    _dkexecb "mkdir -p \${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
+    _dkexecb "chmod -R g+s \${BROWSERTEST_OUTPUT_DIRECTORY}"
+    _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} \${BROWSERTEST_OUTPUT_DIRECTORY}"
   fi
 }
 
@@ -257,7 +265,15 @@ _functional() {
   _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites"
   _dkexecb "sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional"
 
-  _dkexecb "cp -f \${DOC_ROOT}/sites/simpletest/browser_output/*.html \${REPORT_DIR}/functional"
+  _dkexecb "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional"
+
+  _functional_cmd
+}
+
+_functional_cmd() {
+  _dkexecb "sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional"
+
+  _dkexecb "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional"
 }
 
 _functional_js() {
@@ -271,10 +287,15 @@ _functional_js() {
   _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
 
   _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites"
+
+  _functional_js_cmd
+}
+
+_functional_js_cmd() {
   _dkexecb "sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript"
   # _dkexec robo $__simulate test:suite "${PHPUNIT_TESTS}functional-javascript"
 
-  _dkexecb "cp -f \${DOC_ROOT}/sites/simpletest/browser_output/*.html \${REPORT_DIR}/functional-javascript"
+  _dkexecb "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript"
 }
 
 _nightwatch() {
@@ -285,17 +306,25 @@ _nightwatch() {
 
   _dkexecb "cp -u ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env"
 
-  printf ">>> [NOTICE] Patching nightwatch for Drupal profile support.\\n"
-
-  _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o \${DOC_ROOT}/3017176-7.patch"
-  docker exec -it -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < \${DOC_ROOT}/3017176-7.patch"
+  # printf ">>> [NOTICE] Patching nightwatch for Drupal profile support..."
+  # _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o ${DOC_ROOT}/3017176-7.patch"
+  # docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${DOC_ROOT}/3017176-7.patch"
+  # sleep 2s
+  # printf "Done!\\n"
 
   _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
   _prepare_folders
-  _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} \${DOC_ROOT}"
 
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal "yarn install"
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal "yarn test:nightwatch \${NIGHTWATCH_TESTS}"
+  printf ">>> [NOTICE] Chwon docroot, can be long..."
+  _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}"
+  printf "Done!\\n"
+
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
+  _nightwatch_cmd
+}
+
+_nightwatch_cmd() {
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${NIGHTWATCH_TESTS}"
 }
 
 _behat() {
@@ -314,6 +343,10 @@ _behat() {
   docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
 
+  _behat_cmd
+}
+
+_behat_cmd() {
   _dkexec robo $__simulate test:behat
 }
 
@@ -323,6 +356,7 @@ _security_checker() {
   _build
   _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
   _prepare_folders
+
   _dkexecb security-checker security:check
 }
 
@@ -360,7 +394,7 @@ _eslint() {
   _prepare_folders
 
   # _dkexecb "eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json \${JS_CODE}"
-  _dkexecb "eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json --format html --output-file \${REPORT_DIR}/js-lint-report.html \${JS_CODE}"
+  _dkexecb "eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json --format html --output-file ${REPORT_DIR}/js-lint-report.html \${JS_CODE}"
 }
 
 _stylelint() {
@@ -381,7 +415,7 @@ _sass_lint() {
   docker exec -it -w ${WEB_ROOT}/core ci-drupal npm install --no-audit git://github.com/sasstools/sass-lint.git#develop
 
   _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit"
-  _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit --format html --output \${REPORT_DIR}/sass-lint-report.html"
+  _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit --format html --output ${REPORT_DIR}/sass-lint-report.html"
 }
 
 ####### Metrics jobs
@@ -425,11 +459,20 @@ _dkexecb() {
 _init_variables() {
   CI_TYPE=$(yq r ./.gitlab-ci.yml variables.CI_TYPE)
   WEB_ROOT=$(yq r ./.gitlab-ci.yml variables.WEB_ROOT)
+  DOC_ROOT=$(yq r ./.gitlab-ci.yml variables.DOC_ROOT)
+  REPORT_DIR=$(yq r ./.gitlab-ci.yml variables.REPORT_DIR)
   CI_PROJECT_DIR="/builds"
   APACHE_RUN_USER=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_USER)
   APACHE_RUN_GROUP=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_GROUP)
-  BROWSERTEST_OUTPUT_DIRECTORY=$(yq r ./.gitlab-ci.yml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
   PHPUNIT_TESTS=$(yq r ./.gitlab-ci.yml variables.PHPUNIT_TESTS)
+  PHP_CODE=$(yq r ./.gitlab-ci.yml variables.PHP_CODE)
+  PHPQA_IGNORE_DIRS=$(yq r ./.gitlab-ci.yml variables.PHPQA_IGNORE_DIRS)
+  PHPQA_IGNORE_FILES=$(yq r ./.gitlab-ci.yml variables.PHPQA_IGNORE_FILES)
+  NIGHTWATCH_TESTS=$(yq r ./.gitlab-ci.yml variables.NIGHTWATCH_TESTS)
+}
+
+_init() {
+  _init_variables
 }
 
 _generate_env_from_yaml() {
@@ -453,37 +496,37 @@ _generate_env_from_yaml() {
 
   touch $__env
   echo 'CI_PROJECT_NAME: my_module' >> $__env
-  echo 'CI_PROJECT_DIR: /builds' >> $__env
+  echo "CI_PROJECT_DIR: ${CI_PROJECT_DIR}" >> $__env
 
   yq r $__yaml variables >> $__env
   yq r $__yaml "[.test_variables]" >> $__env
-  # yq r $__yaml "Behat tests.variables" >> $__env
+  # # yq r $__yaml "Behat tests.variables" >> $__env
 
-  sed -i "s#\${CI_PROJECT_DIR}#/builds#g" $__env
+  # sed -i "s#\${CI_PROJECT_DIR}#${CI_PROJECT_DIR}#g" $__env
+  # sed -i "s#\${REPORT_DIR}#${REPORT_DIR}#g" $__env
+  # sed -i "s#\${PHP_CODE}#${PHP_CODE}#g" $__env
+  # sed -i "s#\${PHPQA_IGNORE_DIRS}#${PHPQA_IGNORE_DIRS}#g" $__env
+  # sed -i "s#\${PHPQA_IGNORE_FILES}#${PHPQA_IGNORE_FILES}#g" $__env
 
-  __REPORT_DIR=$(yq r $__yaml variables.REPORT_DIR)
-  sed -i "s#\${REPORT_DIR}#$__REPORT_DIR#g" $__env
-
-  __PHP_CODE=$(yq r $__yaml variables.PHP_CODE)
-  sed -i "s#\${PHP_CODE}#$__PHP_CODE#g" $__env
-
-  __PHPQA_IGNORE_DIRS=$(yq r $__yaml variables.PHPQA_IGNORE_DIRS)
-  sed -i "s#\${PHPQA_IGNORE_DIRS}#$__PHPQA_IGNORE_DIRS#g" $__env
-
-  __PHPQA_IGNORE_FILES=$(yq r $__yaml variables.PHPQA_IGNORE_FILES)
-  sed -i "s#\${PHPQA_IGNORE_FILES}#$__PHPQA_IGNORE_FILES#g" $__env
-
-  sed -i 's#: #=#g' $__env
-  # Remove empty values.
-  sed -i 's#""##g' $__env
-  # Treat 1 / 0 options without dble quotes.
-  sed -i 's#"1"#1#g' $__env
-  sed -i 's#"0"#0#g' $__env
+  # sed -i 's#: #=#g' $__env
+  # # Remove empty values.
+  # sed -i 's#""##g' $__env
+  # # Treat 1 / 0 options without dble quotes.
+  # sed -i 's#"1"#1#g' $__env
+  # sed -i 's#"0"#0#g' $__env
 
   # __WEB_ROOT=$(yq r $__yaml variables.WEB_ROOT)
-  sed -i "s#\${WEB_ROOT}#$WEB_ROOT#g" $__env
+  sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
 
   printf ">>> %s ... Done!\\n" $__env
+}
+
+_env() {
+  _generate_env_from_yaml
+}
+
+_gen() {
+  _generate_env_from_yaml
 }
 
 _reset() {
@@ -631,10 +674,10 @@ _main() {
   if ((_PRINT_HELP))
   then
     _print_help
-  elif [ "${_CMD}" == "init_variables" ] || [ "${_CMD}" == "init" ]; then
+  elif [ "${_CMD}" == "init_variables" ]; then
     _init_variables
     exit 0
-  elif [ "${_CMD}" == "generate_env_from_yaml" ] || [ "${_CMD}" == "env" ]; then
+  elif [ "${_CMD}" == "generate_env_from_yaml" ]; then
     _generate_env_from_yaml
     exit 0
   fi
