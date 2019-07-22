@@ -325,6 +325,7 @@ Nightwatch Js:
     # Html reporter.
     - yarn add nightwatch-html-reporter
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}/nightwatch
     - ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
     - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
   artifacts:
@@ -366,6 +367,7 @@ Behat tests:
 
 # [CI_TYPE] [TESTING] Next part can be removed for testing only or no
 # dependencies for a single module / theme.
+# Will fail if a composer.lock is not found.
 Security report:
   stage: tests
   extends: .test_except_only
@@ -373,7 +375,11 @@ Security report:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
   script:
-    - security-checker security:check;
+    - if [ -f composer.lock ]; then
+        security-checker security:check;
+      else
+        echo "[SKIP] No composer.lock file!"
+      fi
   dependencies:
     - Build
 
