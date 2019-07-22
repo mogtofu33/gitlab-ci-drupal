@@ -327,8 +327,11 @@ Nightwatch Js:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
     - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
     # - touch ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/report.html
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
-    - ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
+    # - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
+    # - ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
+    - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${CI_PROJECT_DIR}/${REPORT_DIR} ${DOC_ROOT}
+    - chmod -R 777 ${CI_PROJECT_DIR}/${REPORT_DIR} ${DOC_ROOT}
     - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
   artifacts:
     <<: *default_artifacts
@@ -336,7 +339,7 @@ Nightwatch Js:
       - ${REPORT_DIR}
 
 # Behat tests from tests/ folder.
-Behat tests:
+.Behat tests:
   stage: tests
   extends: .test_template
   script:
@@ -370,7 +373,7 @@ Behat tests:
 # [CI_TYPE] [TESTING] Next part can be removed for testing only or no
 # dependencies for a single module / theme.
 # Will fail if a composer.lock is not found.
-Security report:
+.Security report:
   stage: tests
   extends: .test_except_only
   before_script:
