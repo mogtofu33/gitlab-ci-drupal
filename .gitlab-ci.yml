@@ -219,6 +219,7 @@ stages:
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+    - mkdir -p "${REPORT_DIR}"
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
   artifacts:
     <<: *default_artifacts

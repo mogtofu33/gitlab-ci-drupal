@@ -295,7 +295,7 @@ _functional() {
 
 _functional_cmd() {
   _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional
-  _dkexec cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional
+  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional
 }
 
 _functional_js() {
@@ -319,7 +319,7 @@ _functional_js_cmd() {
   _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript
   # _dkexec robo $__simulate test:suite "${PHPUNIT_TESTS}functional-javascript"
 
-  _dkexec cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript
+  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript
 }
 
 _nightwatch() {
@@ -342,6 +342,7 @@ _nightwatch() {
   printf "Done!\\n"
 
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
+  _ensure_chrome
   _nightwatch_cmd
 }
 
@@ -397,6 +398,7 @@ _behat() {
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
 
   # Starting Chrome.
+  _ensure_chrome
   docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   sleep 5s
   _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
@@ -504,6 +506,12 @@ _dkexec() {
   fi
 }
 
+_dkexecd() {
+  if ! [ -f "/.dockerenv" ]; then
+    docker exec -d -w ${CI_PROJECT_DIR} ci-drupal "$@"
+  fi
+}
+
 _dkexecb() {
   if ! [ -f "/.dockerenv" ]; then
     docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
@@ -599,6 +607,12 @@ _gen() {
   _generate_env_from_yaml
 }
 
+_ensure_chrome() {
+  if ! [ -x "$(command -v chromium)" ]; then
+    sudo apt update && sudo apt install -y chromium
+  fi
+}
+
 _reset() {
   printf "\\n%s[INFO]%s Reset stack to mimic Gitlab-ci\\n" "${_blu}" "${_end}"
   _down
@@ -652,7 +666,7 @@ _down() {
 }
 
 _copy_output() {
-  _dkexec cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/
+  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/
 }
 
 _clean() {
