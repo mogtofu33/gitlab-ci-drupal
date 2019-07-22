@@ -729,23 +729,25 @@ class RoboFile extends \Robo\Tasks {
    */
   private function mirror($src, $target, $remove_if_exist = false) {
     if (!file_exists($src)) {
-      $this->io()->error("Missing src folder: $src");
+      $this->io()->warning("Missing src folder: $src");
     }
-    if (file_exists($target) && $remove_if_exist) {
+    else {
+      if (file_exists($target) && $remove_if_exist) {
+        $this->taskFilesystemStack()
+          ->remove($target)
+          ->mkdir($target)
+          ->run();
+      }
+      if (!file_exists($target)) {
+        $this->io()->warning("Missing target folder: $target");
+      }
+
+      $this->say("Mirror $src to $target");
+      // Mirror our folder in the target.
       $this->taskFilesystemStack()
-        ->remove($target)
-        ->mkdir($target)
+        ->mirror($src, $target)
         ->run();
     }
-    if (!file_exists($target)) {
-      $this->io()->error("Missing target folder: $target");
-    }
-
-    $this->say("Mirror $src to $target");
-    // Mirror our folder in the target.
-    $this->taskFilesystemStack()
-      ->mirror($src, $target)
-      ->run();
   }
 
   /**
