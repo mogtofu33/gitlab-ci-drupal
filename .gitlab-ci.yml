@@ -326,6 +326,7 @@ Nightwatch Js:
     - yarn add nightwatch-html-reporter
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
     - mkdir -p ${REPORT_DIR}/nightwatch
+    - touch ${REPORT_DIR}/nightwatch/report.html
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}/nightwatch
     - ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
     - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
@@ -379,7 +380,7 @@ Security report:
     - if [ -f composer.lock ]; then
         security-checker security:check;
       else
-        echo "[SKIP] No composer.lock file!"
+        echo "[SKIP] No composer.lock file!";
       fi
   dependencies:
     - Build
