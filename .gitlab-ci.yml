@@ -289,10 +289,9 @@ Functional:
   extends: .test_template
   script:
     # For functional tests the user need to be the Apache user.
-    - sudo -E -u ${APACHE_RUN_USER} \
-        robo test:suite "${PHPUNIT_TESTS}functional"
+    - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
   after_script:
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/ | true
 
 Functional Js:
   stage: tests
@@ -301,10 +300,9 @@ Functional Js:
     # Ensure selenium is up.
     - /scripts/start-selenium-standalone.sh&
     - sleep 5s
-    - sudo -E -u ${APACHE_RUN_USER} _
-        robo test:suite "${PHPUNIT_TESTS}functional-javascript"
+    - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
   after_script:
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ | true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 Nightwatch Js:
@@ -321,9 +319,6 @@ Nightwatch Js:
     # Regular test commands.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
-    # Hard permissions fix, could probably be reduced.
-    # - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}
-    # - chmod -R 777 ${DOC_ROOT}
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
     - cd ${WEB_ROOT}/core
     - yarn install
