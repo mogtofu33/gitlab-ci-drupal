@@ -357,6 +357,16 @@ class RoboFile extends \Robo\Tasks {
     if (file_exists($this->dbDump . '/dump.sql')) {
       $this->say("Import dump $this->dbDump/dump.sql");
       $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump.sql;');
+
+      // When install from dump we need to be sure settings.php is correct.
+      $this->taskFilesystemStack()
+        ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->webRoot . '/sites/default/settings.local.php', true)
+        ->remove($this->webRoot . '/sites/default/settings.php')
+        ->copy($this->webRoot . '/sites/default/default.settings.php', $this->webRoot . '/sites/default/settings.php', true)
+        ->run();
+      $this->taskFilesystemStack()
+        ->appendToFile($this->webRoot . '/sites/default/settings.php', 'include $app_root . "/" . $site_path . "/settings.local.php";')
+        ->run();
     }
     else {
       $this->setupDrupal($profile);
@@ -604,7 +614,7 @@ class RoboFile extends \Robo\Tasks {
     switch($this->ciType) {
       case "project":
         $task = $this->taskComposerValidate()
-          ->workingDir($dir)
+          ->workingDir($this->ciProjectDir)
           ->noCheckAll()
           ->noCheckPublish();
         if ($this->verbose) {
@@ -618,9 +628,9 @@ class RoboFile extends \Robo\Tasks {
         }
         $task->run();
 
-        $this->composerInstall();
+        $this->composerInstall($this->ciProjectDir);
 
-        if (!file_exists($this->webRoot . '/index.php')) {
+        if (!file_exists($this->ciProjectDir . '/web/index.php')) {
           $this->io()->error("Missing Drupal, did composer install failed?");
         }
         if ($forceInstall || $this->installDrupal) {
@@ -650,24 +660,24 @@ class RoboFile extends \Robo\Tasks {
     // Handle CI values.
     switch($this->ciType) {
       case "custom":
+      case "project":
         // Root is the Drupal with a web/ folder.
         $targetFolder = $this->docRoot;
         $folder = $this->ciProjectDir;
         if (!file_exists($this->webRoot . '/index.php')) {
-          $this->mirror($folder, $this->docRoot);
+          $this->mirror($folder, $targetFolder);
         }
         elseif ($this->verbose) {
           $this->say("[SKIP] Drupal exist in: $this->webRoot/index.php");
         }
-        break;
-      case "project":
-        // Root contain a web/ folder, we symlink each folders.
+
+        // Root contain a web/ folder, we mirror each folders.
         $targetFolder = $this->webRoot . '/modules/custom';
         $folder = $this->ciProjectDir . '/web/modules/custom';
-        $this->symlink($folder, $targetFolder);
+        $this->mirror($folder, $targetFolder, true);
         $targetFolder = $this->webRoot . '/themes/custom';
         $folder = $this->ciProjectDir . '/web/themes/custom';
-        $this->symlink($folder, $targetFolder);
+        $this->mirror($folder, $targetFolder, true);
         break;
       case "module":
       case "theme":
@@ -713,10 +723,19 @@ class RoboFile extends \Robo\Tasks {
    *
    * @param string $target
    *   Folder target.
+   *
+   * @param bool $remove_if_exist
+   *   (Optional) Flag to remove target if exist.
    */
-  private function mirror($src, $target) {
+  private function mirror($src, $target, $remove_if_exist = false) {
     if (!file_exists($src)) {
       $this->io()->error("Missing src folder: $src");
+    }
+    if (file_exists($target) && $remove_if_exist) {
+      $this->taskFilesystemStack()
+        ->remove($target)
+        ->mkdir($target)
+        ->run();
     }
     if (!file_exists($target)) {
       $this->io()->error("Missing target folder: $target");
@@ -732,19 +751,28 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Return drush with default arguments.
    *
+   * @param string $cmd
+   *   (optional) Commands for drush.
+   *
    * @return \Robo\Task\Base\Exec
    *   A drush exec command.
    */
-  public function drush() {
-    // Drush needs an absolute path to the docroot.
-    $cmd = $this->taskExec('/var/www/.composer/vendor/bin/drush')
+  public function drush($cmd = null) {
+    // Drush needs an absolute path to the webroot.
+    $task = $this->taskExec('/var/www/.composer/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {
-      $cmd->arg('--verbose');
+      $task->arg('--verbose');
     }
 
-    return $cmd;
+    if ($cmd) {
+      $task->arg($cmd)
+        ->run();
+    }
+    else {
+      return $task;
+    }
   }
 
   /**

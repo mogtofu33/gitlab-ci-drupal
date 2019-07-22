@@ -47,17 +47,22 @@ module.exports = {
   custom_commands_path: collectedFolders.Commands,
   custom_assertions_path: collectedFolders.Assertions,
   page_objects_path: collectedFolders.Pages,
-  globals_path: 'tests/Drupal/Nightwatch/globals.js',
-  selenium: {
-    start_process: false,
+  globals_path: 'globals.js',
+  webdriver: {
+    start_process: process.env.DRUPAL_TEST_CHROMEDRIVER_AUTOSTART,
   },
   test_settings: {
     default: {
-      selenium_port: process.env.DRUPAL_TEST_WEBDRIVER_PORT,
-      selenium_host: process.env.DRUPAL_TEST_WEBDRIVER_HOSTNAME,
-      default_path_prefix: process.env.DRUPAL_TEST_WEBDRIVER_PATH_PREFIX || '',
+      webdriver: {
+        port: process.env.DRUPAL_TEST_WEBDRIVER_PORT,
+        server_path: './node_modules/.bin/chromedriver',
+        cli_args: [
+          '--verbose'
+        ]
+      },
       desiredCapabilities: {
         browserName: 'chrome',
+        javascriptEnabled: true,
         acceptSslCerts: true,
         chromeOptions: {
           args: process.env.DRUPAL_TEST_WEBDRIVER_CHROME_ARGS
@@ -65,17 +70,6 @@ module.exports = {
             : [],
         },
       },
-      screenshots: {
-        enabled: true,
-        on_failure: true,
-        on_error: true,
-        path: `${process.env.DRUPAL_NIGHTWATCH_OUTPUT}/screenshots`,
-      },
-      end_session_on_fail: false,
     },
-  },
+  }
 };
-
-// console.log(module.exports);
-// console.log(process.cwd() + `../${searchDirectory}`);
-console.log(collectedFolders);
