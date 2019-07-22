@@ -322,8 +322,11 @@ Nightwatch Js:
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
     - cd ${WEB_ROOT}/core
     - yarn install
+    # Html reporter.
+    - yarn add nightwatch-html-reporter
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
     - ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
-    - yarn test:nightwatch ${NIGHTWATCH_TESTS}
+    - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
   artifacts:
     <<: *default_artifacts
     paths:

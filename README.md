@@ -266,10 +266,14 @@ I would like to:
 - Move to Nightwatch 1+ when this [issue](https://www.drupal.org/project/drupal/issues/3059356)
 resolved and on Drupal core. And then get rid of Selenium!
 
-- Add a Drupal dev version so you can test your module for the next version.
+- Add Nightwatch [visual regression testing](https://github.com/Crunch-io/nightwatch-vrt)
+
+- Add accessibility tests with pa11y
+
+- Add a Drupal dev version so you can test your module for the next version
 
 - Add a matrix option like Travis to test against multiple Php versions and
-databases when [Gitlab-ci support it](https://gitlab.com/gitlab-org/gitlab-ce/issues/49557).
+databases when [Gitlab-ci support it](https://gitlab.com/gitlab-org/gitlab-ce/issues/49557)
 
 - Test if all of this is working with some distributions like Lightning or
 Varbase

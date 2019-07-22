@@ -46,18 +46,22 @@ do
       shift
       ;;
     -sp|--skip-prepare)
+      printf ">>> [NOTICE] skip prepare\\n"
       __skip_prepare=1
       shift
       ;;
     -sb|--skip-build)
+      printf ">>> [NOTICE] skip build\\n"
       __skip_build=1
       shift
       ;;
     -si|--skip-install)
+      printf ">>> [NOTICE] skip install\\n"
       __skip_install=1
       shift
       ;;
     -sa|--skip-all)
+      printf ">>> [NOTICE] skip all\\n"
       __skip_all=1
       shift
       ;;
@@ -241,15 +245,16 @@ _create_artifacts() {
 
 # Replicate Build job artifacts.
 _extract_artifacts() {
-  printf ">>> [NOTICE] extract_artifacts\\n"
+  printf ">>> [NOTICE] extract_artifacts..."
   if [ -f tmp/artifacts.tgz ]
   then
     mv tmp/artifacts.tgz .
     _dkexec tar -xzf ${CI_PROJECT_DIR}/artifacts.tgz
     mkdir -p tmp
     mv artifacts.tgz tmp/
+    printf " Done!\\n"
   else
-    printf "\\n>>> [SKIP] No artifacts!\\n" "${_blu}" "${_end}"
+    printf ">>> [SKIP] No artifacts!\\n" "${_blu}" "${_end}"
   fi
 }
 
@@ -344,6 +349,10 @@ _nightwatch() {
 
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
   _ensure_chrome
+
+  _dkexec mkdir -p ${REPORT_DIR}/nightwatch
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}/nightwatch
+
   _nightwatch_cmd
 }
 
@@ -369,7 +378,16 @@ _nightwatch_cmd() {
   if [ ${VERBOSE} == "1" ]; then
     __verbose="--verbose"
   fi
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
+
+  _test_html_reporter=$(docker exec -t ci-drupal sh -c "[ -f /var/www/html/web/core/node_modules/.bin/nightwatch-html-reporter ] && echo true")
+  if [ -z "${_test_html_reporter}" ]; then
+    docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn add nightwatch-html-reporter"
+  fi
+
+  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
+
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
+  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
 }
 
 _test_site() {
@@ -609,9 +627,11 @@ _gen() {
 }
 
 _ensure_chrome() {
-  if ! [ -x "$(command -v chromium)" ]; then
-    sudo apt update && sudo apt install -y chromium
+  _test_chrome=$(docker exec -t ci-drupal sh -c "[ -f /usr/bin/chromium ] && echo true")
+  if [ -z "${_test_chrome}" ]; then
+    docker exec -t ci-drupal sudo apt update && sudo apt install -y chromium
   fi
+  docker exec -t ci-drupal chromium --version
 }
 
 _reset() {
