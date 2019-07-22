@@ -325,14 +325,17 @@ Nightwatch Js:
     # Html reporter.
     - yarn add nightwatch-html-reporter
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
-    - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
+    # - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
     # - touch ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/report.html
     # - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
     # - ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
-    - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${CI_PROJECT_DIR}/${REPORT_DIR} ${DOC_ROOT}
-    - chmod -R 777 ${CI_PROJECT_DIR}/${REPORT_DIR} ${DOC_ROOT}
+    # - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
+    # - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${CI_PROJECT_DIR}/${REPORT_DIR} ${DOC_ROOT}
+    # - chmod -R 777 ${CI_PROJECT_DIR}/${REPORT_DIR} ${DOC_ROOT}
+    - mkdir -p ${WEB_ROOT}/core/reports
     - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
+  after_script:
+    - cp -r ${WEB_ROOT}/core/reports/* ${REPORT_DIR}/nightwatch/
   artifacts:
     <<: *default_artifacts
     paths:
