@@ -131,6 +131,7 @@ Options
   -h|--help                       Print help.
   -sp|--skip-prepare              Skip prepare step (copy files, set folders).
   -sb|--skip-build                Skip build step (cache, perform build).
+  -si|--skip-install              Skip Drupal install step (behat).
   -sa|-spb|--skip-prepare-build   Skip bith previous.
   -sim|--simulate                 Robo simulate action.
 
@@ -483,7 +484,7 @@ _sass_lint() {
 _phpmetrics() {
   printf "\\n%s[INFO]%s Perform job 'Php metrics' (phpmetrics)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
-  _dkexec robo $__simulate prepare:folder
+  _prepare_folders
 
   _dkexecb "phpqa \${PHPQA_REPORT}/phpmetrics --tools phpmetrics \${PHPQA_PHP_CODE}"
 }
@@ -631,6 +632,9 @@ _restart() {
 _nuke() {
   printf "\\n%s[INFO]%s Full reset!\\n" "${_blu}" "${_end}"
   _down
+  sudo chown -R 1000:1000 ../
+  sudo rm -rf tmp
+  sudo rm -rf dump
   _clean_full
 }
 
@@ -671,8 +675,8 @@ _copy_output() {
 
 _clean() {
   _clean_config
-  sudo rm -rf reports/*
-  _dkexecb "rm -rf ${DOC_ROOT}/sites/simpletest/browser_output/*.html"
+  sudo rm -rf reports
+  # _dkexecd "rm -rf ${DOC_ROOT}/sites/simpletest/browser_output/*.html"
 }
 
 _clean_config() {
@@ -688,9 +692,9 @@ _clean_full() {
 }
 
 _clean_custom() {
-  rm -rf tmp* drush scripts vendor \
+  sudo rm -rf drush scripts vendor \
     web/core web/sites web/profiles web/.* web/*.php web/robots.txt web/web.config \
-    .editorconfig .env.example .gitattributes .travis.yml composer.* load.environment.php phpunit.xml.dist
+    .editorconfig .env.example .gitattributes .travis.yml composer.* load.environment.php phpunit.xml.dist | true
 }
 
 _clean_unit() {
@@ -719,27 +723,38 @@ _security() {
 
 _unit() {
   _unit_kernel
+  # Can skip build and prepare for next items.
+  __skip_build=1
+  __skip_prepare=1
   _code_coverage
   _functional
   _functional_js
   _nightwatch
   _behat
+  __skip_build=0
+  __skip_prepare=0
 }
 
 _lint() {
   _eslint
+  __skip_prepare=1
   _stylelint
   _sass_lint
+  __skip_prepare=0
 }
 
 _qa() {
   _code_quality
+  __skip_prepare=1
   _best_practices
+  __skip_prepare=0
 }
 
 _metrics() {
   _phpmetrics
+  __skip_prepare=1
   _phpstat
+  __skip_prepare=0
 }
 
 ###############################################################################
