@@ -270,13 +270,13 @@ Build:
 # Drupal tests see
 # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 
-.Unit and kernel:
+Unit and kernel:
   stage: tests
   extends: .test_template
   script:
     - robo test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
 
-.Code coverage:
+Code coverage:
   stage: tests
   extends: .test_template
   script:
@@ -284,7 +284,7 @@ Build:
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-.Functional:
+Functional:
   stage: tests
   extends: .test_template
   script:
@@ -293,7 +293,7 @@ Build:
   after_script:
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/ | true
 
-.Functional Js:
+Functional Js:
   stage: tests
   extends: .test_template
   script:
@@ -336,7 +336,7 @@ Nightwatch Js:
       - ${REPORT_DIR}
 
 # Behat tests from tests/ folder.
-.Behat tests:
+Behat tests:
   stage: tests
   extends: .test_template
   script:
@@ -370,7 +370,7 @@ Nightwatch Js:
 # [CI_TYPE] [TESTING] Next part can be removed for testing only or no
 # dependencies for a single module / theme.
 # Will fail if a composer.lock is not found.
-.Security report:
+Security report:
   stage: tests
   extends: .test_except_only
   before_script:
