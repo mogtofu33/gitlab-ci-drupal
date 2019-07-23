@@ -287,6 +287,8 @@ _code_coverage() {
   _build
   _tests_prepare
   _dkexec robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  _dkexec cp -r ${WEB_ROOT}/${REPORT_DIR} ./
+  # bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml -t ${CODECOV_TOKEN}
 }
 
 _functional() {
