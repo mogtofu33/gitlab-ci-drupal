@@ -91,9 +91,9 @@ variables:
 
   # Comma separated for phpqa and phpmetrics.
   # Will fail if a folder is empty.
-  PHP_CODE: "${WEB_ROOT}/modules/custom"
+  # PHP_CODE: "${WEB_ROOT}/modules/custom"
   # PHP_CODE: "${WEB_ROOT}/themes/custom"
-  # PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+  PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
 
   ##############################################################################
   # Eslint / Phpqa settings.
@@ -287,11 +287,11 @@ Code coverage:
   extends: .test_template
   script:
     - robo test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
-  # Codecov integration, see https://codecov.io
-  # Need to set up CI ENVIRONMENT VARIABLES to work.
   after_script:
     - cp -r ${WEB_ROOT}/${REPORT_DIR} ./
-    - bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true
+    # [CODECOV] integration, see https://codecov.io
+    # Need to set up CI ENVIRONMENT VARIABLES to work, see https://codecov.io
+    # - bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
