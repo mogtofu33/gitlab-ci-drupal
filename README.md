@@ -19,6 +19,7 @@ Include **Build**,
   - [Use Gitlab CI to test your module](#use-gitlab-ci-to-test-your-module)
   - [Use Gitlab CI to test your Drupal project](#use-gitlab-ci-to-test-your-drupal-project)
 - [Usage details](#usage-details)
+  - [Nightwatch.js for Drupal 8](#nightwatchjs-for-drupal-8)
   - [Behat tests for Drupal 8](#behat-tests-for-drupal-8)
   - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
   - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
@@ -49,30 +50,28 @@ Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
 module or theme.
 
 Edit `.gitlab-ci.yml` file to match the tests you need, search for the text
-`CI_TYPE` and adapt. Basic settings to change are:
+`CI_TYPE` and adapt. Variables to change are:
 
 ```yaml
 image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium
-...
+#...
 variables:
-...
+#...
   CI_TYPE: "module"
-...
-  # If you have Nightwatch tests you can use a tag.
+#...
   NIGHTWATCH_TESTS: "--tag my_module"
-...
+#...
   WEB_ROOT: "/var/www/html"
-...
-  # Not for testing only for QA.
+#...
   PHP_CODE: "${WEB_ROOT}/modules/custom"
 ```
 
-You can remove the `[DEPLOY]` parts and probably the `Security report` job if
-you don't have dependencies to other projects in your composer.json.
+You can remove the `[DEPLOY]` parts, probably the `Security report` job if you
+don't have dependencies to other projects in your composer.json and `Pa11y` job.
 
-To use Behat tests, you must copy the `tests/` that include a `behat.yml`
-configuration to work with this project. If not you can remove the `Behat tests`
-job.
+To use [Behat](http://behat.org/en/latest/) tests, you must copy the `tests/`
+that include a `behat.yml` configuration to work with this project. If not you
+can remove the `Behat tests` job.
 
 Create a branch **testing**
 
@@ -84,9 +83,6 @@ tag, adapt the section with:
 
 ```yaml
 .test_except_only: &test_except_only
-  # Build and tests are not for master but only branch testing or tags for release.
-  # Limit to branch push, for more options see
-  # https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
   except:
     - master
   only:
@@ -136,6 +132,19 @@ step of editing to match your project.
 
 I use [Robo.li](https://robo.li/) with this [RoboFile](.gitlab-ci/RoboFile.php)
 for running composer, phpunit and some specific tasks.
+
+### Nightwatch.js for Drupal 8
+
+Since Drupal 8.6, [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch) is included as a Javascript test framework.
+
+For now it is not really ready to be used as a replacement for functional
+Javascript, but almost...
+
+The CI tests here include 2 patches to be able to upgrade to nightwatch 1.2 and
+being able to install Drupal from a profile:
+
+- [[Security] Update yarn packages to fix 19 vulnerabilities by updating nightwatch](https://drupal.org/node/3059356)
+- [Support install profile and language code params in drupalInstall Nightwatch command](https://drupal.org/node/3017176)
 
 ### Behat tests for Drupal 8
 
@@ -213,6 +222,9 @@ Nothing could be done without a bunch of awesome humans building awesome tools.
 - [Stylelint](https://github.com/stylelint/stylelint)
 - [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
 - [PHPunit](https://phpunit.de)
+- [Security-checker](https://github.com/sensiolabs/security-checker)
+- [Behat](http://behat.org/en/latest)
+- [Pa11y](https://pa11y.org)
 
 Code quality is done using the wonderful Phpqa, a tool that integrate other Php
 quality and analysis tools:
@@ -223,7 +235,6 @@ quality and analysis tools:
   - [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
   - [Phpmd](https://github.com/phpmd/phpmd)
   - [PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
-  - [Security-checker](https://github.com/sensiolabs/security-checker)
   - [Pdepend](https://pdepend.org/)
   - [Phpmetrics](https://www.phpmetrics.org)
 
@@ -263,12 +274,7 @@ You want to help me make this better? Good! just PR!
 
 I would like to:
 
-- Move to Nightwatch 1+ when this [issue](https://www.drupal.org/project/drupal/issues/3059356)
-resolved and on Drupal core. And then get rid of Selenium!
-
 - Add Nightwatch [visual regression testing](https://github.com/Crunch-io/nightwatch-vrt)
-
-- Add accessibility tests with pa11y
 
 - Add a Drupal dev version so you can test your module for the next version
 
@@ -286,6 +292,7 @@ A lot of help and inspiration from those wonderful projects:
 - [https://github.com/Lullabot/drupal8ci](https://github.com/Lullabot/drupal8ci)
 - [https://gitlab.com/Lullabot/d8cidemo/tree/gitlab](https://gitlab.com/Lullabot/d8cidemo/tree/gitlab)
 - [https://github.com/manumilou/gitlab-ci-example-drupal](https://github.com/manumilou/gitlab-ci-example-drupal)
+- [https://bitbucket.org/mediacurrent/ci-tests](https://bitbucket.org/mediacurrent/ci-tests)
 
 ----
 
