@@ -588,7 +588,7 @@ _generate_env_from_yaml() {
     exit 1
   fi
   __yaml="./.gitlab-ci.yml"
-  __env="./local/.gitlab-ci.env"
+  __env="./local/.env"
 
   if [ -f $__env ]; then
     rm -f $__env
@@ -618,9 +618,11 @@ _generate_env_from_yaml() {
   sed -i 's#: #=#g' $__env
   # Remove empty values.
   sed -i 's#""##g' $__env
-  # Treat 1 / 0 options without dble quotes.
+  # Treat 1 / 0 options without double quotes.
   sed -i 's#"1"#1#g' $__env
   sed -i 's#"0"#0#g' $__env
+  # Remove quotes on DRUPAL_VERSION.
+  sed -i 's#DRUPAL_VERSION="8\(.*\)"#DRUPAL_VERSION=8\1#g' $__env
 
   # __WEB_ROOT=$(yq r $__yaml variables.WEB_ROOT)
   sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
@@ -669,7 +671,7 @@ _nuke() {
 }
 
 _up() {
-  if ! [ -f "./local/.gitlab-ci.env" ]; then
+  if ! [ -f "./local/.env" ]; then
     _generate_env_from_yaml
   fi
 
