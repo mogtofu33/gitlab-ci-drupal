@@ -184,6 +184,10 @@ stages:
 .test_variables: &test_variables
   MYSQL_DATABASE: "drupal"
   MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+  # Install Drupal from a config ../config/sync folder.
+  DRUPAL_SETUP_FROM_CONFIG: "0"
+  # When install Drupal is needed, choose a profile.
+  DRUPAL_INSTALL_PROFILE: "minimal"
   DB_DUMP: "${CI_PROJECT_DIR}/dump"
   SIMPLETEST_BASE_URL: "http://localhost"
   SIMPLETEST_DB: "mysql://root@mariadb/drupal"
@@ -227,11 +231,11 @@ stages:
       - ${REPORT_DIR}/*
 
 ################################################################################
-# Build and tests jobs, not for master.
+# Build and tests jobs.
 ################################################################################
 
 # Build job for all tests.
-# For a project, the build part use composer install to get the Drupal code.
+# For a project, this build part use composer install to get the Drupal code.
 # For a theme this can be used with a specific script to build something
 # (grunt, webpack, yarn...). You must add your script and adapt the cache and
 # artifacts.
@@ -267,8 +271,10 @@ Build:
       - load.environment.php
     expire_in: 1 day
 
+################################################################################
 # Drupal tests see
 # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
+################################################################################
 
 Unit and kernel:
   stage: tests
@@ -291,7 +297,7 @@ Functional:
     # For functional tests the user need to be the Apache user.
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
   after_script:
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/ | true
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/ || true
 
 Functional Js:
   stage: tests
@@ -299,10 +305,10 @@ Functional Js:
   script:
     # Ensure selenium is up.
     - /scripts/start-selenium-standalone.sh&
-    - sleep 5s
+    - sleep 5s && curl -s http://localhost:4444/wd/hub | jq '.'
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
   after_script:
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ | true
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 Nightwatch Js:
@@ -310,7 +316,7 @@ Nightwatch Js:
   extends: .test_template
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
-    # [TEMPORARY] Patch for Nightwatch 1.10+ and allow install profile.
+    # [TEMPORARY] Patch for Nightwatch 1.11+ and allow install profile.
     - cd ${WEB_ROOT}
     - curl -fsSL https://www.drupal.org/files/issues/2019-07-02/3059356-12-nightwatch-upgrade.patch -o upgrade.patch
     - patch -p1 < upgrade.patch || true
@@ -335,6 +341,29 @@ Nightwatch Js:
     paths:
       - ${REPORT_DIR}
 
+################################################################################
+# Third party tools tests.
+#
+# [TESTING] Next part can be removed for testing only.
+################################################################################
+
+# [CI_TYPE] [TESTING] Next part can be removed if no dependencies for a single
+# module / theme.
+Security report:
+  stage: tests
+  extends: .test_except_only
+  before_script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
+    - robo prepare:folders
+  script:
+    - if [ -f composer.lock ]; then
+        security-checker security:check;
+      else
+        echo "[SKIP] No composer.lock file!";
+      fi
+  dependencies:
+    - Build
+
 # Behat tests from tests/ folder.
 Behat tests:
   stage: tests
@@ -342,14 +371,15 @@ Behat tests:
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
-    - robo install:drupal standard
+    - robo install:drupal
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
     # Starting Chrome, we are not using Selenium.
     - /scripts/start-chrome.sh&
-    - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
+    - sleep 5s && curl -s http://localhost:9222/json/version | jq '.'
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   variables:
     <<: *test_variables
+    DRUPAL_INSTALL_PROFILE: "standard"
     CHROMIUM_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
     BEHAT_PARAMS: >
       {
@@ -367,23 +397,29 @@ Behat tests:
         }
       }
 
-# [CI_TYPE] [TESTING] Next part can be removed for testing only or no
-# dependencies for a single module / theme.
-# Will fail if a composer.lock is not found.
-Security report:
+################################################################################
+# Accessibility jobs for Drupal 8+
+#
+# [TESTING] Next part can be removed for testing only.
+################################################################################
+
+Pa11y:
   stage: tests
-  extends: .test_except_only
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
+  extends: .test_template
   script:
-    - if [ -f composer.lock ]; then
-        security-checker security:check;
-      else
-        echo "[SKIP] No composer.lock file!";
-      fi
-  dependencies:
-    - Build
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
+    - robo prepare:folders
+    - robo install:drupal
+    - cd ${WEB_ROOT}/core
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json ${WEB_ROOT}/core || true
+    - yarn add pa11y-ci
+    - pa11y-ci --config ./pa11y-ci.json
+  after_script:
+    - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y
+    - cp -f ${WEB_ROOT}/core/reports/pa11y-*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y/
+  variables:
+    <<: *test_variables
+    DRUPAL_INSTALL_PROFILE: "standard"
 
 ################################################################################
 # Code quality jobs for Drupal 8+

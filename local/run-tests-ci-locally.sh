@@ -34,6 +34,7 @@ __skip_build=0
 __skip_install=0
 __skip_all=0
 __simulate=""
+__drupal_profile="minimal"
 
 _CMD=()
 
@@ -407,12 +408,8 @@ _behat() {
   _copy_robofile
   _prepare_folders
 
-  if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
-    printf ">>> [SKIP] install\\n"
-  else
-    printf ">>> [NOTICE] install\\n"
-    _dkexec robo $__simulate install:drupal standard
-  fi
+  DRUPAL_INSTALL_PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
+  _install_drupal
 
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
 
@@ -423,6 +420,18 @@ _behat() {
   _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
 
   _behat_cmd
+}
+
+_install_drupal() {
+  if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
+    printf ">>> [SKIP] install\\n"
+  else
+    printf ">>> [NOTICE] install Drupal\\n"
+    if [ -z ${DRUPAL_INSTALL_PROFILE} ]; then
+      $__drupal_profile = ${DRUPAL_INSTALL_PROFILE}
+    fi
+    _dkexec robo $__simulate install:drupal $__drupal_profile
+  fi
 }
 
 _behat_cmd() {
@@ -554,11 +563,12 @@ _init_variables() {
   PHPQA_IGNORE_FILES=$(yq r ./.gitlab-ci.yml variables.PHPQA_IGNORE_FILES)
   NIGHTWATCH_TESTS=$(yq r ./.gitlab-ci.yml variables.NIGHTWATCH_TESTS)
 
+  DRUPAL_SETUP_FROM_CONFIG=$(yq r ./.gitlab-ci.yml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
   APACHE_RUN_USER=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_USER)
   APACHE_RUN_GROUP=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_GROUP)
   BROWSERTEST_OUTPUT_DIRECTORY=$(yq r ./.gitlab-ci.yml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
   BROWSERTEST_OUTPUT_DIRECTORY=$(echo $BROWSERTEST_OUTPUT_DIRECTORY | sed "s#\${WEB_ROOT}#${WEB_ROOT}#g")
-
+  DRUPAL_INSTALL_PROFILE="minimal"
 }
 
 _init() {

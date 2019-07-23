@@ -59,15 +59,6 @@ class RoboFile extends \Robo\Tasks {
   protected $webRoot = '/var/www/html';
 
   /**
-   * Install Drupal.
-   *
-   * @var bool
-   *   Flag to install Drupal. This can be  overridden by specifying an
-   *   $INSTALL_DRUPAL environment variable.
-   */
-  protected $installDrupal = null;
-
-  /**
    * Drupal setup profile.
    *
    * @var string
@@ -168,13 +159,14 @@ class RoboFile extends \Robo\Tasks {
       $this->webRoot = getenv('WEB_ROOT');
     }
 
+    // Pull a DRUPAL_SETUP_FROM_CONFIG from the environment, if it exists.
+    if (filter_var(getenv('DRUPAL_SETUP_FROM_CONFIG'))) {
+      $this->setupFromConfig = getenv('DRUPAL_SETUP_FROM_CONFIG');
+    }
+
     // Pull a REPORT_DIR from the environment, if it exists.
     if (getenv('REPORT_DIR')) {
       $this->reportDir = getenv('REPORT_DIR');
-    }
-    // Pull a INSTALL_DRUPAL from the environment, if it exists.
-    if (getenv('INSTALL_DRUPAL')) {
-      $this->installDrupal = getenv('INSTALL_DRUPAL');
     }
   }
 
@@ -353,10 +345,13 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installDrupal($profile = null) {
     $this->say('Installing Drupal...');
+    if (!$profile) {
+      $profile = $this->setupProfile;
+    }
 
-    if (file_exists($this->dbDump . '/dump.sql')) {
-      $this->say("Import dump $this->dbDump/dump.sql");
-      $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump.sql;');
+    if (file_exists($this->dbDump . '/dump-' . $profile . '.sql')) {
+      $this->say("Import dump $this->dbDump/dump-$profile.sql");
+      $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump-' . $profile . '.sql;');
 
       // When install from dump we need to be sure settings.php is correct.
       $this->taskFilesystemStack()
@@ -450,6 +445,7 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) The module name.
    */
   public function testSuite($testsuite = 'unit,kernel', $xml = true, $html = true, $module = null) {
+    // Prepare report dir.
     $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
     if (!file_exists($this->reportDir)) {
       $this->taskFilesystemStack()->mkdir($reportDir)->run();
@@ -633,7 +629,7 @@ class RoboFile extends \Robo\Tasks {
         if (!file_exists($this->ciProjectDir . '/web/index.php')) {
           $this->io()->error("Missing Drupal, did composer install failed?");
         }
-        if ($forceInstall || $this->installDrupal) {
+        if ($forceInstall) {
           $this->installDrupal();
         }
         break;
