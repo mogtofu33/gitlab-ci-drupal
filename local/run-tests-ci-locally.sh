@@ -31,45 +31,59 @@ _PRINT_HELP=0
 
 __skip_prepare=0
 __skip_build=0
-__skip_pb=0
+__skip_install=0
+__skip_all=0
 __simulate=""
+__drupal_profile="minimal"
+
+_CMD=()
 
 while [[ ${#} -gt 0 ]]
 do
   __option="${1:-}"
-  __maybe_param="${2:-}"
   case "${__option}" in
     -h|--help)
       _PRINT_HELP=1
+      shift
       ;;
     -sp|--skip-prepare)
+      printf ">>> [NOTICE] skip prepare\\n"
       __skip_prepare=1
+      shift
       ;;
     -sb|--skip-build)
+      printf ">>> [NOTICE] skip build\\n"
       __skip_build=1
+      shift
       ;;
-    -sa|-spb|--skip-prepare-build)
-      __skip_pb=1
+    -si|--skip-install)
+      printf ">>> [NOTICE] skip install\\n"
+      __skip_install=1
+      shift
+      ;;
+    -sa|--skip-all)
+      printf ">>> [NOTICE] skip all\\n"
+      __skip_all=1
+      shift
       ;;
     -sim|--simulate)
       printf ">>> [NOTICE] simulate robo\\n"
       __simulate="--simulate"
-      __skip_pb=1
+      __skip_all=1
+      shift
       ;;
     --endopts)
-      # Terminate option parsing.
+      Terminate option parsing.
       break
       ;;
-    -*)
-      printf "%s[ERROR]%s Unexpected option: %s\\n" "${_red}" "${_end}" "${__option}"
-      exit 1
-      ;;
     *)
-      _CMD=${__option}
+      _CMD+=("$1")
+      shift
       ;;
   esac
-  shift
 done
+
+_ARGS=${_CMD[@]:1}
 
 ###############################################################################
 # Help
@@ -118,6 +132,14 @@ Arguments:
     phpmetrics
     phpstat
 
+Options
+  -h|--help                       Print help.
+  -sp|--skip-prepare              Skip prepare step (copy files, set folders).
+  -sb|--skip-build                Skip build step (cache, perform build).
+  -si|--skip-install              Skip Drupal install step (behat).
+  -sa|-spb|--skip-prepare-build   Skip bith previous.
+  -sim|--simulate                 Robo simulate action.
+
 HEREDOC
 }
 
@@ -127,22 +149,30 @@ HEREDOC
 
 _status() {
 
-  printf "CI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
-  ${CI_TYPE} ${WEB_ROOT} ${DOC_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
-  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\PHPUNIT_TESTS:%s\\n" \
-  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS}
+  _status_vars
 
-  _dkexecb /scripts/run-tests.sh
-  # docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.sh"
+  _dkexecb /scripts/run-tests.
+  sleep 2s
+  docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.
+  sleep 2s"
   # sleep 2s
   printf "Selenium running? (If nothing, no!)\\n"
   _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
-  # docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
+  docker exec -d ci-drupal bash -c "/scripts/start-chrome.
+  sleep 2s"
   # sleep 1s
   printf "Chrome running? (If nothing, no!)\\n"
   _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
 
   printf "\\n"
+}
+
+_status_vars() {
+
+  printf "CI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
+  ${CI_TYPE} ${WEB_ROOT} ${DOC_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
+  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\n" \
+  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY}
 }
 
 _st() {
@@ -151,12 +181,12 @@ _st() {
 
 # Replicate Gitlab-ci.yml .test_template
 _tests_prepare() {
-  if [ $__skip_prepare = 1 ] || [ $__skip_pb = 1 ]; then
+  if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] tests_prepare\\n"
-else
+  else
     printf ">>> [NOTICE] tests_prepare\\n"
 
-    _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
+    _copy_robofile
 
     _prepare_folders
     
@@ -164,29 +194,25 @@ else
     # docker exec -d ci-drupal bash -c "apache2-foreground"
 
     # Prepare needed folders, reproduce .test_template
-    if [ ${CI_TYPE} == 'custom' ]; then
-      _dkexecb "cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${CI_PROJECT_DIR}/web/core/phpunit.xml"
-    else
-      _dkexecb "cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml"
-    fi
+    _dkexec cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml
 
     # RoboFile.php is already at root.
-    _dkexecb "mkdir -p \${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
-    _dkexecb "chmod -R g+s \${BROWSERTEST_OUTPUT_DIRECTORY}"
-    _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} \${BROWSERTEST_OUTPUT_DIRECTORY}"
+    _dkexec mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output
+    _dkexec chmod -R g+s ${BROWSERTEST_OUTPUT_DIRECTORY}
+    _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
   fi
 }
 
 # Replicate Build job.
 _build() {
-  if [ $__skip_build = 1 ] || [ $__skip_pb = 1 ]; then
+  if [ $__skip_build = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] build\\n"
-    _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
+    _copy_robofile
   else
     printf ">>> [NOTICE] build\\n"
     _simulate_cache
 
-    _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
+    _copy_robofile
 
     _dkexec robo $__simulate perform:build
 
@@ -195,9 +221,10 @@ _build() {
 }
 
 _prepare_folders() {
-  if [ $__skip_prepare = 1 ]; then
+  if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] prepare_folders\\n"
   else
+    _copy_robofile
     _dkexec robo $__simulate prepare:folders
   fi
 }
@@ -209,7 +236,9 @@ _create_artifacts() {
   if ! [ -f tmp/artifacts.tgz ] && [ -f web/index.php ]
   then
     mkdir -p tmp
-    tar -czf tmp/artifacts.tgz vendor web drush scripts composer.json composer.lock .env.example load.environment.php
+    tar -czf tmp/artifacts.tgz \
+      --exclude="web/modules/custom" --exclude="web/themes/custom" \
+      vendor web drush scripts composer.json composer.lock .env.example load.environment.php
   else
     printf ">>> [SKIP] artifacts already exist or not a project.\\n"
   fi
@@ -217,15 +246,16 @@ _create_artifacts() {
 
 # Replicate Build job artifacts.
 _extract_artifacts() {
-  printf ">>> [NOTICE] extract_artifacts\\n"
+  printf ">>> [NOTICE] extract_artifacts..."
   if [ -f tmp/artifacts.tgz ]
   then
     mv tmp/artifacts.tgz .
-    _dkexecb "tar -xzf ${CI_PROJECT_DIR}/artifacts.tgz"
+    _dkexec tar -xzf ${CI_PROJECT_DIR}/artifacts.tgz
     mkdir -p tmp
     mv artifacts.tgz tmp/
+    printf " Done!\\n"
   else
-    printf "\\n>>> [SKIP] No artifacts!\\n" "${_blu}" "${_end}"
+    printf ">>> [SKIP] No artifacts!\\n" "${_blu}" "${_end}"
   fi
 }
 
@@ -234,10 +264,13 @@ _simulate_cache() {
   printf ">>> [NOTICE] simulate_cache\\n"
   _extract_artifacts
   if ! [ ${CI_TYPE} == "project" ]; then
-    rm -rf drush scripts composer.json composer.lock .env.example load.environment.php
+    sudo rm -rf drush scripts composer.json composer.lock .env.example load.environment.php
   fi
 }
 
+_copy_robofile() {
+  _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
+}
 ####### Tests jobs
 
 _unit_kernel() {
@@ -253,7 +286,9 @@ _code_coverage() {
 
   _build
   _tests_prepare
-  _dkexecb robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  _dkexec robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  _dkexec cp -r ${WEB_ROOT}/${REPORT_DIR} ./
+  # bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml -t ${CODECOV_TOKEN}
 }
 
 _functional() {
@@ -262,40 +297,38 @@ _functional() {
   _build
   _tests_prepare
 
-  _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites"
-  _dkexecb "sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional"
-
-  _dkexecb "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional"
-
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
   _functional_cmd
 }
 
 _functional_cmd() {
-  _dkexecb "sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional"
-
-  _dkexecb "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional"
+  _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional
+  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional
 }
 
 _functional_js() {
   printf "\\n%s[INFO]%s Perform job 'Functional Js' (functional_js)\\n\\n" "${_blu}" "${_end}"
   # Starting Selenium.
   docker exec -d ci-drupal /scripts/start-selenium-standalone.sh
+  sleep 5s
 
   _build
   _tests_prepare
 
   _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
 
-  _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites"
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
 
   _functional_js_cmd
 }
 
 _functional_js_cmd() {
-  _dkexecb "sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript"
+  _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript
   # _dkexec robo $__simulate test:suite "${PHPUNIT_TESTS}functional-javascript"
 
-  _dkexecb "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript"
+  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript
 }
 
 _nightwatch() {
@@ -304,27 +337,68 @@ _nightwatch() {
   _build
   _tests_prepare
 
-  _dkexecb "cp -u ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env"
+  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env
 
-  # printf ">>> [NOTICE] Patching nightwatch for Drupal profile support..."
-  # _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o ${DOC_ROOT}/3017176-7.patch"
-  # docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${DOC_ROOT}/3017176-7.patch"
-  # sleep 2s
-  # printf "Done!\\n"
+  _patch_nightwatch
 
-  _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
+  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/nightwatch.conf.js ${WEB_ROOT}/core/nightwatch.conf.js
+
+  _copy_robofile
   _prepare_folders
 
-  printf ">>> [NOTICE] Chwon docroot, can be long..."
-  _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}"
+  printf ">>> [NOTICE] Chown docroot, can be long..."
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}
   printf "Done!\\n"
 
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
+  _ensure_chrome
+
+  _dkexec mkdir -p ${REPORT_DIR}/nightwatch
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}/nightwatch
+
   _nightwatch_cmd
 }
 
+_patch_nightwatch() {
+  printf ">>> [NOTICE] Patching nightwatch to upgrade to ^1.10"
+  _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-07-02/3059356-12-nightwatch-upgrade.patch -o ${WEB_ROOT}/upgrade.patch"
+  docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/upgrade.patch"
+  sleep 2s
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
+  printf "\\n"
+  docker exec -it ci-drupal ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
+  printf " Done!\\n"
+
+  printf ">>> [NOTICE] Patching nightwatch for Drupal profile support..."
+  _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o ${WEB_ROOT}/3017176-7.patch"
+  docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3017176-7.patch"
+  sleep 2s
+  printf "Done!\\n"
+}
+
 _nightwatch_cmd() {
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${NIGHTWATCH_TESTS}"
+  __verbose=""
+  if [ ${VERBOSE} == "1" ]; then
+    __verbose="--verbose"
+  fi
+
+  _test_html_reporter=$(docker exec -t ci-drupal sh -c "[ -f /var/www/html/web/core/node_modules/.bin/nightwatch-html-reporter ] && echo true")
+  if [ -z "${_test_html_reporter}" ]; then
+    docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn add nightwatch-html-reporter"
+  fi
+
+  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
+
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
+  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
+}
+
+_test_site() {
+  if [ ${_ARGS} == "install" ]; then
+    docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "sudo -u www-data php ./scripts/test-site.php install --setup-file 'core/tests/Drupal/TestSite/TestSiteInstallTestScript.php' --install-profile 'demo_umami' --base-url http://localhost --db-url mysql://root@mariadb/drupal"
+  else
+    docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "sudo -u www-data php ./scripts/test-site.php ${_ARGS}"
+  fi
 }
 
 _behat() {
@@ -333,31 +407,47 @@ _behat() {
   _build
   _tests_prepare
 
-  _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
+  _copy_robofile
   _prepare_folders
-  _dkexec robo $__simulate install:drupal standard
 
-  _dkexecb "chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites"
+  DRUPAL_INSTALL_PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
+  _install_drupal
+
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
 
   # Starting Chrome.
+  _ensure_chrome
   docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
+  sleep 5s
   _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
 
   _behat_cmd
 }
 
+_install_drupal() {
+  if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
+    printf ">>> [SKIP] install\\n"
+  else
+    printf ">>> [NOTICE] install Drupal\\n"
+    if [ -z ${DRUPAL_INSTALL_PROFILE} ]; then
+      $__drupal_profile = ${DRUPAL_INSTALL_PROFILE}
+    fi
+    _dkexec robo $__simulate install:drupal $__drupal_profile
+  fi
+}
+
 _behat_cmd() {
-  _dkexec robo $__simulate test:behat
+  _dkexec robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
 }
 
 _security_checker() {
   printf "\\n%s[INFO]%s Perform job 'Security report' (security_checker)\\n\\n" "${_blu}" "${_end}"
 
   _build
-  _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}"
+  _copy_robofile
   _prepare_folders
 
-  _dkexecb security-checker security:check
+  _dkexec security-checker security:check
 }
 
 ####### QA jobs
@@ -366,7 +456,7 @@ _security_checker() {
 _cp_qa_lint_metrics() {
   # Place config files in a proper directory.
   printf ">>> [NOTICE] cp config\\n"
-  _dkexecb "cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}"
+  _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}
 }
 
 _code_quality() {
@@ -423,7 +513,7 @@ _sass_lint() {
 _phpmetrics() {
   printf "\\n%s[INFO]%s Perform job 'Php metrics' (phpmetrics)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
-  _dkexec robo $__simulate prepare:folder
+  _prepare_folders
 
   _dkexecb "phpqa \${PHPQA_REPORT}/phpmetrics --tools phpmetrics \${PHPQA_PHP_CODE}"
 }
@@ -446,6 +536,12 @@ _dkexec() {
   fi
 }
 
+_dkexecd() {
+  if ! [ -f "/.dockerenv" ]; then
+    docker exec -d -w ${CI_PROJECT_DIR} ci-drupal "$@"
+  fi
+}
+
 _dkexecb() {
   if ! [ -f "/.dockerenv" ]; then
     docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
@@ -457,18 +553,24 @@ _dkexecb() {
 ###############################################################################
 
 _init_variables() {
+  CI_PROJECT_DIR="/builds"
+  VERBOSE=$(yq r ./.gitlab-ci.yml variables.VERBOSE)
   CI_TYPE=$(yq r ./.gitlab-ci.yml variables.CI_TYPE)
   WEB_ROOT=$(yq r ./.gitlab-ci.yml variables.WEB_ROOT)
   DOC_ROOT=$(yq r ./.gitlab-ci.yml variables.DOC_ROOT)
   REPORT_DIR=$(yq r ./.gitlab-ci.yml variables.REPORT_DIR)
-  CI_PROJECT_DIR="/builds"
-  APACHE_RUN_USER=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_USER)
-  APACHE_RUN_GROUP=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_GROUP)
   PHPUNIT_TESTS=$(yq r ./.gitlab-ci.yml variables.PHPUNIT_TESTS)
   PHP_CODE=$(yq r ./.gitlab-ci.yml variables.PHP_CODE)
   PHPQA_IGNORE_DIRS=$(yq r ./.gitlab-ci.yml variables.PHPQA_IGNORE_DIRS)
   PHPQA_IGNORE_FILES=$(yq r ./.gitlab-ci.yml variables.PHPQA_IGNORE_FILES)
   NIGHTWATCH_TESTS=$(yq r ./.gitlab-ci.yml variables.NIGHTWATCH_TESTS)
+
+  DRUPAL_SETUP_FROM_CONFIG=$(yq r ./.gitlab-ci.yml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
+  APACHE_RUN_USER=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_USER)
+  APACHE_RUN_GROUP=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_GROUP)
+  BROWSERTEST_OUTPUT_DIRECTORY=$(yq r ./.gitlab-ci.yml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
+  BROWSERTEST_OUTPUT_DIRECTORY=$(echo $BROWSERTEST_OUTPUT_DIRECTORY | sed "s#\${WEB_ROOT}#${WEB_ROOT}#g")
+  DRUPAL_INSTALL_PROFILE="minimal"
 }
 
 _init() {
@@ -488,7 +590,7 @@ _generate_env_from_yaml() {
     exit 1
   fi
   __yaml="./.gitlab-ci.yml"
-  __env="./local/.gitlab-ci.env"
+  __env="./local/.env"
 
   if [ -f $__env ]; then
     rm -f $__env
@@ -500,20 +602,29 @@ _generate_env_from_yaml() {
 
   yq r $__yaml variables >> $__env
   yq r $__yaml "[.test_variables]" >> $__env
-  # # yq r $__yaml "Behat tests.variables" >> $__env
 
-  # sed -i "s#\${CI_PROJECT_DIR}#${CI_PROJECT_DIR}#g" $__env
-  # sed -i "s#\${REPORT_DIR}#${REPORT_DIR}#g" $__env
-  # sed -i "s#\${PHP_CODE}#${PHP_CODE}#g" $__env
-  # sed -i "s#\${PHPQA_IGNORE_DIRS}#${PHPQA_IGNORE_DIRS}#g" $__env
-  # sed -i "s#\${PHPQA_IGNORE_FILES}#${PHPQA_IGNORE_FILES}#g" $__env
+  CHROMIUM_OPTS=$(yq r $__yaml "[Behat tests].variables.CHROMIUM_OPTS")
+  echo 'CHROMIUM_OPTS='"${CHROMIUM_OPTS}"'' >> $__env
+  # Fix BEHAT_PARAMS, remove spaces and escape \.
+  BEHAT_PARAMS=$(yq r $__yaml "[Behat tests].variables.BEHAT_PARAMS")
+  BEHAT_PARAMS="$(echo -e "${BEHAT_PARAMS}" | tr -d '[:space:]')"
+  BEHAT_PARAMS=$(sed 's#\\#\\\\#g' <<< $BEHAT_PARAMS)
+  echo 'BEHAT_PARAMS='${BEHAT_PARAMS} >> $__env
 
-  # sed -i 's#: #=#g' $__env
-  # # Remove empty values.
-  # sed -i 's#""##g' $__env
-  # # Treat 1 / 0 options without dble quotes.
-  # sed -i 's#"1"#1#g' $__env
-  # sed -i 's#"0"#0#g' $__env
+  sed -i "s#\${CI_PROJECT_DIR}#${CI_PROJECT_DIR}#g" $__env
+  sed -i "s#\${REPORT_DIR}#${REPORT_DIR}#g" $__env
+  sed -i "s#\${PHP_CODE}#${PHP_CODE}#g" $__env
+  sed -i "s#\${PHPQA_IGNORE_DIRS}#${PHPQA_IGNORE_DIRS}#g" $__env
+  sed -i "s#\${PHPQA_IGNORE_FILES}#${PHPQA_IGNORE_FILES}#g" $__env
+
+  sed -i 's#: #=#g' $__env
+  # Remove empty values.
+  sed -i 's#""##g' $__env
+  # Treat 1 / 0 options without double quotes.
+  sed -i 's#"1"#1#g' $__env
+  sed -i 's#"0"#0#g' $__env
+  # Remove quotes on DRUPAL_VERSION.
+  sed -i 's#DRUPAL_VERSION="8\(.*\)"#DRUPAL_VERSION=8\1#g' $__env
 
   # __WEB_ROOT=$(yq r $__yaml variables.WEB_ROOT)
   sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
@@ -527,6 +638,14 @@ _env() {
 
 _gen() {
   _generate_env_from_yaml
+}
+
+_ensure_chrome() {
+  _test_chrome=$(docker exec -t ci-drupal sh -c "[ -f /usr/bin/chromium ] && echo true")
+  if [ -z "${_test_chrome}" ]; then
+    docker exec -t ci-drupal sudo apt update && sudo apt install -y chromium
+  fi
+  docker exec -t ci-drupal chromium --version
 }
 
 _reset() {
@@ -547,11 +666,14 @@ _restart() {
 _nuke() {
   printf "\\n%s[INFO]%s Full reset!\\n" "${_blu}" "${_end}"
   _down
+  sudo chown -R 1000:1000 ../
+  sudo rm -rf tmp
+  sudo rm -rf dump
   _clean_full
 }
 
 _up() {
-  if ! [ -f "./local/.gitlab-ci.env" ]; then
+  if ! [ -f "./local/.env" ]; then
     _generate_env_from_yaml
   fi
 
@@ -582,13 +704,13 @@ _down() {
 }
 
 _copy_output() {
-  _dkexecb "cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/"
+  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/
 }
 
 _clean() {
   _clean_config
-  sudo rm -rf reports/*
-  _dkexecb "rm -rf ${DOC_ROOT}/sites/simpletest/browser_output/*.html"
+  sudo rm -rf reports
+  # _dkexecd "rm -rf ${DOC_ROOT}/sites/simpletest/browser_output/*.html"
 }
 
 _clean_config() {
@@ -604,9 +726,9 @@ _clean_full() {
 }
 
 _clean_custom() {
-  rm -rf tmp* drush scripts vendor \
+  sudo rm -rf drush scripts vendor \
     web/core web/sites web/profiles web/.* web/*.php web/robots.txt web/web.config \
-    .editorconfig .env.example .gitattributes .travis.yml composer.* load.environment.php phpunit.xml.dist
+    .editorconfig .env.example .gitattributes .travis.yml composer.* load.environment.php phpunit.xml.dist | true
 }
 
 _clean_unit() {
@@ -635,27 +757,38 @@ _security() {
 
 _unit() {
   _unit_kernel
+  # Can skip build and prepare for next items.
+  __skip_build=1
+  __skip_prepare=1
   _code_coverage
   _functional
   _functional_js
   _nightwatch
   _behat
+  __skip_build=0
+  __skip_prepare=0
 }
 
 _lint() {
   _eslint
+  __skip_prepare=1
   _stylelint
   _sass_lint
+  __skip_prepare=0
 }
 
 _qa() {
   _code_quality
+  __skip_prepare=1
   _best_practices
+  __skip_prepare=0
 }
 
 _metrics() {
   _phpmetrics
+  __skip_prepare=1
   _phpstat
+  __skip_prepare=0
 }
 
 ###############################################################################
@@ -673,7 +806,7 @@ _main() {
 
   if ((_PRINT_HELP))
   then
-    _print_help
+    _help
   elif [ "${_CMD}" == "init_variables" ]; then
     _init_variables
     exit 0

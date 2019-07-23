@@ -30,7 +30,7 @@ variables:
   # CI_DEBUG_TRACE: "1"
   #
   # Verbose scripts, mostly composer and phpunit. 1|0.
-  VERBOSE: "1"
+  VERBOSE: "0"
   # No ansi flag for composer.
   NO_ANSI: "1"
 
@@ -66,7 +66,7 @@ variables:
   # Nightwatch.js tests to run, only tag, core, all except core.
   # see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
   # Add --verbose for a full log from Nightwatch if it fail.
-  # NIGHTWATCH_TESTS: "--tag my_module_tags"
+  # NIGHTWATCH_TESTS: "--tag custom"
   NIGHTWATCH_TESTS: "--skiptags core"
 
   # Phpunit tests to run, only custom code or empty for all 
@@ -161,10 +161,15 @@ stages:
 .test_variables: &test_variables
   MYSQL_DATABASE: "drupal"
   MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+  # Install Drupal from a config ../config/sync folder.
+  DRUPAL_SETUP_FROM_CONFIG: "0"
+  # When install Drupal is needed, choose a profile.
+  DRUPAL_INSTALL_PROFILE: "minimal"
   DB_DUMP: "${CI_PROJECT_DIR}/dump"
   SIMPLETEST_BASE_URL: "http://localhost"
   SIMPLETEST_DB: "mysql://root@mariadb/drupal"
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+  # No spaces.
   MINK_DRIVER_ARGS_WEBDRIVER: '["chrome",{"browserName":"chrome","chromeOptions":{"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}},"http://localhost:4444/wd/hub"]'
   APACHE_RUN_USER: "www-data"
   APACHE_RUN_GROUP: "www-data"
@@ -194,6 +199,9 @@ stages:
     - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
     - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+    - mkdir -p "${REPORT_DIR}"
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
   artifacts:
     <<: *default_artifacts
     paths:
@@ -202,11 +210,11 @@ stages:
 
 
 ################################################################################
-# Build and tests jobs, not for master.
+# Build and tests jobs.
 ################################################################################
 
 # Build job for all tests.
-# For a project, the build part use composer install to get the Drupal code.
+# For a project, this build part use composer install to get the Drupal code.
 # For a theme this can be used with a specific script to build something
 # (grunt, webpack, yarn...). You must add your script and adapt the cache and
 # artifacts.
@@ -242,8 +250,10 @@ Build:
       - load.environment.php
     expire_in: 1 day
 
+################################################################################
 # Drupal tests see
 # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
+################################################################################
 
 Unit and kernel:
   stage: tests
@@ -256,6 +266,11 @@ Code coverage:
   extends: .test_template
   script:
     - robo test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  # Codecov integration, see https://codecov.io
+  # Need to set up CI ENVIRONMENT VARIABLES to work.
+  after_script:
+    - cp -r ${WEB_ROOT}/${REPORT_DIR} ./
+    - bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
@@ -263,11 +278,10 @@ Functional:
   stage: tests
   extends: .test_template
   script:
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
     # For functional tests the user need to be the Apache user.
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
   after_script:
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/ || true
 
 Functional Js:
   stage: tests
@@ -275,10 +289,10 @@ Functional Js:
   script:
     # Ensure selenium is up.
     - /scripts/start-selenium-standalone.sh&
-    - sleep 5s
-    - robo test:suite "${PHPUNIT_TESTS}functional-javascript"
+    - sleep 5s && curl -s http://localhost:4444/wd/hub | jq '.'
+    - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
   after_script:
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 Nightwatch Js:
@@ -286,21 +300,54 @@ Nightwatch Js:
   extends: .test_template
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
-    # [TEMPORARY] Patch for Nightwatch to allow install profile.
+    # [TEMPORARY] Patch for Nightwatch 1.11+ and allow install profile.
     - cd ${WEB_ROOT}
+    - curl -fsSL https://www.drupal.org/files/issues/2019-07-02/3059356-12-nightwatch-upgrade.patch -o upgrade.patch
+    - patch -p1 < upgrade.patch || true
     - curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o 3017176-7.patch
-    - patch -N -p1 < 3017176-7.patch || true
+    - patch -p1 < 3017176-7.patch || true
+    # Regular test commands.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}
-    - chmod -R 777 ${DOC_ROOT}
+    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
     - cd ${WEB_ROOT}/core
     - yarn install
-    - yarn test:nightwatch ${NIGHTWATCH_TESTS}
+    # Html reporter.
+    - yarn add nightwatch-html-reporter
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
+    - mkdir -p ${WEB_ROOT}/core/reports
+    - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
+  after_script:
+    - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
+    - cp -r ${WEB_ROOT}/core/reports/* ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
   artifacts:
     <<: *default_artifacts
     paths:
       - ${REPORT_DIR}
+
+################################################################################
+# Third party tools tests.
+#
+# [TESTING] Next part can be removed for testing only.
+################################################################################
+
+# [CI_TYPE] [TESTING] Next part can be removed if no dependencies for a single
+# module / theme.
+Security report:
+  stage: tests
+  extends: .test_except_only
+  before_script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
+    - robo prepare:folders
+  script:
+    - if [ -f composer.lock ]; then
+        security-checker security:check;
+      else
+        echo "[SKIP] No composer.lock file!";
+      fi
+  dependencies:
+    - Build
+  allow_failure: true
 
 # Behat tests from tests/ folder.
 Behat tests:
@@ -309,21 +356,22 @@ Behat tests:
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
-    - robo install:drupal standard
+    - robo install:drupal
     - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
     # Starting Chrome, we are not using Selenium.
     - /scripts/start-chrome.sh&
-    - sleep 2s && curl -s http://localhost:9222/json/version | jq '.'
+    - sleep 5s && curl -s http://localhost:9222/json/version | jq '.'
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   variables:
     <<: *test_variables
+    DRUPAL_INSTALL_PROFILE: "standard"
     CHROMIUM_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
     BEHAT_PARAMS: >
       {
         "extensions" : {
           "Bex\\Behat\\ScreenshotExtension" : {
             "image_drivers" : {
-              "local" : { "screenshot_directory" : "${REPORT_DIR}/behat" }
+              "local" : { "screenshot_directory" : "${CI_PROJECT_DIR}/${REPORT_DIR}/behat" }
             }
           },
           "Drupal\\DrupalExtension" : {
@@ -334,19 +382,32 @@ Behat tests:
         }
       }
 
-# [CI_TYPE] [TESTING] Next part can be removed for testing only or no
-# dependencies for a single module / theme.
-Security report:
+################################################################################
+# Accessibility jobs for Drupal 8+
+#
+# [TESTING] Next part can be removed for testing only.
+################################################################################
+
+Pa11y:
   stage: tests
-  extends: .test_except_only
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
+  extends: .test_template
   script:
-    - security-checker security:check;
-  dependencies:
-    - Build
-  allow_failure: true
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
+    - robo prepare:folders
+    - robo install:drupal
+    - cd ${WEB_ROOT}/core
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json ${WEB_ROOT}/core || true
+    - yarn add pa11y-ci
+    - node_modules/.bin/pa11y-ci --config ./pa11y-ci.json
+  after_script:
+    - cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
+  variables:
+    <<: *test_variables
+    DRUPAL_INSTALL_PROFILE: "standard"
+  artifacts:
+    <<: *default_artifacts
+    paths:
+      - ${REPORT_DIR}/*.png
 
 ################################################################################
 # Code quality jobs for Drupal 8+
@@ -555,3 +616,79 @@ Php stats All:
   dependencies:
     - Build
   when: manual
+
+################################################################################
+# [DEPLOY] Deploy jobs definition.
+# [CI_TYPE] Next part could be used only for a project with deploy.
+# [TESTING] Next part can be removed for testing only.
+#
+# This is a sample workflow, testing is run on master and testing branches
+# pushes or merge, other deploy are manual. Using a basic bash deploy, you must
+# adapt if you are using a specific deploy process.
+#
+# You need to be sure we can ssh to the machine, a deploy key must be manually
+# added on the target in  ~/.ssh/authorized_keys
+# Private key name and values must be set on Gitlab:
+#   Settings > CI / CD > Variables
+################################################################################
+
+# Basic docker image with ssh to be able to access a remote.
+# Each access must add a ssh key, see samples below.
+.deploy_template:
+  image: alpine:latest
+  only:
+    - master
+    - tags
+  before_script:
+    - apk --no-cache add openssh-client
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # Avoid warning on connection.
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    # Add our private key.
+    - echo -e "${PRIVATE_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
+  variables:
+    PRIVATE_KEY: ""
+  when: manual
+
+Deploy to testing:
+  stage: deploy to testing
+  extends: .deploy_template
+  only:
+    - testing
+  environment:
+    name: testing
+    url: http://${TESTING_HOST}
+  script:
+    # We can now ssh and run any deploy script.
+    - ssh -T $USER_NAME@$TESTING_HOST
+        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  variables:
+    PRIVATE_KEY: "${TESTING_PRIVATE_KEY}"
+
+Deploy to staging:
+  stage: deploy to staging
+  extends: .deploy_template
+  environment:
+    name: staging
+    url: http://${STAGING_HOST}
+  script:
+    # We can now ssh and run any deploy script.
+    - ssh -T $USER_NAME@$TESTING_HOST
+        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  variables:
+    PRIVATE_KEY: "${STAGING_PRIVATE_KEY}"
+
+Deploy to production:
+  stage: deploy to production
+  extends: .deploy_template
+  environment:
+    name: production
+    url: http://${PRODUCTION_HOST}
+  script:
+    # We can now ssh and run any deploy script.
+    - ssh -T $USER_NAME@$TESTING_HOST
+        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  variables:
+    PRIVATE_KEY: "${PRODUCTION_PRIVATE_KEY}"

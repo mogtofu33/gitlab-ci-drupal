@@ -59,19 +59,11 @@ class RoboFile extends \Robo\Tasks {
   protected $webRoot = '/var/www/html';
 
   /**
-   * Install Drupal.
-   *
-   * @var bool
-   *   Flag to install Drupal. This can be  overridden by specifying an
-   *   $INSTALL_DRUPAL environment variable.
-   */
-  protected $installDrupal = null;
-
-  /**
    * Drupal setup profile.
    *
    * @var string
-   *   The profile name.
+   *   The profile name. This can be overridden by specifying a
+   *   $DRUPAL_INSTALL_PROFILE environment variable.
    */
   protected $setupProfile = 'minimal';
 
@@ -155,10 +147,6 @@ class RoboFile extends \Robo\Tasks {
       $this->dbUrl = getenv('SIMPLETEST_DB');
     }
 
-    // Pull a DB_DUMP from the environment, if it exists.
-    if (getenv('DB_DUMP')) {
-      $this->dbDump = getenv('DB_DUMP');
-    }
     // Pull a DOC_ROOT from the environment, if it exists.
     if (getenv('DOC_ROOT')) {
       $this->docRoot = getenv('DOC_ROOT');
@@ -168,13 +156,22 @@ class RoboFile extends \Robo\Tasks {
       $this->webRoot = getenv('WEB_ROOT');
     }
 
+    // Pull a DB_DUMP from the environment, if it exists.
+    if (getenv('DB_DUMP')) {
+      $this->dbDump = getenv('DB_DUMP');
+    }
+    // Pull a DRUPAL_INSTALL_PROFILE from the environment, if it exists.
+    if (filter_var(getenv('DRUPAL_INSTALL_PROFILE'))) {
+      $this->setupProfile = getenv('DRUPAL_INSTALL_PROFILE');
+    }
+    // Pull a DRUPAL_SETUP_FROM_CONFIG from the environment, if it exists.
+    if (filter_var(getenv('DRUPAL_SETUP_FROM_CONFIG'))) {
+      $this->setupFromConfig = getenv('DRUPAL_SETUP_FROM_CONFIG');
+    }
+    
     // Pull a REPORT_DIR from the environment, if it exists.
     if (getenv('REPORT_DIR')) {
       $this->reportDir = getenv('REPORT_DIR');
-    }
-    // Pull a INSTALL_DRUPAL from the environment, if it exists.
-    if (getenv('INSTALL_DRUPAL')) {
-      $this->installDrupal = getenv('INSTALL_DRUPAL');
     }
   }
 
@@ -353,10 +350,13 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installDrupal($profile = null) {
     $this->say('Installing Drupal...');
+    if (!$profile) {
+      $profile = $this->setupProfile;
+    }
 
-    if (file_exists($this->dbDump . '/dump.sql')) {
-      $this->say("Import dump $this->dbDump/dump.sql");
-      $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump.sql;');
+    if (file_exists($this->dbDump . '/dump-' . $profile . '.sql')) {
+      $this->say("Import dump $this->dbDump/dump-$profile.sql");
+      $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump-' . $profile . '.sql;');
 
       // When install from dump we need to be sure settings.php is correct.
       $this->taskFilesystemStack()
@@ -450,6 +450,7 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) The module name.
    */
   public function testSuite($testsuite = 'unit,kernel', $xml = true, $html = true, $module = null) {
+    // Prepare report dir.
     $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
     if (!file_exists($this->reportDir)) {
       $this->taskFilesystemStack()->mkdir($reportDir)->run();
@@ -489,6 +490,8 @@ class RoboFile extends \Robo\Tasks {
     if ($xml) {
       $this->taskFilesystemStack()->mkdir($this->reportDir . '/coverage-xml')->run();
       $test->option('coverage-xml', $this->reportDir . '/coverage-xml');
+      // For Codecov.
+      $test->option('coverage-clover', $this->reportDir . '/coverage.xml');
     }
     if ($html) {
       $this->taskFilesystemStack()->mkdir($this->reportDir . '/coverage-html')->run();
@@ -633,7 +636,7 @@ class RoboFile extends \Robo\Tasks {
         if (!file_exists($this->ciProjectDir . '/web/index.php')) {
           $this->io()->error("Missing Drupal, did composer install failed?");
         }
-        if ($forceInstall || $this->installDrupal) {
+        if ($forceInstall) {
           $this->installDrupal();
         }
         break;
@@ -665,20 +668,19 @@ class RoboFile extends \Robo\Tasks {
         $targetFolder = $this->docRoot;
         $folder = $this->ciProjectDir;
         if (!file_exists($this->webRoot . '/index.php')) {
-          $this->mirror($folder, $this->docRoot);
+          $this->mirror($folder, $targetFolder);
         }
         elseif ($this->verbose) {
           $this->say("[SKIP] Drupal exist in: $this->webRoot/index.php");
         }
-        // break;
-      case "project":
-        // Root contain a web/ folder, we symlink each folders.
+
+        // Root contain a web/ folder, we mirror each folders.
         $targetFolder = $this->webRoot . '/modules/custom';
         $folder = $this->ciProjectDir . '/web/modules/custom';
-        $this->symlink($folder, $targetFolder);
+        $this->mirror($folder, $targetFolder, true);
         $targetFolder = $this->webRoot . '/themes/custom';
         $folder = $this->ciProjectDir . '/web/themes/custom';
-        $this->symlink($folder, $targetFolder);
+        $this->mirror($folder, $targetFolder, true);
         break;
       case "module":
       case "theme":
@@ -724,20 +726,31 @@ class RoboFile extends \Robo\Tasks {
    *
    * @param string $target
    *   Folder target.
+   *
+   * @param bool $remove_if_exist
+   *   (Optional) Flag to remove target if exist.
    */
-  private function mirror($src, $target) {
+  private function mirror($src, $target, $remove_if_exist = false) {
     if (!file_exists($src)) {
-      $this->io()->error("Missing src folder: $src");
+      $this->io()->warning("Missing src folder: $src");
     }
-    if (!file_exists($target)) {
-      $this->io()->error("Missing target folder: $target");
-    }
+    else {
+      if (file_exists($target) && $remove_if_exist) {
+        $this->taskFilesystemStack()
+          ->remove($target)
+          ->mkdir($target)
+          ->run();
+      }
+      if (!file_exists($target)) {
+        $this->io()->warning("Missing target folder: $target");
+      }
 
-    $this->say("Mirror $src to $target");
-    // Mirror our folder in the target.
-    $this->taskFilesystemStack()
-      ->mirror($src, $target)
-      ->run();
+      $this->say("Mirror $src to $target");
+      // Mirror our folder in the target.
+      $this->taskFilesystemStack()
+        ->mirror($src, $target)
+        ->run();
+    }
   }
 
   /**

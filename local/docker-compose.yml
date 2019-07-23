@@ -13,8 +13,10 @@ services:
   drupal:
     # Drupal included from official docker image + ci tools.
     # see https://gitlab.com/mog33/drupal8ci
-    # image: mogtofu33/drupal8ci:8.7-selenium
-    image: mogtofu33/drupal8ci:8.7-selenium-no-drupal
+    # image: mogtofu33/drupal8ci:${DRUPAL_VERSION:-8.7}
+    image: mogtofu33/drupal8ci:${DRUPAL_VERSION:-8.7}-no-drupal
+    # image: mogtofu33/drupal8ci:${DRUPAL_VERSION:-8.7}-selenium
+    # image: mogtofu33/drupal8ci:${DRUPAL_VERSION:-8.7}-selenium-no-drupal
     ports:
       - "88:80"
     links:
@@ -29,7 +31,8 @@ services:
       - ${HOME}/.composer/cache:/var/www/.composer/cache
     working_dir: /builds
     container_name: ci-drupal
-    env_file: .gitlab-ci.env
+    # env_file: .gitlab-ci.env
+    env_file: .env
   chromedriver:
     image: selenium/standalone-chrome:latest
     volumes:
