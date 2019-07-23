@@ -485,6 +485,8 @@ class RoboFile extends \Robo\Tasks {
     if ($xml) {
       $this->taskFilesystemStack()->mkdir($this->reportDir . '/coverage-xml')->run();
       $test->option('coverage-xml', $this->reportDir . '/coverage-xml');
+      // For Codecov.
+      $test->option('coverage-clover', $this->reportDir . '/coverage.xml');
     }
     if ($html) {
       $this->taskFilesystemStack()->mkdir($this->reportDir . '/coverage-html')->run();

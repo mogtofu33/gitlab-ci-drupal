@@ -287,6 +287,10 @@ Code coverage:
   extends: .test_template
   script:
     - robo test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  # Codecov integration, see https://codecov.io
+  # Need to set up CI ENVIRONMENT VARIABLES to work.
+  after_script:
+    - bash <(curl -s https://codecov.io/bash -f ${REPORT_DIR}/coverage.xml) || true
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
@@ -331,15 +335,14 @@ Nightwatch Js:
     # Html reporter.
     - yarn add nightwatch-html-reporter
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
-    - mkdir -p ${WEB_ROOT}/core/reports
     - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
   after_script:
     - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
-    - cp -r ${WEB_ROOT}/core/reports/* ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
+    - cp -f ${WEB_ROOT}/core/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
   artifacts:
     <<: *default_artifacts
     paths:
-      - ${REPORT_DIR}
+      - ${REPORT_DIR}/*.png
 
 ################################################################################
 # Third party tools tests.
