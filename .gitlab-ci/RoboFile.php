@@ -68,14 +68,6 @@ class RoboFile extends \Robo\Tasks {
   protected $setupProfile = 'minimal';
 
   /**
-   * Drupal setup from config.
-   *
-   * @var bool
-   *   Is Drupal setup regular or from config.
-   */
-  protected $setupFromConfig = false;
-
-  /**
    * Report dir.
    *
    * @var string
@@ -163,10 +155,6 @@ class RoboFile extends \Robo\Tasks {
     // Pull a DRUPAL_INSTALL_PROFILE from the environment, if it exists.
     if (filter_var(getenv('DRUPAL_INSTALL_PROFILE'))) {
       $this->setupProfile = getenv('DRUPAL_INSTALL_PROFILE');
-    }
-    // Pull a DRUPAL_SETUP_FROM_CONFIG from the environment, if it exists.
-    if (filter_var(getenv('DRUPAL_SETUP_FROM_CONFIG'))) {
-      $this->setupFromConfig = getenv('DRUPAL_SETUP_FROM_CONFIG');
     }
     
     // Pull a REPORT_DIR from the environment, if it exists.
@@ -349,10 +337,11 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) The profile to install, default to minimal.
    */
   public function installDrupal($profile = null) {
-    $this->say('Installing Drupal...');
+    
     if (!$profile) {
       $profile = $this->setupProfile;
     }
+    $this->say("Installing Drupal with $profile...");
 
     if (file_exists($this->dbDump . '/dump-' . $profile . '.sql')) {
       $this->say("Import dump $this->dbDump/dump-$profile.sql");
@@ -379,18 +368,17 @@ class RoboFile extends \Robo\Tasks {
    * Install Drupal from profile or config with config_installer.
    *
    * @param string $profile
-   *   (optional) The profile to install, default to minimal.
+   *   The profile to install, default to minimal.
    */
-  public function setupDrupal($profile = null) {
-    $this->say('Setup Drupal...');
+  public function setupDrupal($profile) {
+    $this->say("Setup Drupal with $profile...");
 
-    if ($this->setupFromConfig) {
+    if ($profile == 'config_installer') {
       $task = $this->drush()
         ->args('site-install', 'config_installer')
-        ->arg('config_installer_sync_configure_form.sync_directory="../config/sync"')
+        ->arg('config_installer_sync_configure_form.sync_directory=' . $this->docRoot . '/config/sync')
         ->option('yes')
-        ->option('db-url', $this->dbUrl, '=')
-        ->run();
+        ->option('db-url', $this->dbUrl, '=');
     }
     else {
       if (!$profile) {

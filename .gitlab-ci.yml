@@ -184,9 +184,8 @@ stages:
 .test_variables: &test_variables
   MYSQL_DATABASE: "drupal"
   MYSQL_ALLOW_EMPTY_PASSWORD: "1"
-  # Install Drupal from a config ../config/sync folder.
-  DRUPAL_SETUP_FROM_CONFIG: "0"
   # When install Drupal is needed, choose a profile.
+  # To install Drupal from a config ../config/sync folder choose "config_installer"
   DRUPAL_INSTALL_PROFILE: "minimal"
   DB_DUMP: "${CI_PROJECT_DIR}/dump"
   SIMPLETEST_BASE_URL: "http://localhost"
@@ -246,6 +245,7 @@ Build:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # check Drupal codebase and composer install if needed.
     - robo perform:build
+    # Add here any custom build step, composer run-script, grunt, webpack, yarn...
   variables:
     <<: *test_variables
   # [CI_TYPE] When using included Drupal for a module or a theme, the
