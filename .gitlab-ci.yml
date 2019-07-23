@@ -413,7 +413,7 @@ Pa11y:
     - cd ${WEB_ROOT}/core
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json ${WEB_ROOT}/core || true
     - yarn add pa11y-ci
-    - pa11y-ci --config ./pa11y-ci.json
+    - node_modules/.bin/pa11y-ci --config ./pa11y-ci.json
   after_script:
     - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y
     - cp -f ${WEB_ROOT}/core/reports/pa11y-*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y/
