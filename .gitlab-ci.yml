@@ -335,14 +335,15 @@ Nightwatch Js:
     # Html reporter.
     - yarn add nightwatch-html-reporter
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
+    - mkdir -p ${WEB_ROOT}/core/reports
     - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
   after_script:
     - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
-    - cp -f ${WEB_ROOT}/core/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
+    - cp -r ${WEB_ROOT}/core/reports/* ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
   artifacts:
     <<: *default_artifacts
     paths:
-      - ${REPORT_DIR}/*.png
+      - ${REPORT_DIR}
 
 ################################################################################
 # Third party tools tests.
@@ -418,11 +419,14 @@ Pa11y:
     - yarn add pa11y-ci
     - node_modules/.bin/pa11y-ci --config ./pa11y-ci.json
   after_script:
-    - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y
-    - cp -f ${WEB_ROOT}/core/reports/pa11y-*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y/
+    - cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
   variables:
     <<: *test_variables
     DRUPAL_INSTALL_PROFILE: "standard"
+  artifacts:
+    <<: *default_artifacts
+    paths:
+      - ${REPORT_DIR}/*.png
 
 ################################################################################
 # Code quality jobs for Drupal 8+

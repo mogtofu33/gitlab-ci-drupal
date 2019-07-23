@@ -14,10 +14,6 @@
     {
       "url": "http://localhost",
       "screenCapture": "pa11y-home.png"
-    },
-    {
-      "url": "http://localhost/user/password",
-      "screenCapture": "pa11y-user-password.png"
     }
   ]
 }

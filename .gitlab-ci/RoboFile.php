@@ -62,7 +62,8 @@ class RoboFile extends \Robo\Tasks {
    * Drupal setup profile.
    *
    * @var string
-   *   The profile name.
+   *   The profile name. This can be overridden by specifying a
+   *   $DRUPAL_INSTALL_PROFILE environment variable.
    */
   protected $setupProfile = 'minimal';
 
@@ -146,10 +147,6 @@ class RoboFile extends \Robo\Tasks {
       $this->dbUrl = getenv('SIMPLETEST_DB');
     }
 
-    // Pull a DB_DUMP from the environment, if it exists.
-    if (getenv('DB_DUMP')) {
-      $this->dbDump = getenv('DB_DUMP');
-    }
     // Pull a DOC_ROOT from the environment, if it exists.
     if (getenv('DOC_ROOT')) {
       $this->docRoot = getenv('DOC_ROOT');
@@ -159,11 +156,19 @@ class RoboFile extends \Robo\Tasks {
       $this->webRoot = getenv('WEB_ROOT');
     }
 
+    // Pull a DB_DUMP from the environment, if it exists.
+    if (getenv('DB_DUMP')) {
+      $this->dbDump = getenv('DB_DUMP');
+    }
+    // Pull a DRUPAL_INSTALL_PROFILE from the environment, if it exists.
+    if (filter_var(getenv('DRUPAL_INSTALL_PROFILE'))) {
+      $this->setupProfile = getenv('DRUPAL_INSTALL_PROFILE');
+    }
     // Pull a DRUPAL_SETUP_FROM_CONFIG from the environment, if it exists.
     if (filter_var(getenv('DRUPAL_SETUP_FROM_CONFIG'))) {
       $this->setupFromConfig = getenv('DRUPAL_SETUP_FROM_CONFIG');
     }
-
+    
     // Pull a REPORT_DIR from the environment, if it exists.
     if (getenv('REPORT_DIR')) {
       $this->reportDir = getenv('REPORT_DIR');
