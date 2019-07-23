@@ -359,7 +359,7 @@ class RoboFile extends \Robo\Tasks {
     }
     else {
       $this->setupDrupal($profile);
-      $this->dumpDrupal();
+      $this->dumpDrupal($profile);
     }
     $this->checkDrupal();
   }
@@ -411,14 +411,17 @@ class RoboFile extends \Robo\Tasks {
 
   /**
    * Dump Drupal DB with Drush.
+   *
+  * @param string $profile
+   *   The profile to install, default to minimal.
    */
-  public function dumpDrupal() {
+  public function dumpDrupal($profile) {
     if (!file_exists($this->dbDump)) {
       $this->taskFilesystemStack()->mkdir($this->dbDump)->run();
     }
     $this->drush()
       ->args('sql-dump')
-      ->option('result-file', $this->dbDump . '/dump.sql', '=')
+      ->option('result-file', $this->dbDump . '/dump-' . $profile . '.sql', '=')
       ->run();
   }
 
