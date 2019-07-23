@@ -290,6 +290,7 @@ Code coverage:
   # Codecov integration, see https://codecov.io
   # Need to set up CI ENVIRONMENT VARIABLES to work.
   after_script:
+    - cp -r ${WEB_ROOT}/${REPORT_DIR} ${REPORT_DIR}
     - bash <(curl -s https://codecov.io/bash -f ${REPORT_DIR}/coverage.xml) || true
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
