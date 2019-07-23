@@ -47,17 +47,17 @@ do
       shift
       ;;
     -sp|--skip-prepare)
-      printf ">>> [NOTICE] skip prepare\\n"
+      printf ">>> [NOTICE] skip prepare set\\n"
       __skip_prepare=1
       shift
       ;;
     -sb|--skip-build)
-      printf ">>> [NOTICE] skip build\\n"
+      printf ">>> [NOTICE] skip build set\\n"
       __skip_build=1
       shift
       ;;
     -si|--skip-install)
-      printf ">>> [NOTICE] skip install\\n"
+      printf ">>> [NOTICE] skip install set\\n"
       __skip_install=1
       shift
       ;;
@@ -246,9 +246,9 @@ _create_artifacts() {
 
 # Replicate Build job artifacts.
 _extract_artifacts() {
-  printf ">>> [NOTICE] extract_artifacts..."
   if [ -f tmp/artifacts.tgz ]
   then
+    printf ">>> [NOTICE] extract_artifacts..."
     mv tmp/artifacts.tgz .
     _dkexec tar -xzf ${CI_PROJECT_DIR}/artifacts.tgz
     mkdir -p tmp
@@ -339,28 +339,39 @@ _nightwatch() {
 
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env
 
-  _patch_nightwatch
+  if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
+    printf ">>> [SKIP] patch_nightwatch\\n"
+  else
+    _patch_nightwatch
+  fi
 
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/nightwatch.conf.js ${WEB_ROOT}/core/nightwatch.conf.js
 
   _copy_robofile
   _prepare_folders
 
-  printf ">>> [NOTICE] Chown docroot, can be long..."
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${DOC_ROOT}
-  printf "Done!\\n"
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
 
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
-  _ensure_chrome
+  if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
+    printf ">>> [SKIP] yarn install / chrome check\\n"
+  else
+    docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
+    _ensure_chrome
+  fi
 
   _dkexec mkdir -p ${REPORT_DIR}/nightwatch
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}/nightwatch
+  _dkexec mkdir -p ${WEB_ROOT}/core/reports/
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/core/reports/
 
   _nightwatch_cmd
+
+  _dkexec mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
+  _dkexec cp -r ${WEB_ROOT}/core/reports/report.html ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
 }
 
 _patch_nightwatch() {
-  printf ">>> [NOTICE] Patching nightwatch to upgrade to ^1.10"
+  printf ">>> [NOTICE] Patching nightwatch to upgrade to ^1.1"
   _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-07-02/3059356-12-nightwatch-upgrade.patch -o ${WEB_ROOT}/upgrade.patch"
   docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/upgrade.patch"
   sleep 2s
@@ -382,9 +393,13 @@ _nightwatch_cmd() {
     __verbose="--verbose"
   fi
 
-  _test_html_reporter=$(docker exec -t ci-drupal sh -c "[ -f /var/www/html/web/core/node_modules/.bin/nightwatch-html-reporter ] && echo true")
-  if [ -z "${_test_html_reporter}" ]; then
-    docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn add nightwatch-html-reporter"
+  if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
+    printf ">>> [SKIP] patch_nightwatch\\n"
+  else
+    _test_html_reporter=$(docker exec -t ci-drupal sh -c "[ -f ${WEB_ROOT}/core/node_modules/.bin/nightwatch-html-reporter ] && echo true")
+    if [ -z "${_test_html_reporter}" ]; then
+      docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn add nightwatch-html-reporter"
+    fi
   fi
 
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
@@ -570,7 +585,7 @@ _init_variables() {
   APACHE_RUN_GROUP=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_GROUP)
   BROWSERTEST_OUTPUT_DIRECTORY=$(yq r ./.gitlab-ci.yml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
   BROWSERTEST_OUTPUT_DIRECTORY=$(echo $BROWSERTEST_OUTPUT_DIRECTORY | sed "s#\${WEB_ROOT}#${WEB_ROOT}#g")
-  DRUPAL_INSTALL_PROFILE="minimal"
+  DRUPAL_INSTALL_PROFILE="standard"
 }
 
 _init() {
