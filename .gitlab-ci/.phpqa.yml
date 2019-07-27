@@ -23,11 +23,12 @@ phpcpd:
     minTokens: 70
 
 # Php file extensions to parse.
-extensions:
-    - php
-    - inc
-    - module
-    - install
-    - test
-    - profile
-    - theme
+phpqa:
+    extensions:
+        - php
+        - inc
+        - module
+        - install
+        - test
+        - profile
+        - theme
