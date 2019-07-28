@@ -49,13 +49,12 @@ accounts.
 Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
 module or theme.
 
-Edit `.gitlab-ci.yml` file to match the tests you need, search for the text
-`CI_TYPE` and adapt. Variables to change are:
+Edit `.gitlab-ci/.gitlab-ci-variables.yml` file to match the tests you need,
+search for the text `CI_TYPE` and adapt. Variables to change are:
 
 ```yaml
-image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium
 #...
-variables:
+  CI_IMAGE_TYPE: selenium
 #...
   CI_TYPE: "module"
 #...
@@ -66,8 +65,11 @@ variables:
   PHP_CODE: "${WEB_ROOT}/modules/custom"
 ```
 
-You can remove the `[DEPLOY]` parts, probably the `Security report` job if you
-don't have dependencies to other projects in your composer.json and `Pa11y` job.
+You can remove the `[DEPLOY]` parts.
+
+Edit `.gitlab-ci.yml` file to match the tests you can remove `[DEPLOY]` parts,
+and `Security report` job if you don't have dependencies to other projects in
+your composer.json and `Pa11y` job.
 
 To use [Behat](http://behat.org/en/latest/) tests, you must copy the `tests/`
 that include a `behat.yml` configuration to work with this project. If not you
@@ -79,7 +81,7 @@ Push to **testing** and Check your project pipeline or
 [Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines)
 
 If you want to choose when to run the CI, for example on a branch master or on a
-tag, adapt the section with:
+tag, adapt this section in `.gitlab-ci.yml`:
 
 ```yaml
 .test_except_only: &test_except_only
@@ -115,8 +117,8 @@ Create a branch **master** and push, see the pipeline running!
 As an example you can check my project on a Drupal 8 template:
 [Drupal 8 project template](https://gitlab.com/mog33/drupal-composer-advanced-template)
 
-See next part for more details on adapting the `.gitlab-ci.yml` file to your
-project.
+See next part for more details on adapting the `.gitlab-ci/.gitlab-ci-variables.yml`
+and `.gitlab-ci.yml` file to your project.
 
 ## Usage details
 
@@ -127,8 +129,38 @@ need but be careful about dependencies between some jobs.
 If your commit message contains **[ci skip]** or **[skip ci]**, using any
 capitalization, the commit will be created but the pipeline will be skipped.
 
-Look in `.gitlab-ci.yml` for the text `[CI_TYPE] [DEPLOY] [TESTING]` as a first
-step of editing to match your project.
+First look in ``.gitlab-ci/.gitlab-ci-variables.yml` and check the variables.
+
+You can set variables values directly or use Gitlab CI UI to set variables, for
+example this is a good approach for a quick setup and to disable some tests
+without need to edit `.gitlab-ci.yml`. Skip variables are:
+
+```yaml
+  # Skip all tests jobs.
+  SKIP_TESTS: 0
+  # Skip single jobs in tests.
+  SKIP_TEST_UNITKERNEL: 0
+  SKIP_TEST_CODECOVERAGE: 0
+  SKIP_TEST_FUNCTIONAL: 0
+  SKIP_TEST_FUNCTIONALJS: 0
+  SKIP_TEST_NIGHTWATCH: 0
+  SKIP_TEST_SECURITY: 0
+  SKIP_TEST_BEHAT: 0
+  SKIP_TEST_PA11Y: 0
+  # Skip all QA jobs.
+  SKIP_QA: 0
+  # Skip all lint jobs.
+  SKIP_LINT: 0
+  # Skip single lint sass job.
+  SKIP_SASS_LINT: 0
+  # Skip all metrics jobs.
+  SKIP_METRICS: 0
+  # Skip all deploy jobs by default.
+  SKIP_DEPLOY: 1
+```
+
+You can take a look in `.gitlab-ci.yml` for the text `[CI_TYPE] [DEPLOY] [TESTING]`
+as a first step of editing to match your project.
 
 I use [Robo.li](https://robo.li/) with this [RoboFile](.gitlab-ci/RoboFile.php)
 for running composer, phpunit and some specific tasks.
@@ -201,6 +233,9 @@ A branch _master_ trigger qa, lint, manual deploy
 
 You can adapt _only_ and _except_ for your own workflow, see
 [Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
+
+Deploy jobs are disabled by default, you have to set a variable `SKIP_DEPLOY: 0`
+in `.gitlab-ci/.gitlab-ci-variables.yml` or Gitlab UI.
 
 ### Branch master
 
