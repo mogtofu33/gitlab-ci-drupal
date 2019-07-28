@@ -490,7 +490,6 @@ Js lint:
   extends: .lint_template
   artifacts:
     <<: *default_artifacts
-  artifacts:
     paths:
       - ${REPORT_DIR}/js-lint-report.html
   before_script:
