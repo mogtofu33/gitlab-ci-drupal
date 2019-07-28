@@ -11,127 +11,6 @@
 ################################################################################
 
 ################################################################################
-# Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
-################################################################################
-
-# [CI_TYPE] Select the base image for all tests and actions.
-
-# For a module or theme, this image include Drupal from the official Docker
-# image with tools for CI.
-# image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium
-
-# For a project including a composer.json file.
-image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-selenium-no-drupal
-
-variables:
-  ##############################################################################
-  #
-  # Make CI very verbose in case of problem.
-  # CI_DEBUG_TRACE: "1"
-  #
-  # Verbose scripts, mostly composer and phpunit. 1|0.
-  VERBOSE: "0"
-  # No ansi flag for composer.
-  NO_ANSI: "1"
-
-  # Minor Drupal version to work with.
-  DRUPAL_VERSION: "8.7"
-
-  # [CI_TYPE] Select if you are using CI to test, options are:
-  #   project
-  #     A full Drupal project with a composer.json file.
-  #   module
-  #     A single Drupal module.
-  #   theme
-  #     A single Drupal theme.
-  #   custom
-  #     A Codebase modules/themes/profile for a Drupal project without a
-  #     composer.json file based on Drupal project. The main use case is for
-  #     this module.
-  CI_TYPE: "custom"
-
-  # Path is relative to project root, for included Drupal in the
-  # image, DOC_ROOT and WEB_ROOT must be the same. For a project based on Drupal
-  # project this is 'web'. Can be 'docroot' on some distributions.
-  #
-  # If using the image with Drupal for a module or a theme.
-  # WEB_ROOT: "/var/www/html"
-  #
-  # [CI_TYPE] If using a Drupal project with a composer.json or custom.
-  WEB_ROOT: "/var/www/html/web"
-
-  # Do not need editing when using ci image.
-  DOC_ROOT: "/var/www/html"
-
-  # Nightwatch.js tests to run, only tag, core, all except core.
-  # see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-  # Add --verbose for a full log from Nightwatch if it fail.
-  # NIGHTWATCH_TESTS: "--tag custom"
-  NIGHTWATCH_TESTS: "--skiptags core"
-
-  # Phpunit tests to run, only custom code or empty for all 
-  # (included Drupal) see .gitlab-ci/phpunit.xml for settings.
-  PHPUNIT_TESTS: "custom"
-
-  # All reports will be available in artifacts from this folder.
-  # Do not need any editing as it's for CI only.
-  REPORT_DIR: "reports"
-
-  ##############################################################################
-  # [TESTING] Next part can be removed for testing only.
-  #
-  # See Phpqa available tools:
-  #   https://github.com/EdgedesignCZ/phpqa#available-tools
-  # Allow some errors, this will stop the pipeline if a limit is reached.
-  # TOOLS: "--tools phpcs:0,phpmd,phpcpd,parallel-lint"
-  TOOLS: "--tools phpcs:0,phpmd"
-  # Coding best practices limit, ~10 could be reasonable, to adapt for your
-  # project. Current is strict and do not allow errors.
-  BEST_PRACTICES: "phpcs:0"
-
-  # Comma separated for phpqa and phpmetrics.
-  # Will fail if a folder is empty.
-  # PHP_CODE: "${WEB_ROOT}/modules/custom"
-  # PHP_CODE: "${WEB_ROOT}/themes/custom"
-  PHP_CODE: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
-
-  ##############################################################################
-  # Eslint / Phpqa settings.
-  #
-  # Space separated for eslint and sass lint.
-  JS_CODE: "${WEB_ROOT}/**/custom/**/*.js"
-  CSS_FILES: "${WEB_ROOT}/(themes|modules)/custom/**/css/*.css"
-  SCSS_FILES: "${WEB_ROOT}/(themes|modules)/custom/**/scss/*.scss"
-  SASS_CONFIG: "${CI_PROJECT_DIR}/.gitlab-ci/.sass-lint.yml"
-
-  # PhpQA specific variables to prepare run.
-  # Ignore files and dir for all Phpqa tools.
-  PHPQA_IGNORE_DIRS: "--ignoredDirs vendor,bootstrap,tests"
-  PHPQA_IGNORE_FILES: "--ignoredFiles Readme.md,style.css,print.css,*Test.php"
-  # Options for Phpqa to build a report to download, need artifacts set on the
-  # job, see '.report' below.
-  PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
-  PHPQA_PHP_CODE: "--analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
-  PHPQA_ALL_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
-
-  ##############################################################################
-  # [DEPLOY] Global settings for all env used for deploy.
-  # Just an example, adapt with 'Deploy jobs definition' at the end of this
-  # file.
-  ##############################################################################
-  #
-  # Remote machine access and information.
-  # USER_NAME: "ubuntu"
-  # DRUPAL_FOLDER: "/var/www/html/MY_DRUPAL_ROOT"
-  # Deploy environments configuration, add or remove depending deploy jobs.
-  # Testing config, set host or ip
-  TESTING_HOST: "localhost"
-  # Staging config, set host or ip
-  STAGING_HOST: "localhost"
-  # Production config, set host or ip
-  PRODUCTION_HOST: "localhost"
-
-################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
 #   https://docs.gitlab.com/ee/ci/pipelines.html
 ################################################################################
@@ -145,6 +24,7 @@ stages:
   - code lint
   # Only on tag, when released.
   - php code metrics
+  # [DEPLOY] Skipped by default, see SKIP_DEPLOY in .gitlab-ci-variables.yml
   # [DEPLOY] Manual if branch testing or master or tag.
   - deploy to testing
   # [DEPLOY] Manual if branch master or tag.
@@ -160,13 +40,19 @@ stages:
 # When to run tests, on branch testing and tags.
 .test_except_only:
   # Build and tests are only for branch testing or tags.
+  # Skipped if variable SKIP_TEST is set in .gitlab-ci-variables.yml or as
+  # variable on Gitlab UI.
   # For more options see
   #   https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
   except:
-    - master
+    refs:
+      - master
+    variables:
+      - $SKIP_TESTS == "1"
   only:
-    - testing
-    - tags
+    refs:
+      - testing
+      - tags
 
 # Reports produced and visible in job report.
 .default_artifacts: &default_artifacts
@@ -279,25 +165,40 @@ Build:
 Unit and kernel:
   stage: tests
   extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_UNITKERNEL == "1"
   script:
     - robo test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
 
 Code coverage:
   stage: tests
   extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_CODECOVERAGE == "1"
   script:
     - robo test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
   after_script:
     - cp -r ${WEB_ROOT}/${REPORT_DIR} ./
     # [CODECOV] integration, see https://codecov.io
-    # Need to set up CI ENVIRONMENT VARIABLES to work, see https://codecov.io
-    # - bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true
+    # Need to set up CI ENVIRONMENT VARIABLES 'CODECOV_TOKEN' to work,
+    # see https://codecov.io
+    - if [ ! -z ${CODECOV_TOKEN} ]; then
+        bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true;
+      fi
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
 Functional:
   stage: tests
   extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_FUNCTIONAL == "1"
   script:
     # For functional tests the user need to be the Apache user.
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
@@ -307,6 +208,10 @@ Functional:
 Functional Js:
   stage: tests
   extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_FUNCTIONALJS == "1"
   script:
     # Ensure selenium is up.
     - /scripts/start-selenium-standalone.sh&
@@ -319,6 +224,10 @@ Functional Js:
 Nightwatch Js:
   stage: tests
   extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_NIGHTWATCH == "1"
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
     # [TEMPORARY] Patch for Nightwatch 1.11+ and allow install profile.
@@ -357,6 +266,10 @@ Nightwatch Js:
 Security report:
   stage: tests
   extends: .test_except_only
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_SECURITY == "1"
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
@@ -373,6 +286,10 @@ Security report:
 Behat tests:
   stage: tests
   extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_BEHAT == "1"
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
@@ -411,6 +328,10 @@ Behat tests:
 Pa11y:
   stage: tests
   extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_PA11Y == "1"
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
@@ -441,7 +362,11 @@ Pa11y:
 Code quality:
   stage: code quality
   only:
-    - branches
+    refs:
+      - branches
+  except:
+    variables:
+      - $SKIP_QA == "1"
   artifacts:
     <<: *default_artifacts
   before_script:
@@ -456,7 +381,11 @@ Code quality:
 Best practices:
   stage: code quality
   only:
-    - branches
+    refs:
+      - branches
+  except:
+    variables:
+      - $SKIP_QA == "1"
   artifacts:
     <<: *default_artifacts
   before_script:
@@ -480,7 +409,11 @@ Best practices:
 # Common definition for all lint jobs.
 .lint_template:
   only:
-    - branches
+    refs:
+      - branches
+  except:
+    variables:
+      - $SKIP_LINT == "1"
   # Allow failure to produce report and warning, not a critical job.
   allow_failure: true
 
@@ -542,6 +475,10 @@ Css lint:
 Sass lint:
   stage: code lint
   extends: .lint_template
+  except:
+    variables:
+      - $SKIP_LINT == "1"
+      - $SKIP_SASS_LINT == "1"
   artifacts:
     <<: *default_artifacts
     paths:
@@ -574,8 +511,12 @@ Sass lint:
   stage: php code metrics
   # Could use only on tag release.
   only:
-    - master
-    - tags
+    refs:
+      - master
+      - tags
+  except:
+    variables:
+      - $SKIP_METRICS == "1"
   artifacts:
     <<: *default_artifacts
   before_script:
@@ -606,7 +547,8 @@ Php metrics All:
   # Need same constraint as Build job.
   extends: .test_except_only
   only:
-    - tags
+    refs:
+      - tags
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phpmetrics
@@ -625,7 +567,8 @@ Php stats All:
   # Need same constraint as Build job.
   extends: .test_except_only
   only:
-    - tags
+    refs:
+      - tags
   script:
     - phpqa ${PHPQA_REPORT}
         --tools phploc,pdepend
@@ -654,8 +597,12 @@ Php stats All:
 .deploy_template:
   image: alpine:latest
   only:
-    - master
-    - tags
+    refs:
+      - master
+      - tags
+  except:
+    variables:
+      - $SKIP_DEPLOY == "1"
   before_script:
     - apk --no-cache add openssh-client
     - mkdir -p ~/.ssh
@@ -673,7 +620,8 @@ Deploy to testing:
   stage: deploy to testing
   extends: .deploy_template
   only:
-    - testing
+    refs:
+      - testing
   environment:
     name: testing
     url: http://${TESTING_HOST}
@@ -709,3 +657,16 @@ Deploy to production:
         "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
   variables:
     PRIVATE_KEY: "${PRODUCTION_PRIVATE_KEY}"
+
+################################################################################
+# Variables are in a separate file to ease customization.
+################################################################################
+
+include:
+  - local: '/.gitlab-ci/.gitlab-ci-variables.yml'
+
+################################################################################
+# Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
+################################################################################
+
+image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-${CI_IMAGE_TYPE}
