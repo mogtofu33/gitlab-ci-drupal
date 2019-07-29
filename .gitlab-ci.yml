@@ -539,44 +539,6 @@ Php stats:
   script:
     - phpqa ${PHPQA_REPORT} --tools phploc,pdepend ${PHPQA_PHP_CODE}
 
-# [CI_TYPE] Same reports for all Drupal code including our custom.
-# Those commands require enough resources from the runner.
-Php metrics All:
-  stage: php code metrics
-  extends: .metrics_template
-  # Need same constraint as Build job.
-  extends: .test_except_only
-  only:
-    refs:
-      - tags
-  script:
-    - phpqa ${PHPQA_REPORT}
-        --tools phpmetrics
-        ${PHPQA_ALL_CODE}
-  artifacts:
-    <<: *default_artifacts
-    paths:
-      - ${REPORT_DIR}/
-  dependencies:
-    - Build
-  when: manual
-
-Php stats All:
-  stage: php code metrics
-  extends: .metrics_template
-  # Need same constraint as Build job.
-  extends: .test_except_only
-  only:
-    refs:
-      - tags
-  script:
-    - phpqa ${PHPQA_REPORT}
-        --tools phploc,pdepend
-        ${PHPQA_ALL_CODE}
-  dependencies:
-    - Build
-  when: manual
-
 ################################################################################
 # [DEPLOY] Deploy jobs definition.
 # [CI_TYPE] Next part could be used only for a project with deploy.
