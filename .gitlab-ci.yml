@@ -188,8 +188,6 @@ Code coverage:
     # see https://codecov.io
     - if [ ! -z ${CODECOV_TOKEN} ] && [ -f ${REPORT_DIR}/coverage.xml ]; then
         bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true;
-      else
-        echo ">>>>> No CODECOV_TOKEN or coverage.xml file."
       fi
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
