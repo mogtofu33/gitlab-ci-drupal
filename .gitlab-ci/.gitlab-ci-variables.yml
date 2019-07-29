@@ -67,26 +67,37 @@ variables:
   ##############################################################################
   # [TESTING] Skip some stages or single jobs.
   #
-  # Skip all tests jobs.
+  # Skip all tests jobs (next list).
   SKIP_TESTS: 0
-  # Skip single jobs in tests.
+  # Skip single jobs in tests. for tests information see
+  # https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8.
+  #
+  # Phpunit unit,kernel
   SKIP_TEST_UNITKERNEL: 0
+  # Phpunit codecoverage with optional Codecove.io support
   SKIP_TEST_CODECOVERAGE: 0
+  # Phpunit functional tests (browser tests)
   SKIP_TEST_FUNCTIONAL: 0
+  # Phpunit functional javascript tests (browser with javascript tests)
   SKIP_TEST_FUNCTIONALJS: 0
+  # Nightwatch tests (browser with javascript tests), since Drupal 8.6
+  # Currently not fully ready for Drupal.
   SKIP_TEST_NIGHTWATCH: 0
+  # Symfony security check on composer.lock
   SKIP_TEST_SECURITY: 0
+  # Behat tests
   SKIP_TEST_BEHAT: 0
+  # Accessibility test
   SKIP_TEST_PA11Y: 0
-  # Skip all QA jobs.
+  # Skip all QA jobs (Code sniffer with Drupal standards)
   SKIP_QA: 0
-  # Skip all lint jobs.
+  # Skip all lint jobs (Javascript with eslint, Css with stylelint, Sass with sass-lint)
   SKIP_LINT: 0
-  # Skip single lint sass job.
+  # Skip single lint sass job (Only one not included in Drupal core)
   SKIP_SASS_LINT: 0
-  # Skip all metrics jobs.
+  # Skip all metrics jobs (phpmetrics, phploc, pdepend)
   SKIP_METRICS: 0
-  # Skip all deploy jobs by default.
+  # Skip all deploy jobs by default (samples of deploy)
   SKIP_DEPLOY: 1
 
   # All reports will be available in artifacts from this folder.
@@ -128,7 +139,8 @@ variables:
   # job, see '.report' below.
   PHPQA_REPORT: "--report --buildDir ${REPORT_DIR}"
   PHPQA_PHP_CODE: "--analyzedDirs ${PHP_CODE} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
-  PHPQA_ALL_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
+  # Include all code from the project and not only contrib or custom.
+  # PHPQA_PHP_CODE: "--analyzedDirs ${WEB_ROOT} ${PHPQA_IGNORE_DIRS} ${PHPQA_IGNORE_FILES}"
 
   ##############################################################################
   # [DEPLOY] Global settings for all env used for deploy.
