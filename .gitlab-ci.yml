@@ -186,8 +186,10 @@ Code coverage:
     # [CODECOV] integration, see https://codecov.io
     # Need to set up CI ENVIRONMENT VARIABLES 'CODECOV_TOKEN' to work,
     # see https://codecov.io
-    - if [ ! -z ${CODECOV_TOKEN} ]; then
+    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f ${REPORT_DIR}/coverage.xml ]; then
         bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true;
+      else
+        echo ">>>>> No CODECOV_TOKEN or coverage.xml file."
       fi
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
