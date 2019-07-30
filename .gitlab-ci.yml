@@ -356,17 +356,21 @@ Pa11y:
 # [TESTING] Next part can be removed for testing only.
 ################################################################################
 
-# Automated quality check job when something is pushed/merged on master.
-# We have a limit on errors we accept on the tools, if failed we run a
-# report and stop.
-Code quality:
-  stage: code quality
+# Common definition for all qa jobs.
+.qa_template:
   only:
     refs:
       - branches
   except:
     variables:
       - $SKIP_QA == "1"
+
+# Automated quality check job when something is pushed/merged on master.
+# We have a limit on errors we accept on the tools, if failed we run a
+# report and stop.
+Code quality:
+  stage: code quality
+  extends: .qa_template
   artifacts:
     <<: *default_artifacts
   before_script:
@@ -380,12 +384,7 @@ Code quality:
 # Drupal coding standard best practices report.
 Best practices:
   stage: code quality
-  only:
-    refs:
-      - branches
-  except:
-    variables:
-      - $SKIP_QA == "1"
+  extends: .qa_template
   artifacts:
     <<: *default_artifacts
   before_script:
@@ -508,8 +507,6 @@ Sass lint:
 
 # Common definition for all metrics jobs.
 .metrics_template:
-  stage: php code metrics
-  # Could use only on tag release.
   only:
     refs:
       - master
@@ -526,6 +523,7 @@ Sass lint:
 
 # Phpmetrics report, no pass or failure as it's just informative.
 Php metrics:
+  stage: php code metrics
   extends: .metrics_template
   artifacts:
     paths:
@@ -535,6 +533,7 @@ Php metrics:
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
 Php stats:
+  stage: php code metrics
   extends: .metrics_template
   script:
     - phpqa ${PHPQA_REPORT} --tools phploc,pdepend ${PHPQA_PHP_CODE}
