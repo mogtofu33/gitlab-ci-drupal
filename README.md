@@ -14,18 +14,21 @@ Include **Build**,
 
 - [Prerequisites](#prerequisites)
 - [Quick how to](#quick-how-to)
-  - [Use Gitlab CI to test your Drupal 8 module](#use-gitlab-ci-to-test-your-drupal-8-module)
-  - [Use Gitlab CI to test your full Drupal project](#use-gitlab-ci-to-test-your-full-drupal-project)
-- [Usage details](#usage-details)
-  - [Advanced usage](#advanced-usage)
-  - [Nightwatch.js for Drupal 8](#nightwatchjs-for-drupal-8)
-  - [Behat tests for Drupal 8](#behat-tests-for-drupal-8)
-  - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
-  - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
-  - [Codecov.io support](#codecovio-support)
+  - [Use Gitlab CI with your Drupal 8 module](#use-gitlab-ci-with-your-drupal-8-module)
+  - [Use Gitlab CI with your full Drupal project](#use-gitlab-ci-with-your-full-drupal-project)
+- [Usage](#usage)
+  - [Skip jobs](#skip-jobs)
+  - [Triggering pipeline](#triggering-pipeline)
 - [Workflow proposed](#workflow-proposed)
   - [Branch master](#branch-master)
   - [Branch testing](#branch-testing)
+- [Advanced usage](#advanced-usage)
+  - [Nightwatch.js for Drupal 8](#nightwatchjs-for-drupal-8)
+  - [Behat tests for Drupal 8](#behat-tests-for-drupal-8)
+  - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
+  - [Codecov.io support in PHPUNIT Code coverage](#codecovio-support-in-phpunit-code-coverage)
+  - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
+  - [Accessibility with Pa11y](#accessibility-with-pa11y)
 - [Jobs detail](#jobs-detail)
 - [CI image including tools](#ci-image-including-tools)
 - [Running the jobs locally with Docker](#running-the-jobs-locally-with-docker)
@@ -39,7 +42,7 @@ Include **Build**,
 
 ## Quick how to
 
-### Use Gitlab CI to test your Drupal 8 module
+### Use Gitlab CI with your Drupal 8 module
 
 Push your module to a Gitlab with CI and runners enabled.
 
@@ -72,7 +75,7 @@ Check your project pipeline or
 As an example you can check my module:
 [Content moderation edit notify](https://gitlab.com/mog33/content_moderation_edit_notify)
 
-### Use Gitlab CI to test your full Drupal project
+### Use Gitlab CI with your full Drupal project
 
 Push your project to a Gitlab with CI and runners enabled.
 
@@ -97,7 +100,7 @@ Check your project pipeline or
 As an example you can check my project on a Drupal 8 template:
 [Drupal 8 project template](https://gitlab.com/mog33/drupal-composer-advanced-template)
 
-## Usage details
+## Usage
 
 **Note**: The `.gitlab-ci.yml` file is meant to be a starting point for working
 jobs with [Drupal 8](https://www.drupal.org), feel free to cherry pick what you
@@ -107,10 +110,18 @@ If your commit message contains **[ci skip]** or **[skip ci]**, using any
 capitalization, the commit will be created but the pipeline will be skipped.
 
 First look in `.gitlab-ci/.gitlab-ci-variables.yml` and check the variables.
+This is all the variables you can override from global settings on Gitlab CI or
+when manually running a pipeline.
+
+See section [Advanced usage](#advanced-usage) for more details on each relation
+between variables and jobs.
+
+### Skip jobs
 
 You can set variables values on Gitlab CI UI under _Settings > CI / CD > Variables_
 
-With variables you can disable some tests without editing any file, available skip variables are:
+With variables you can disable some tests without editing any file, available
+skip variables are:
 
 ```yaml
   # Skip all tests jobs (next list).
@@ -147,8 +158,13 @@ With variables you can disable some tests without editing any file, available sk
   SKIP_DEPLOY: 1
 ```
 
-If you want to choose when to run the CI, for example on a branch master or on a
-tag, adapt this section in `.gitlab-ci.yml`:
+### Triggering pipeline
+
+If you want to choose when to run the tests, you can adapt rules in
+`.gitlab-ci.yml`, see
+[Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
+
+Tests (and Build) are by default on a branch `testing` and on all `tags`
 
 ```yaml
 .test_except_only: &test_except_only
@@ -163,7 +179,89 @@ tag, adapt this section in `.gitlab-ci.yml`:
       - tags
 ```
 
-### Advanced usage
+QA and Lint is run by default on all `branches`, you can adapt on each jobs
+
+```yaml
+.qa_template:
+  only:
+    refs:
+      - branches
+  except:
+    variables:
+      - $SKIP_QA == "1"
+#...
+.lint_template:
+  only:
+    refs:
+      - branches
+  except:
+    variables:
+      - $SKIP_LINT == "1"
+```
+
+Metrics jobs are by default on each push on `master` and all `tags`
+
+```yaml
+.metrics_template:
+  only:
+    refs:
+      - master
+      - tags
+  except:
+    variables:
+      - $SKIP_METRICS == "1"
+```
+
+Deploy jobs are disabled by default, you have to set in Gitlab UI a variable:
+
+```bash
+SKIP_DEPLOY 0
+```
+
+Then deploy jobs run by default on each push on `master` and `tag`. And they are
+all set manual by default (must be manually started on the pipeline)
+
+```yaml
+.deploy_template:
+#...
+  only:
+    refs:
+      - master
+      - tags
+  except:
+    variables:
+      - $SKIP_DEPLOY == "1"
+#...
+  when: manual
+```
+
+## Workflow proposed
+
+Workflow used with this project, based on Git branches or tags.
+
+By default a new tag or branch _testing_ trigger the build, unit tests,
+security, qa, lint, manual deploy to test.
+A branch _master_ trigger qa, lint, manual deploy
+
+You can adapt _only_ and _except_ for your own workflow, see
+[Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
+and section [Triggering pipeline](#triggering-pipeline)
+
+Deploy jobs are disabled by default, you have to set in Gitlab UI a variable:
+
+```bash
+SKIP_DEPLOY 0
+```
+
+### Branch master
+
+[![gitlab-pipeline-master](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/449abbb2c59e217dc0999621511545e8/gitlab-pipeline-master.png)](https://gitlab.com/mog33/gitlab-ci-drupal/pipelines/73438508)
+
+### Branch testing
+
+[![gitlab-pipeline-testing](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/5971202471b49e1477fdd4ef2cbf1eb6/gitlab-pipeline-testing.png)](https://gitlab.com/mog33/gitlab-ci-drupal/pipelines/73438670)
+
+## Advanced usage
 
 You can take a look in `.gitlab-ci.yml` for the text `[CI_TYPE] [DEPLOY] [TESTING]`
 as a first step of editing to match your project.
@@ -175,14 +273,24 @@ for running composer, phpunit and some specific tasks.
 
 Since Drupal 8.6, [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch) is included as a Javascript test framework.
 
-For now it is not really ready to be used as a replacement for functional
-Javascript, but almost...
+For now it is not really ready to be used as a replacement for _functional
+Javascript_, but soon...
 
 The CI tests here include 2 patches to be able to upgrade to nightwatch 1.2 and
 being able to install Drupal from a profile:
 
 - [[Security] Update yarn packages to fix 19 vulnerabilities by updating nightwatch](https://drupal.org/node/3059356)
 - [Support install profile and language code params in drupalInstall Nightwatch command](https://drupal.org/node/3017176)
+
+There is a variable in this project that you can set in Gitlab to select the
+tests Nightwatch will run:
+
+```bash
+  # Only my module tests if set a @tag
+  NIGHTWATCH_TESTS    --tag my_module
+  # All tests except core
+  NIGHTWATCH_TESTS    --skiptags core
+```
 
 ### Behat tests for Drupal 8
 
@@ -205,15 +313,35 @@ The pipeline in this project support Unit, Kernel, Functional,
 tests in Drupal 8, see
 [Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
-For Drupal 8 (since 8.6) [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
-is working.
+The location of tests is defined in [.gitlab-ci/phpunit.xml]. There is 2 set of
+tests location:
+
+- Custom modules and themes only
+  - All `tests/` from `modules/custom/**` and `themes/custom/**`
+- All tests from all folders
+
+There is a Gitlab variable to select the tests:
+
+```bash
+PHPUNIT_TESTS     custom
+```
+
+Set this variable empty to run all tests.
+
+### Codecov.io support in PHPUNIT Code coverage
+
+Code coverage job support [Codecov.io](https://codecov.io/).
+
+After creating an account on [Codecov.io](https://codecov.io/), create from the
+Gitlab UI _> Settings > CI / CD > Variables_ a variable `CODECOV_TOKEN` with
+your token value.
 
 ### Rules for linting / Code standards / QA
 
 All rules match a [Drupal 8](https://www.drupal.org) project.
 
-To adapt some rules, first look at `.phpqa.yml`, `.phpmd.xml` and
-`.sass-lint.yml` files with `.gitlab-ci.yml`.
+To adapt some rules, first look at `.gitlab-ci/.phpqa.yml`, `.gitlab-ci/.phpmd.xml`
+and `.gitlab-ci/.sass-lint.yml`.
 
 More options see:
 
@@ -229,36 +357,23 @@ Stylelint is based on the official
 [Sass-lint](.gitlab-ci/.sass-lint.yml) is based on
 [Wolox](https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml)
 
-### Codecov.io support
+### Accessibility with Pa11y
 
-Code coverage job support [Codecov.io](https://codecov.io/).
+Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in
+[.gitlab-ci/pa11y-ci.json](.gitlab-ci/pa11y-ci.json)
 
-After creating an account on [Codecov.io](https://codecov.io/), create from the Gitlab UI _> Settings > CI / CD > Variables_ a variable `CODECOV_TOKEN` with your token value.
+For setting your urls to test, adapt the urls section:
 
-## Workflow proposed
-
-Sample workflow used with this project, based on Git branches or tags.
-
-By default a new tag or branch _testing_ trigger the build, unit tests,
-security, qa, lint, manual deploy to test.
-A branch _master_ trigger qa, lint, manual deploy
-
-You can adapt _only_ and _except_ for your own workflow, see
-[Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
-
-Deploy jobs are disabled by default, you have to set in Gitlab UI a variable:
-
-```bash
-SKIP_DEPLOY 0
+```json
+  "urls": [
+    {
+      "url": "http://localhost",
+      "screenCapture": "pa11y-home.png"
+    }
+  ]
 ```
 
-### Branch master
-
-[![gitlab-pipeline-master](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/449abbb2c59e217dc0999621511545e8/gitlab-pipeline-master.png)](https://gitlab.com/mog33/gitlab-ci-drupal/pipelines/73438508)
-
-### Branch testing
-
-[![gitlab-pipeline-testing](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/5971202471b49e1477fdd4ef2cbf1eb6/gitlab-pipeline-testing.png)](https://gitlab.com/mog33/gitlab-ci-drupal/pipelines/73438670)
+When a test failed, a screen capture is recorded in the reports.
 
 ## Jobs detail
 
@@ -290,7 +405,7 @@ Available jobs
 | Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8](#nightwatchjs-for-drupal-8) | text and html |
 | Security report | Symfony security-checker, look at versions in composer.lock | text |
 | Behat tests | Support Behat tests from `tests` folder, see [Behat tests for Drupal 8](#behat-tests-for-drupal-8) | html |
-| Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](.gitlab-ci/pa11y-ci.json) | text and html |
+| Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](.gitlab-ci/pa11y-ci.json) | text |
 | Code quality | Code sniffer with _Drupal standards_ | html |
 | Best practices | Code sniffer with _Drupal Best practices standard_ | html |
 | Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | html |
