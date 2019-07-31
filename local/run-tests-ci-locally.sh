@@ -3,7 +3,6 @@
 # This script is an helper to run some tests from Gitlab-ci config in a local
 # environment with docker-compose.yml
 
-set -o nounset
 IFS=$'\n\t'
 
 ###############################################################################
@@ -124,7 +123,7 @@ Arguments:
 
   Grouped tests:
     security          Run security tests (if any composer.json file).
-    unit              Run unit tests + nightwatch + behat.
+    unit              Run unit tests + nightwatch + behat + pa11y.
     lint              Run linters.
     qa                Run code quality.
     metrics           Rum stats and metrics.
@@ -137,13 +136,14 @@ Arguments:
     functional_js
     nightwatch
     behat
+    pa11y
     code_quality
     best_practices
     eslint
     stylelint
     sass_lint
     phpmetrics
-    phpstat
+    phpstats
 
 Options
   -h|--help                       Print help.
@@ -152,6 +152,9 @@ Options
   -si|--skip-install              Skip Drupal install step (behat).
   -sa|-spb|--skip-prepare-build   Skip bith previous.
   -sim|--simulate                 Robo simulate action.
+  --clean                         Delete previous reports.
+  --debug                         Debug this script.
+  --full-debug                    Debug this script.
 
 HEREDOC
 }
@@ -246,7 +249,7 @@ _create_artifacts() {
 
   printf ">>> [NOTICE] Uploading artifacts...\\n"
 
-  if ! [ -f tmp/artifacts.tgz ] && [ -f web/index.php ]
+  if ! [ -f tmp/artifacts.tgz ]
   then
     mkdir -p tmp
     tar -czf tmp/artifacts.tgz \
@@ -286,6 +289,7 @@ _simulate_cache() {
 _copy_robofile() {
   _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
 }
+
 ####### Tests jobs
 
 _unit_kernel() {
@@ -373,8 +377,6 @@ _nightwatch() {
     _patch_nightwatch
   fi
 
-  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/nightwatch.conf.js ${WEB_ROOT}/core/nightwatch.conf.js
-
   _copy_robofile
   _prepare_folders
 
@@ -416,6 +418,13 @@ _patch_nightwatch() {
 }
 
 _nightwatch_cmd() {
+
+  if [ $__clean == 1 ];
+  then
+    # _clean_browser_output
+    sudo rm -rf reports/nightwatch
+  fi
+
   __verbose=""
   if [ ${VERBOSE} == "1" ]; then
     __verbose="--verbose"
@@ -432,8 +441,8 @@ _nightwatch_cmd() {
 
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
 
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
-  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
+  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
 }
 
 _test_site() {
@@ -483,7 +492,42 @@ _install_drupal() {
 }
 
 _behat_cmd() {
+
+  if [ $__clean == 1 ];
+  then
+    # _clean_browser_output
+    sudo rm -rf reports/behat
+  fi
+  _dkexec drush cr
   _dkexec robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
+}
+
+
+_pa11y() {
+  printf "\\n%s[INFO]%s Perform job 'Pa11y' (pa11y)\\n\\n" "${_blu}" "${_end}"
+
+  _build
+  _tests_prepare
+
+  _copy_robofile
+  _prepare_folders
+
+  DRUPAL_INSTALL_PROFILE=$(yq r ./.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
+  _install_drupal
+
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+
+  _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json ${WEB_ROOT}/core
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn add pa11y-ci"
+
+  if [ $__clean == 1 ];
+  then
+    sudo rm -rf reports/pa11y*.png
+  fi
+
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "node_modules/.bin/pa11y-ci --config ./pa11y-ci.json"
+
+  _dkexecd cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
 }
 
 _security_checker() {
@@ -510,6 +554,11 @@ _code_quality() {
   _cp_qa_lint_metrics
   _prepare_folders
 
+  if [ $__clean == 1 ];
+  then
+    sudo rm -rf reports/code_quality
+  fi
+
   _dkexecb "phpqa \${PHPQA_REPORT}/code_quality \${TOOLS} \${PHPQA_PHP_CODE}"
 }
 
@@ -518,6 +567,11 @@ _best_practices() {
   _cp_qa_lint_metrics
   sed -i 's/Drupal/DrupalPractice/g' .phpqa.yml
   _prepare_folders
+
+  if [ $__clean == 1 ];
+  then
+    sudo rm -rf reports/best_practices
+  fi
 
   _dkexecb "phpqa \${PHPQA_REPORT}/best_practices --tools \${BEST_PRACTICES} \${PHPQA_PHP_CODE}"
 }
@@ -528,6 +582,11 @@ _eslint() {
   printf "\\n%s[INFO]%s Perform job 'Js lint' (eslint)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
   _prepare_folders
+
+  if [ $__clean == 1 ];
+  then
+    sudo rm -rf reports/js-lint-report.html
+  fi
 
   # _dkexecb "eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json \${JS_CODE}"
   _dkexecb "eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json --format html --output-file ${REPORT_DIR}/js-lint-report.html \${JS_CODE}"
@@ -550,7 +609,12 @@ _sass_lint() {
   printf ">>> [NOTICE] Install Sass-lint\\n"
   docker exec -it -w ${WEB_ROOT}/core ci-drupal npm install --no-audit git://github.com/sasstools/sass-lint.git#develop
 
-  _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit"
+  if [ $__clean == 1 ];
+  then
+    sudo rm -rf reports/sass-lint-report.html
+  fi
+
+  # _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit"
   _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit --format html --output ${REPORT_DIR}/sass-lint-report.html"
 }
 
@@ -561,15 +625,25 @@ _phpmetrics() {
   _cp_qa_lint_metrics
   _prepare_folders
 
+  if [ $__clean == 1 ];
+  then
+    sudo rm -rf reports/phpmetrics
+  fi
+
   _dkexecb "phpqa \${PHPQA_REPORT}/phpmetrics --tools phpmetrics \${PHPQA_PHP_CODE}"
 }
 
-_phpstat() {
-  printf "\\n%s[INFO]%s Perform job 'Php stats' (phpstat)\\n\\n" "${_blu}" "${_end}"
+_phpstats() {
+  printf "\\n%s[INFO]%s Perform job 'Php stats' (phpstats)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
   _prepare_folders
 
-  _dkexecb "phpqa \${PHPQA_REPORT}/phpstat --tools phploc,pdepend \${PHPQA_PHP_CODE}"
+  if [ $__clean == 1 ];
+  then
+    sudo rm -rf reports/phpstats
+  fi
+
+  _dkexecb "phpqa \${PHPQA_REPORT}/phpstats --tools phploc,pdepend \${PHPQA_PHP_CODE}"
 }
 
 ###############################################################################
@@ -691,7 +765,11 @@ _generate_env_from_yaml() {
   sed -i 's#"0"#0#g' $__env
   # Remove quotes on DRUPAL_VERSION.
   sed -i 's#DRUPAL_VERSION="8\(.*\)"#DRUPAL_VERSION=8\1#g' $__env
-  sed -i 's/MINK_DRIVER_ARGS_WEBDRIVER/#MINK_DRIVER_ARGS_WEBDRIVER/g' $__env
+  # sed -i 's/MINK_DRIVER_ARGS_WEBDRIVER/#MINK_DRIVER_ARGS_WEBDRIVER/g' $__env
+  # Remove single quotes
+  sed -i "s#'##g" $__env
+  # Fix selenium local.
+  sed -i 's#http://localhost:4444#http://127.0.0.1:4444#g' $__env
 
   sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
 
@@ -844,6 +922,7 @@ _unit() {
   _functional_js
   _nightwatch
   _behat
+  _pa11y
   __skip_build=0
   __skip_prepare=0
 }
@@ -866,7 +945,7 @@ _qa() {
 _metrics() {
   _phpmetrics
   __skip_prepare=1
-  _phpstat
+  _phpstats
   __skip_prepare=0
 }
 
@@ -886,6 +965,7 @@ _main() {
   if ((_PRINT_HELP))
   then
     _help
+    exit 0
   elif [ "${_CMD}" == "init_variables" ]; then
     _init_variables
     exit 0
@@ -900,8 +980,7 @@ _main() {
     _init_variables
     $__call
   else
-    printf "%s[ERROR]%s Unknown command: %s\\n" "${_red}" "${_end}" "${_CMD}"
-    _help
+    printf "%s[ERROR]%s Unknown command: %s\\nRun --help for usage.\\n" "${_red}" "${_end}" "${_CMD}"
   fi
 }
 
