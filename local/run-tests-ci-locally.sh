@@ -4,10 +4,6 @@
 # environment with docker-compose.yml
 
 set -o nounset
-set -o errexit
-trap 'echo "Aborting due to errexit on line $LINENO. Exit code: $?" >&2' ERR
-set -o errtrace
-set -o pipefail
 IFS=$'\n\t'
 
 ###############################################################################
@@ -28,12 +24,14 @@ _end=$'\e[0m'
 
 # Initialize program option variables.
 _PRINT_HELP=0
+_DEBUG=0
 
 __skip_prepare=0
 __skip_build=0
 __skip_install=0
 __skip_all=0
 __simulate=""
+__clean=0
 __drupal_profile="minimal"
 
 _CMD=()
@@ -70,6 +68,21 @@ do
       printf ">>> [NOTICE] simulate robo\\n"
       __simulate="--simulate"
       __skip_all=1
+      shift
+      ;;
+    --clean)
+      printf ">>> [NOTICE] Clean flag\\n"
+      __clean=1
+      shift
+      ;;
+    --debug)
+      printf ">>> [NOTICE] Debug mode on!\\n"
+      _DEBUG=1
+      shift
+      ;;
+    --full-debug)
+      printf ">>> [NOTICE] FULL Debug mode on!\\n"
+      set -o xtrace
       shift
       ;;
     --endopts)
@@ -151,7 +164,7 @@ _status() {
 
   _status_vars
 
-  _dkexecb /scripts/run-tests.
+  _dkexecb /scripts/run-tests.sh
   sleep 2s
   docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.
   sleep 2s"
@@ -170,9 +183,9 @@ _status() {
 _status_vars() {
 
   printf "CI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
-  ${CI_TYPE} ${WEB_ROOT} ${DOC_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
-  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\n" \
-  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY}
+  ${CI_TYPE} ${DOC_ROOT} ${WEB_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
+  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\nMINK_DRIVER_ARGS_WEBDRIVER: %s\\n" \
+  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY} ${MINK_DRIVER_ARGS_WEBDRIVER}
 }
 
 _st() {
@@ -264,7 +277,9 @@ _simulate_cache() {
   printf ">>> [NOTICE] simulate_cache\\n"
   _extract_artifacts
   if ! [ ${CI_TYPE} == "project" ]; then
-    sudo rm -rf drush scripts composer.json composer.lock .env.example load.environment.php
+    if [ -f 'composer.lock' ] || [ -f 'load.environment.php' ]; then
+      sudo rm -rf drush scripts composer.json composer.lock .env.example load.environment.php
+    fi
   fi
 }
 
@@ -303,8 +318,13 @@ _functional() {
 }
 
 _functional_cmd() {
+  if [ $__clean == 1 ];
+  then
+    _clean_browser_output
+    sudo rm -rf reports/functional
+  fi
   _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional
-  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional
+  _copy_output functional
 }
 
 _functional_js() {
@@ -316,7 +336,9 @@ _functional_js() {
   _build
   _tests_prepare
 
-  _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
+  if [ ${_DEBUG} == "1" ]; then
+    _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
+  fi
 
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
@@ -325,10 +347,16 @@ _functional_js() {
 }
 
 _functional_js_cmd() {
+  if [ $__clean == 1 ];
+  then
+    _clean_browser_output
+    sudo rm -rf reports/functional-javascript
+  fi
   _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript
-  # _dkexec robo $__simulate test:suite "${PHPUNIT_TESTS}functional-javascript"
+  # _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:phpunit ${PHPUNIT_TESTS}functional-javascript
 
-  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript
+  _copy_output functional-javascript
+
 }
 
 _nightwatch() {
@@ -434,7 +462,10 @@ _behat() {
   _ensure_chrome
   docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   sleep 5s
-  _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
+
+  if [ ${_DEBUG} == "1" ]; then
+    _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
+  fi
 
   _behat_cmd
 }
@@ -547,18 +578,21 @@ _phpstat() {
 
 _dkexec() {
   if ! [ -f "/.dockerenv" ]; then
-    docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@"
+    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
   fi
 }
 
 _dkexecd() {
   if ! [ -f "/.dockerenv" ]; then
-    docker exec -d -w ${CI_PROJECT_DIR} ci-drupal "$@"
+    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    docker exec -d -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
   fi
 }
 
 _dkexecb() {
   if ! [ -f "/.dockerenv" ]; then
+    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
     docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
   fi
 }
@@ -568,24 +602,34 @@ _dkexecb() {
 ###############################################################################
 
 _init_variables() {
-  CI_PROJECT_DIR="/builds"
-  VERBOSE=$(yq r ./.gitlab-ci.yml variables.VERBOSE)
-  CI_TYPE=$(yq r ./.gitlab-ci.yml variables.CI_TYPE)
-  WEB_ROOT=$(yq r ./.gitlab-ci.yml variables.WEB_ROOT)
-  DOC_ROOT=$(yq r ./.gitlab-ci.yml variables.DOC_ROOT)
-  REPORT_DIR=$(yq r ./.gitlab-ci.yml variables.REPORT_DIR)
-  PHPUNIT_TESTS=$(yq r ./.gitlab-ci.yml variables.PHPUNIT_TESTS)
-  PHP_CODE=$(yq r ./.gitlab-ci.yml variables.PHP_CODE)
-  PHPQA_IGNORE_DIRS=$(yq r ./.gitlab-ci.yml variables.PHPQA_IGNORE_DIRS)
-  PHPQA_IGNORE_FILES=$(yq r ./.gitlab-ci.yml variables.PHPQA_IGNORE_FILES)
-  NIGHTWATCH_TESTS=$(yq r ./.gitlab-ci.yml variables.NIGHTWATCH_TESTS)
+  __yaml="./.gitlab-ci.yml"
+  __yaml_variables="./.gitlab-ci/.gitlab-ci-variables.yml"
 
-  DRUPAL_SETUP_FROM_CONFIG=$(yq r ./.gitlab-ci.yml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
-  APACHE_RUN_USER=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_USER)
-  APACHE_RUN_GROUP=$(yq r ./.gitlab-ci.yml [.test_variables].APACHE_RUN_GROUP)
-  BROWSERTEST_OUTPUT_DIRECTORY=$(yq r ./.gitlab-ci.yml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
+  CI_PROJECT_DIR="/builds"
+  VERBOSE=$(yq r $__yaml_variables variables.VERBOSE)
+  CI_TYPE=$(yq r $__yaml_variables variables.CI_TYPE)
+  WEB_ROOT=$(yq r $__yaml_variables variables.WEB_ROOT)
+  DOC_ROOT=$(yq r $__yaml_variables variables.DOC_ROOT)
+  REPORT_DIR=$(yq r $__yaml_variables variables.REPORT_DIR)
+  PHPUNIT_TESTS=$(yq r $__yaml_variables variables.PHPUNIT_TESTS)
+  PHP_CODE=$(yq r $__yaml_variables variables.PHP_CODE)
+  PHPQA_IGNORE_DIRS=$(yq r $__yaml_variables variables.PHPQA_IGNORE_DIRS)
+  PHPQA_IGNORE_FILES=$(yq r $__yaml_variables variables.PHPQA_IGNORE_FILES)
+  NIGHTWATCH_TESTS=$(yq r $__yaml_variables variables.NIGHTWATCH_TESTS)
+
+  DRUPAL_SETUP_FROM_CONFIG=$(yq r $__yaml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
+  APACHE_RUN_USER=$(yq r $__yaml [.test_variables].APACHE_RUN_USER)
+  APACHE_RUN_GROUP=$(yq r $__yaml [.test_variables].APACHE_RUN_GROUP)
+  BROWSERTEST_OUTPUT_DIRECTORY=$(yq r $__yaml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
   BROWSERTEST_OUTPUT_DIRECTORY=$(echo $BROWSERTEST_OUTPUT_DIRECTORY | sed "s#\${WEB_ROOT}#${WEB_ROOT}#g")
   DRUPAL_INSTALL_PROFILE="standard"
+
+  # Overriden variables (simulate Gitlab-CI UI)
+  if [ -f "local/.local.env" ]; then
+    source local/.local.env
+  else
+    touch local/.local.env
+  fi
 }
 
 _init() {
@@ -604,7 +648,14 @@ _generate_env_from_yaml() {
     printf "%s[ERROR]%s Missing .gitlab-ci.yml file.\\n" "${_red}" "${_end}"
     exit 1
   fi
+
+  if ! [ -f "./.gitlab-ci/.gitlab-ci-variables.yml" ]; then
+    printf "%s[ERROR]%s Missing .gitlab-ci-variables.yml file.\\n" "${_red}" "${_end}"
+    exit 1
+  fi
+
   __yaml="./.gitlab-ci.yml"
+  __yaml_variables="./.gitlab-ci/.gitlab-ci-variables.yml"
   __env="./local/.env"
 
   if [ -f $__env ]; then
@@ -615,7 +666,7 @@ _generate_env_from_yaml() {
   echo 'CI_PROJECT_NAME: my_module' >> $__env
   echo "CI_PROJECT_DIR: ${CI_PROJECT_DIR}" >> $__env
 
-  yq r $__yaml variables >> $__env
+  yq r $__yaml_variables variables >> $__env
   yq r $__yaml "[.test_variables]" >> $__env
 
   CHROMIUM_OPTS=$(yq r $__yaml "[Behat tests].variables.CHROMIUM_OPTS")
@@ -640,8 +691,8 @@ _generate_env_from_yaml() {
   sed -i 's#"0"#0#g' $__env
   # Remove quotes on DRUPAL_VERSION.
   sed -i 's#DRUPAL_VERSION="8\(.*\)"#DRUPAL_VERSION=8\1#g' $__env
+  sed -i 's/MINK_DRIVER_ARGS_WEBDRIVER/#MINK_DRIVER_ARGS_WEBDRIVER/g' $__env
 
-  # __WEB_ROOT=$(yq r $__yaml variables.WEB_ROOT)
   sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
 
   printf ">>> %s ... Done!\\n" $__env
@@ -719,13 +770,26 @@ _down() {
 }
 
 _copy_output() {
-  _dkexecd cp -f ${DOC_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/
+  _dkexecd cp -r ${DOC_ROOT}/sites/simpletest/browser_output/ ${CI_PROJECT_DIR}/${REPORT_DIR}/${1}
+}
+_copy_output_functional() {
+  _copy_output functional
+}
+_copy_output_functional_js() {
+  _copy_output functional-javascript
 }
 
 _clean() {
   _clean_config
   sudo rm -rf reports
-  # _dkexecd "rm -rf ${DOC_ROOT}/sites/simpletest/browser_output/*.html"
+}
+
+_clean_browser_output() {
+  # sudo rm -rf reports/**/browser_output
+  _dkexec rm -rf ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output
+  _dkexec mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output
+  _dkexec chmod -R g+s ${BROWSERTEST_OUTPUT_DIRECTORY}
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
 }
 
 _clean_config() {
