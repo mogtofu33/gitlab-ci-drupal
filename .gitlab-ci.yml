@@ -222,6 +222,7 @@ Functional Js:
   after_script:
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ || true
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.png ${REPORT_DIR}/functional-javascript/ || true
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.jpg ${REPORT_DIR}/functional-javascript/ || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 Nightwatch Js:
