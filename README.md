@@ -148,12 +148,22 @@ skip variables are:
   SKIP_TEST_PA11Y: 0
   # Skip all QA jobs (Code sniffer with Drupal standards)
   SKIP_QA: 0
+  # Skip QA Best practices (Code sniffer with Drupal Practices standard)
+  SKIP_QA_BESTPRACTICES: 0
   # Skip all lint jobs (Javascript with eslint, Css with stylelint, Sass with sass-lint)
   SKIP_LINT: 0
+  # Skip CSS lint job with stylelint
+  SKIP_LINT_CSS: 0
+  # Skip Javascript lint job with eslint
+  SKIP_LINT_JS: 0
   # Skip single lint sass job (Only one not included in Drupal core)
-  SKIP_SASS_LINT: 0
+  SKIP_LINT_SASS: 0
   # Skip all metrics jobs (phpmetrics, phploc, pdepend)
   SKIP_METRICS: 0
+  # Skip only Phpmetrics job
+  SKIP_METRICS_PHPMETRICS: 0
+  # Skip only phploc, pdepend
+  SKIP_METRICS_PHPSTATS: 0
   # Skip all deploy jobs by default (samples of deploy)
   SKIP_DEPLOY: 1
 ```
@@ -182,18 +192,10 @@ Tests (and Build) are by default on a branch `testing` and on all `tags`
 QA and Lint is run by default on all `branches`, you can adapt on each jobs
 
 ```yaml
-.qa_template:
-  only:
-    refs:
-      - branches
   except:
     variables:
       - $SKIP_QA == "1"
 #...
-.lint_template:
-  only:
-    refs:
-      - branches
   except:
     variables:
       - $SKIP_LINT == "1"
@@ -202,11 +204,6 @@ QA and Lint is run by default on all `branches`, you can adapt on each jobs
 Metrics jobs are by default on each push on `master` and all `tags`
 
 ```yaml
-.metrics_template:
-  only:
-    refs:
-      - master
-      - tags
   except:
     variables:
       - $SKIP_METRICS == "1"
@@ -222,12 +219,6 @@ Then deploy jobs run by default on each push on `master` and `tag`. And they are
 all set manual by default (must be manually started on the pipeline)
 
 ```yaml
-.deploy_template:
-#...
-  only:
-    refs:
-      - master
-      - tags
   except:
     variables:
       - $SKIP_DEPLOY == "1"
