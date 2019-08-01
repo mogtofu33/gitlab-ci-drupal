@@ -544,21 +544,11 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Report root dir for this task.
    */
   public function testBehat($reportRootDir = null) {
-    if (!$reportRootDir) {
-      $reportRootDir = $this->reportDir;
-    }
-    $this->say("[NOTICE] Behat tests on $reportRootDir");
-
-    $this->taskFilesystemStack()->mkdir($reportRootDir . '/behat')->run();
-    $this->taskFilesystemStack()->mkdir($this->docRoot . '/tests')->run();
-
-    $this->taskFilesystemStack()
-      ->copy('tests/behat.yml', $this->docRoot . '/tests/behat.yml', true)
-      ->run();
-
+    # First we check if we have behat.
     if (!file_exists($this->docRoot . '/vendor/bin/behat')) {
       $task = $this->taskComposerRequire()
         ->workingDir($this->docRoot)
+        ->noInteraction()
         ->dependency('dmore/behat-chrome-extension')
         ->dependency('bex/behat-screenshot', '^1.2')
         ->dependency('emuse/behat-html-formatter', '0.1.*')
@@ -566,12 +556,31 @@ class RoboFile extends \Robo\Tasks {
       if ($this->verbose) {
         $task->arg('--verbose');
       }
+      else {
+        $task->arg('--quiet');
+      }
+      if ($this->noAnsi) {
+        $task->noAnsi();
+      }
       $task->run();
     }
 
     if (!file_exists('/usr/local/bin/behat')) {
       $this->symlink($this->docRoot . '/vendor/bin/behat', '/usr/local/bin/behat');
     }
+
+    if (!$reportRootDir) {
+      $reportRootDir = $this->reportDir;
+    }
+    $this->say("[NOTICE] Behat tests on $reportRootDir");
+
+    $this->taskFilesystemStack()->mkdir($reportRootDir . '/behat')->run();
+    $this->taskFilesystemStack()->mkdir($this->docRoot . '/tests')->run();
+    $this->taskFilesystemStack()->mirror($this->ciProjectDir . '/tests', $this->docRoot . '/tests')->run();
+
+    #$this->taskFilesystemStack()
+    #  ->copy('tests/behat.yml', $this->docRoot . '/tests/behat.yml', true)
+    #  ->run();
 
     $task = $this->taskBehat()
       ->dir($this->docRoot)
@@ -581,6 +590,9 @@ class RoboFile extends \Robo\Tasks {
       ->option('out', $reportRootDir . '/behat', '=');
     if ($this->verbose) {
       $task->verbose('v');
+    }
+    if ($this->noAnsi) {
+      $task->noColors();
     }
     $task->run();
   }
@@ -609,6 +621,7 @@ class RoboFile extends \Robo\Tasks {
       case "project":
         $task = $this->taskComposerValidate()
           ->workingDir($this->ciProjectDir)
+          ->noInteraction()
           ->noCheckAll()
           ->noCheckPublish();
         if ($this->verbose) {
@@ -784,6 +797,7 @@ class RoboFile extends \Robo\Tasks {
       }
       $this->taskComposerRequire()
         ->workingDir($dir)
+        ->noInteraction()
         ->dependency('drush/drush', '^9')
         ->run();
       }

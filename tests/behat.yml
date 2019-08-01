@@ -22,7 +22,7 @@ default:
             api_url: http://localhost:9222
         selenium:
           selenium2:
-            wd_host: http://browser:4444/wd/hub
+            wd_host: http://localhost:4444/wd/hub
             capabilities: { "browser": "chrome", "version": "*" }
 
     # Behat HTML formatter.
