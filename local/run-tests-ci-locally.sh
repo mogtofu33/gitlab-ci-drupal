@@ -559,7 +559,7 @@ _code_quality() {
     sudo rm -rf reports/code_quality
   fi
 
-  _dkexecb "phpqa \${PHPQA_REPORT}/code_quality \${TOOLS} \${PHPQA_PHP_CODE}"
+  _dkexecb "phpqa \${PHPQA_REPORT}/code_quality --tools \${TOOLS} ${PHPQA_PHP_CODE}"
 }
 
 _best_practices() {
@@ -573,7 +573,7 @@ _best_practices() {
     sudo rm -rf reports/best_practices
   fi
 
-  _dkexecb "phpqa \${PHPQA_REPORT}/best_practices --tools \${BEST_PRACTICES} \${PHPQA_PHP_CODE}"
+  _dkexecb "phpqa \${PHPQA_REPORT}/best_practices --tools \${BEST_PRACTICES} ${PHPQA_PHP_CODE}"
 }
 
 ####### Lint jobs
@@ -630,7 +630,7 @@ _phpmetrics() {
     sudo rm -rf reports/phpmetrics
   fi
 
-  _dkexecb "phpqa \${PHPQA_REPORT}/phpmetrics --tools phpmetrics \${PHPQA_PHP_CODE}"
+  _dkexecb "phpqa \${PHPQA_REPORT}/phpmetrics --tools phpmetrics ${PHPQA_PHP_CODE}"
 }
 
 _phpstats() {
@@ -643,7 +643,7 @@ _phpstats() {
     sudo rm -rf reports/phpstats
   fi
 
-  _dkexecb "phpqa \${PHPQA_REPORT}/phpstats --tools phploc,pdepend \${PHPQA_PHP_CODE}"
+  _dkexecb "phpqa \${PHPQA_REPORT}/phpstats --tools phploc,pdepend ${PHPQA_PHP_CODE}"
 }
 
 ###############################################################################
@@ -690,6 +690,7 @@ _init_variables() {
   PHPQA_IGNORE_DIRS=$(yq r $__yaml_variables variables.PHPQA_IGNORE_DIRS)
   PHPQA_IGNORE_FILES=$(yq r $__yaml_variables variables.PHPQA_IGNORE_FILES)
   NIGHTWATCH_TESTS=$(yq r $__yaml_variables variables.NIGHTWATCH_TESTS)
+  PHPQA_PHP_CODE=$(yq r $__yaml_variables variables.PHPQA_PHP_CODE)
 
   DRUPAL_SETUP_FROM_CONFIG=$(yq r $__yaml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
   APACHE_RUN_USER=$(yq r $__yaml [.test_variables].APACHE_RUN_USER)
