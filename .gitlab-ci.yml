@@ -80,7 +80,7 @@ stages:
   SIMPLETEST_DB: "mysql://root@mariadb/drupal"
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
   # No spaces.
-  MINK_DRIVER_ARGS_WEBDRIVER: '["chrome",{"browserName":"chrome","chromeOptions":{"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}},"http://localhost:4444/wd/hub"]'
+  MINK_DRIVER_ARGS_WEBDRIVER: '["chrome",{"browserName":"chrome","chromeOptions":{"w3c": false, "args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}},"http://localhost:4444/wd/hub"]'
   APACHE_RUN_USER: "www-data"
   APACHE_RUN_GROUP: "www-data"
   # Selenium extra options, see
@@ -234,10 +234,12 @@ Nightwatch Js:
       - $SKIP_TEST_NIGHTWATCH == "1"
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
-    # [TEMPORARY] Patch for Nightwatch 1.11+ and allow install profile.
+    # [TEMPORARY] Patch for Nightwatch 1.2+ and allow install profile.
     - cd ${WEB_ROOT}
-    - curl -fsSL https://www.drupal.org/files/issues/2019-07-02/3059356-12-nightwatch-upgrade.patch -o upgrade.patch
-    - patch -p1 < upgrade.patch || true
+    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/155c2d435c76eb90a1afe102daad5335a57661c6/core/yarn.lock -o yarn_8-8.lock
+    - cp yarn_8-8.lock core/yarn.lock || true
+    - curl -fsSL https://www.drupal.org/files/issues/2019-08-14/3059356-27.patch -o 3059356-27.patch
+    - patch -p1 < 3059356-27.patch || true
     - curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o 3017176-7.patch
     - patch -p1 < 3017176-7.patch || true
     # Regular test commands.

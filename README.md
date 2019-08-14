@@ -31,7 +31,6 @@ Include **Build**,
   - [Accessibility with Pa11y](#accessibility-with-pa11y)
 - [Jobs detail](#jobs-detail)
 - [CI image including tools](#ci-image-including-tools)
-- [Running the jobs locally with Docker](#running-the-jobs-locally-with-docker)
 - [Future plan](#future-plan)
 - [Credits](#credits)
 
@@ -433,36 +432,6 @@ quality and analysis tools:
   - [PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
   - [Pdepend](https://pdepend.org/)
   - [Phpmetrics](https://www.phpmetrics.org)
-
-## Running the jobs locally with Docker
-
-You can perform most of the tests locally (on `*Unix`) without installing any
-tool or Drupal code using included [docker-compose.yml](tests/docker-compose.yml)
-file in this project, require:
-
-- [Docker engine 18+](https://docs.docker.com/install)
-- [Docker compose 1.24+](https://docs.docker.com/compose/install)
-
-Default scenario is to have only your custom code modules / themes in a `/web`
-folder, then run:
-
-```bash
-docker-compose -f tests/docker-compose.yml up -d
-```
-
-If you include your own `composer.json` file for_Drupal_, you must edit the
-[docker-compose.yml](tests/docker-compose.yml) to use an image without Drupal
-and [.docker-compose.env](tests/.docker-compose.env).
-
-An helper bash script can help you run the tests using docker, this is a copy
-of the jobs from the [.gitlab-ci.yml](.gitlab-ci.yml) file.
-
-The script will copy configuration files from this folder and ensure folders to
-run the tests properly.
-
-```bash
-tests/run-tests-ci-locally.sh all
-```
 
 ## Future plan
 

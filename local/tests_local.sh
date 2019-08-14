@@ -401,9 +401,14 @@ _nightwatch() {
 }
 
 _patch_nightwatch() {
+  printf ">>> [NOTICE] Prepare yarn.lock for Nightwath patching."
+  _dkexecb "curl -fsSL https://git.drupalcode.org/project/drupal/raw/155c2d435c76eb90a1afe102daad5335a57661c6/core/yarn.lock -o ${WEB_ROOT}/yarn_8-8.lock"
+  _dkexecb "cp yarn_8-8.lock ${WEB_ROOT}/core/yarn.lock"
+  printf " Done!\\n"
+
   printf ">>> [NOTICE] Patching nightwatch to upgrade to ^1.1"
-  _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-08-12/3059356-21.patch -o ${WEB_ROOT}/upgrade.patch"
-  docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/upgrade.patch"
+  _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-08-14/3059356-27.patch -o ${WEB_ROOT}/3059356-27.patch"
+  docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3059356-27.patch"
   sleep 2s
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
   printf "\\n"
