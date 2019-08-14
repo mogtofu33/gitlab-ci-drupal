@@ -80,7 +80,7 @@ stages:
   SIMPLETEST_DB: "mysql://root@mariadb/drupal"
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
   # No spaces.
-  MINK_DRIVER_ARGS_WEBDRIVER: '["chrome",{"browserName":"chrome","chromeOptions":{"w3c": false, "args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}},"http://localhost:4444/wd/hub"]'
+  MINK_DRIVER_ARGS_WEBDRIVER: '["chrome",{"browserName":"chrome","chromeOptions":{"w3c":false,"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}},"http://localhost:4444/wd/hub"]'
   APACHE_RUN_USER: "www-data"
   APACHE_RUN_GROUP: "www-data"
   # Selenium extra options, see
@@ -256,6 +256,7 @@ Nightwatch Js:
   after_script:
     - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
     - cp -r ${WEB_ROOT}/core/reports/* ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
+    - cp -r ${WEB_ROOT}/core/chromedriver.log ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/chromedriver.log
   artifacts:
     <<: *default_artifacts
     paths:
