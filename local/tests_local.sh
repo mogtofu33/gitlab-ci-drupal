@@ -398,6 +398,7 @@ _nightwatch() {
 
   _dkexec mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
   _dkexec cp -r ${WEB_ROOT}/core/reports/report.html ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
+  _dkexec cp -r ${WEB_ROOT}/core/chromedriver.log ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/chromedriver.log
 }
 
 _patch_nightwatch() {
@@ -446,8 +447,8 @@ _nightwatch_cmd() {
 
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
 
-  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
+  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
 }
 
 _test_site() {
@@ -687,6 +688,8 @@ _init_variables() {
   CI_PROJECT_DIR="/builds"
   VERBOSE=$(yq r $__yaml_variables variables.VERBOSE)
   CI_TYPE=$(yq r $__yaml_variables variables.CI_TYPE)
+  DRUPAL_VERSION=$(yq r $__yaml_variables variables.DRUPAL_VERSION)
+  CI_IMAGE_TYPE=$(yq r $__yaml_variables variables.CI_IMAGE_TYPE)
   WEB_ROOT=$(yq r $__yaml_variables variables.WEB_ROOT)
   DOC_ROOT=$(yq r $__yaml_variables variables.DOC_ROOT)
   REPORT_DIR=$(yq r $__yaml_variables variables.REPORT_DIR)
@@ -824,11 +827,12 @@ _nuke() {
 
 _up() {
   if ! [ -f "./local/.env" ]; then
+    printf "[NOTICE] Generate .env file for %s-%s\\n"  "${DRUPAL_VERSION}" "${CI_IMAGE_TYPE}"
     _generate_env_from_yaml
   fi
 
   if [ -f "local/docker-compose.yml" ]; then
-    docker-compose -f local/docker-compose.yml up -d
+    docker-compose --project-directory local -f local/docker-compose.yml up -d
   else
     if [ -f "docker-compose.yml" ]; then
       docker-compose up -d
@@ -842,7 +846,7 @@ _up() {
 
 _down() {
   if [ -f "local/docker-compose.yml" ]; then
-    docker-compose -f local/docker-compose.yml down
+    docker-compose --project-directory local -f local/docker-compose.yml down
   else
     if [ -f "docker-compose.yml" ]; then
       docker-compose down
