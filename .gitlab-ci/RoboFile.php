@@ -80,7 +80,7 @@ class RoboFile extends \Robo\Tasks {
    * CI context type.
    *
    * @var string
-   *   The type name, as project, custom, module or theme.
+   *   The type name, as project, module or theme.
    */
   protected $ciType = 'module';
 
@@ -644,9 +644,6 @@ class RoboFile extends \Robo\Tasks {
           $this->installDrupal();
         }
         break;
-      case "custom":
-        $this->downloadDrupalProject();
-      break;
       case "module":
       case "theme":
         if ($this->verbose) {

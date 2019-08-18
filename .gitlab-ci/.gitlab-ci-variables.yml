@@ -34,10 +34,6 @@ variables:
   #     A single Drupal module.
   #   theme
   #     A single Drupal theme.
-  #   custom
-  #     A Codebase modules/themes/profile for a Drupal project without a
-  #     composer.json file based on Drupal project. The main use case is for
-  #     this module.
   CI_TYPE: "project"
 
   # Path is relative to project root, for included Drupal in the
@@ -47,7 +43,7 @@ variables:
   # If using the image with Drupal for a module or a theme.
   # WEB_ROOT: "/var/www/html"
   #
-  # [CI_TYPE] If using a Drupal project with a composer.json or custom.
+  # [CI_TYPE] If using a Drupal project with a composer.json file.
   WEB_ROOT: "/var/www/html/web"
 
   # Do not need editing when using ci image.

@@ -169,14 +169,15 @@ _status() {
 
   _dkexecb /scripts/run-tests.sh
   sleep 2s
-  docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.
-  sleep 2s"
-  # sleep 2s
+
+  docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone"
+  sleep 2s
+
   printf "Selenium running? (If nothing, no!)\\n"
   _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
-  docker exec -d ci-drupal bash -c "/scripts/start-chrome.
-  sleep 2s"
-  # sleep 1s
+  docker exec -d ci-drupal bash -c "/scripts/start-chrome."
+  sleep 2s
+
   printf "Chrome running? (If nothing, no!)\\n"
   _dkexecb "curl -s http://localhost:9222/json/version | jq '.'"
 
@@ -185,10 +186,10 @@ _status() {
 
 _status_vars() {
 
-  printf "CI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
-  ${CI_TYPE} ${DOC_ROOT} ${WEB_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
-  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\nMINK_DRIVER_ARGS_WEBDRIVER: %s\\n" \
-  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY} ${MINK_DRIVER_ARGS_WEBDRIVER}
+  printf "DRUPAL_VERSION: %s\\nCI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
+  ${DRUPAL_VERSION} ${CI_TYPE} ${DOC_ROOT} ${WEB_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
+  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\n" \
+  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY}
 }
 
 _st() {
@@ -246,32 +247,35 @@ _prepare_folders() {
 }
 
 _create_artifacts() {
+  if [ ${CI_TYPE} == "project" ]; then
+    printf ">>> [NOTICE] Uploading artifacts...\\n"
 
-  printf ">>> [NOTICE] Uploading artifacts...\\n"
-
-  if ! [ -f tmp/artifacts.tgz ]
-  then
-    mkdir -p tmp
-    tar -czf tmp/artifacts.tgz \
-      --exclude="web/modules/custom" --exclude="web/themes/custom" \
-      vendor web drush scripts composer.json composer.lock .env.example load.environment.php
-  else
-    printf ">>> [SKIP] artifacts already exist or not a project.\\n"
+    if ! [ -f tmp/artifacts.tgz ]
+    then
+      mkdir -p tmp
+      tar -czf tmp/artifacts.tgz \
+        --exclude="web/modules/custom" --exclude="web/themes/custom" \
+        vendor web drush scripts composer.json composer.lock .env.example load.environment.php
+    else
+      printf ">>> [SKIP] artifacts already exist or not a project.\\n"
+    fi
   fi
 }
 
 # Replicate Build job artifacts.
 _extract_artifacts() {
-  if [ -f tmp/artifacts.tgz ]
-  then
-    printf ">>> [NOTICE] extract_artifacts..."
-    mv tmp/artifacts.tgz .
-    _dkexec tar -xzf ${CI_PROJECT_DIR}/artifacts.tgz
-    mkdir -p tmp
-    mv artifacts.tgz tmp/
-    printf " Done!\\n"
-  else
-    printf ">>> [SKIP] No artifacts!\\n" "${_blu}" "${_end}"
+  if [ ${CI_TYPE} == "project" ]; then
+    if [ -f tmp/artifacts.tgz ]
+    then
+      printf ">>> [NOTICE] extract_artifacts..."
+      mv tmp/artifacts.tgz .
+      _dkexec tar -xzf ${CI_PROJECT_DIR}/artifacts.tgz
+      mkdir -p tmp
+      mv artifacts.tgz tmp/
+      printf " Done!\\n"
+    else
+      printf ">>> [SKIP] No artifacts!\\n" "${_blu}" "${_end}"
+    fi
   fi
 }
 
@@ -402,25 +406,22 @@ _nightwatch() {
 }
 
 _patch_nightwatch() {
-  printf ">>> [NOTICE] Prepare yarn.lock for Nightwath patching."
-  _dkexecb "curl -fsSL https://git.drupalcode.org/project/drupal/raw/155c2d435c76eb90a1afe102daad5335a57661c6/core/yarn.lock -o ${WEB_ROOT}/yarn_8-8.lock"
-  _dkexecb "cp yarn_8-8.lock ${WEB_ROOT}/core/yarn.lock"
-  printf " Done!\\n"
 
-  printf ">>> [NOTICE] Patching nightwatch to upgrade to ^1.1"
-  _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-08-14/3059356-27.patch -o ${WEB_ROOT}/3059356-27.patch"
-  docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3059356-27.patch"
-  sleep 2s
+  printf ">>> [NOTICE] Patching nightwatch to upgrade to ^1.2 with %s ...\\n" "3059356-32.${DRUPAL_VERSION}.patch"
+  # _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-08-16/3059356-32.patch -o ${WEB_ROOT}/3059356-32.patch"
+  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-32.${DRUPAL_VERSION}.patch ${WEB_ROOT}/3059356-32.${DRUPAL_VERSION}.patch
+  docker exec -t -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3059356-32.${DRUPAL_VERSION}.patch"
+  printf ">>> Done!\\n"
+
   docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
   printf "\\n"
   docker exec -it ci-drupal ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
-  printf " Done!\\n"
+  printf ">>> Done!\\n"
 
-  printf ">>> [NOTICE] Patching nightwatch for Drupal profile support..."
+  printf ">>> [NOTICE] Patching nightwatch for Drupal profile support with 3017176-7.patch...\\n"
   _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o ${WEB_ROOT}/3017176-7.patch"
-  docker exec -d -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3017176-7.patch"
-  sleep 2s
-  printf "Done!\\n"
+  docker exec -t -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3017176-7.patch"
+  printf ">>> Done!\\n"
 }
 
 _nightwatch_cmd() {
@@ -447,7 +448,7 @@ _nightwatch_cmd() {
 
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
 
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
+  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} --env local ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
   # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
 }
 
@@ -688,7 +689,6 @@ _init_variables() {
   CI_PROJECT_DIR="/builds"
   VERBOSE=$(yq r $__yaml_variables variables.VERBOSE)
   CI_TYPE=$(yq r $__yaml_variables variables.CI_TYPE)
-  DRUPAL_VERSION=$(yq r $__yaml_variables variables.DRUPAL_VERSION)
   CI_IMAGE_TYPE=$(yq r $__yaml_variables variables.CI_IMAGE_TYPE)
   WEB_ROOT=$(yq r $__yaml_variables variables.WEB_ROOT)
   DOC_ROOT=$(yq r $__yaml_variables variables.DOC_ROOT)
@@ -706,6 +706,12 @@ _init_variables() {
   BROWSERTEST_OUTPUT_DIRECTORY=$(yq r $__yaml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
   BROWSERTEST_OUTPUT_DIRECTORY=$(echo $BROWSERTEST_OUTPUT_DIRECTORY | sed "s#\${WEB_ROOT}#${WEB_ROOT}#g")
   DRUPAL_INSTALL_PROFILE="standard"
+
+  if [ -f "local/.env" ]; then
+    head -n 9 local/.env > local/.env.tmp
+    source local/.env.tmp
+    rm -f local/.env.tmp
+  fi
 
   # Overriden variables (simulate Gitlab-CI UI)
   if [ -f "local/.local.env" ]; then
@@ -805,7 +811,6 @@ _reset() {
   printf "\\n%s[INFO]%s Reset stack to mimic Gitlab-ci\\n" "${_blu}" "${_end}"
   _down
   _clean_config
-  _clean_custom
   _up
 }
 
@@ -831,7 +836,7 @@ _up() {
     _generate_env_from_yaml
   fi
 
-  if [ -f "local/docker-compose.yml" ]; then
+  if [ -f "./local/docker-compose.yml" ]; then
     docker-compose --project-directory local -f local/docker-compose.yml up -d
   else
     if [ -f "docker-compose.yml" ]; then
@@ -886,24 +891,10 @@ _clean_config() {
 
 _clean_full() {
   _clean
-  if [ ${CI_TYPE} == 'custom' ];
-  then
-    _clean_custom
-  fi
-}
-
-_clean_custom() {
-  sudo rm -rf drush scripts vendor \
-    web/core web/sites web/profiles web/.* web/*.php web/robots.txt web/web.config \
-    .editorconfig .env.example .gitattributes .travis.yml composer.* load.environment.php phpunit.xml.dist | true
 }
 
 _clean_unit() {
   _clean_config
-  if [ ${CI_TYPE} == 'custom' ];
-  then
-    _clean_custom
-  fi
 }
 
 ###############################################################################
