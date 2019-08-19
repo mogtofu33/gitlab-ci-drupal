@@ -130,6 +130,7 @@ Build:
   stage: build
   extends: .test_except_only
   script:
+    - echo ">>>>> [Note] Build with image mogtofu33/drupal8ci:${DRUPAL_VERSION}-${CI_IMAGE_TYPE}"
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # check Drupal codebase and composer install if needed.
     - robo perform:build
@@ -282,7 +283,7 @@ Security report:
     - if [ -f composer.lock ]; then
         security-checker security:check;
       else
-        echo "[SKIP] No composer.lock file!";
+        echo ">>>>> [SKIP] No composer.lock file!";
       fi
   dependencies:
     - Build
@@ -384,6 +385,7 @@ Code quality:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
   script:
+    - echo "[CMD] phpqa ${PHPQA_REPORT} --tools ${TOOLS} ${PHPQA_PHP_CODE}"
     - phpqa ${PHPQA_REPORT} --tools ${TOOLS} ${PHPQA_PHP_CODE}
 
 # Drupal coding standard best practices report.
@@ -402,6 +404,7 @@ Best practices:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
   script:
+    - echo "[CMD] phpqa ${PHPQA_REPORT} --tools ${BEST_PRACTICES} ${PHPQA_PHP_CODE}"
     - phpqa ${PHPQA_REPORT} --tools ${BEST_PRACTICES} ${PHPQA_PHP_CODE}
   # Allow failure to produce report and warning.
   allow_failure: true
@@ -447,6 +450,7 @@ Js lint:
     - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
       -o ${WEB_ROOT}/core/.eslintrc.passing.json
   script:
+    - echo "[CMD] eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json ${JS_CODE}"
     # Run the eslint command to generate a report.
     # Terminal result.
     - eslint
@@ -479,6 +483,7 @@ Css lint:
     - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json
       -o ${WEB_ROOT}/core/.stylelintrc.json
   script:
+    - echo "[CMD] stylelint --config-basedir /var/www/.node/node_modules/ --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose ${CSS_FILES}"
     # Css report.
     - stylelint --config-basedir /var/www/.node/node_modules/
       --config ${WEB_ROOT}/core/.stylelintrc.json -f verbose "${CSS_FILES}"
@@ -503,6 +508,7 @@ Sass lint:
     - cd /var/www/.node/
     - npm install --no-audit git://github.com/sasstools/sass-lint.git#develop
   script:
+    - echo "[CMD] /var/www/.node/node_modules/.bin/sass-lint --config ${SASS_CONFIG} --verbose --no-exit"
     # Terminal result.
     - /var/www/.node/node_modules/.bin/sass-lint --config ${SASS_CONFIG} --verbose --no-exit
     # Html report.
@@ -548,6 +554,7 @@ Php metrics:
     paths:
       - ${REPORT_DIR}/
   script:
+    - echo "[CMD] phpqa ${PHPQA_REPORT} --tools phpmetrics ${PHPQA_PHP_CODE}"
     - phpqa ${PHPQA_REPORT} --tools phpmetrics ${PHPQA_PHP_CODE}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
@@ -559,6 +566,7 @@ Php stats:
       - $SKIP_METRICS == "1"
       - $SKIP_METRICS_PHPSTATS == "1"
   script:
+    - echo "[CMD] phpqa ${PHPQA_REPORT} --tools phploc,pdepend ${PHPQA_PHP_CODE}"
     - phpqa ${PHPQA_REPORT} --tools phploc,pdepend ${PHPQA_PHP_CODE}
 
 ################################################################################

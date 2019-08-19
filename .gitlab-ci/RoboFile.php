@@ -651,7 +651,7 @@ class RoboFile extends \Robo\Tasks {
         }
         break;
       default:
-        $this->io()->error("Invalid ci type: $this->ciType");
+        $this->say("[SKIP] Build");
     }
   }
 
