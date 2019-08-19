@@ -106,12 +106,7 @@ stages:
     - apache2-foreground&
     # Copy files and prepare test folder with permissions.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${WEB_ROOT}/core || true
-    - mkdir -p "${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
-    - chmod -R g+s "${BROWSERTEST_OUTPUT_DIRECTORY}"
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
-    - mkdir -p "${REPORT_DIR}"
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
+    - robo ensure:tests-folders
   artifacts:
     <<: *default_artifacts
     paths:
@@ -130,9 +125,8 @@ Build:
   stage: build
   extends: .test_except_only
   script:
-    - echo ">>>>> [Note] Build with image mogtofu33/drupal8ci:${DRUPAL_VERSION}-${CI_IMAGE_TYPE}"
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    # check Drupal codebase and composer install if needed.
+    # Check Drupal codebase and run 'composer install' for a project.
     - robo perform:build
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
   variables:
@@ -235,27 +229,12 @@ Nightwatch Js:
       - $SKIP_TEST_NIGHTWATCH == "1"
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
-    # [TEMPORARY] Patch for Nightwatch 1.2+ and allow install profile.
-    - cd ${WEB_ROOT}
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-32.${DRUPAL_VERSION} patch 3059356-32.patch
-    - patch -p1 < 3059356-32.patch || true
-    - curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o 3017176-7.patch
-    - patch -p1 < 3017176-7.patch || true
-    # Regular test commands.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
-    - robo prepare:folders
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
-    - cd ${WEB_ROOT}/core
-    - yarn install
-    # Html reporter.
-    - mkdir -p ${WEB_ROOT}/core/reports
-    - yarn add nightwatch-html-reporter
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
-    - yarn test:nightwatch ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js
-  after_script:
-    - mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
-    - cp -r ${WEB_ROOT}/core/reports/* ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
-    - cp -r ${WEB_ROOT}/core/chromedriver.log ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/chromedriver.log
+    # [TEMPORARY] Patch for Nightwatch 1.2+ and allow install profile.
+    - robo patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-32.${DRUPAL_VERSION}.patch
+    - robo patch:nightwatch https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch 1
+    # This is the main script, 'yarn install' and 'test:nightwatch' from core folder.
+    - robo test:nightwatch
   artifacts:
     <<: *default_artifacts
     paths:
@@ -300,7 +279,6 @@ Behat tests:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
     - robo install:drupal
-    - chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites/
     # Starting Chrome, we are not using Selenium.
     - /scripts/start-chrome.sh&
     - sleep 5s && curl -s http://localhost:9222/json/version | jq '.'
@@ -342,10 +320,8 @@ Pa11y:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
     - robo prepare:folders
     - robo install:drupal
-    - cd ${WEB_ROOT}/core
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json ${WEB_ROOT}/core || true
-    - yarn add pa11y-ci
-    - node_modules/.bin/pa11y-ci --config ./pa11y-ci.json
+    # Run pa11y tests using ./gitlab-ci/pa11y-ci.json file definition.
+    - robo test:pa11y
   after_script:
     - cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
   variables:

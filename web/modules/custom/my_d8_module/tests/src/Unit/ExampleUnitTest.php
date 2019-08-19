@@ -2,12 +2,8 @@
 
 namespace Drupal\Tests\my_d8_module\Unit;
 
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\Query\QueryInterface;
+use Drupal\Tests\UnitTestCase;
 use Drupal\my_d8_module\DemoModuleExampleService;
-use Drupal\node\NodeStorageInterface;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Tests Unit DemoModuleExampleService.
@@ -15,67 +11,32 @@ use PHPUnit\Framework\TestCase;
  * @group my_d8_module
  * @coversDefaultClass \Drupal\my_d8_module\DemoModuleExampleService
  */
-class ExampleUnitTest extends TestCase {
+class ExampleUnitTest extends UnitTestCase {
+
+  protected $dummy;
 
   /**
-   * An instance of DemoModuleExampleService.
-   *
-   * @var \Drupal\my_d8_module\DemoModuleExampleService
+   * Before a test method is run, setUp() is invoked.
+   * Create new unit object.
    */
-  protected $demoModuleExampleService;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function setUp() {
-    parent::setUp();
-
-    $node_storage_interface = $this->prophesize(NodeStorageInterface::class);
-    $entity_type_manager = $this->prophesize(EntityTypeManagerInterface::class);
-    $entity_type_manager->getStorage('node')
-      ->willReturn($node_storage_interface->reveal());
-
-    $this->demoModuleExampleService = new DemoModuleExampleService($entity_type_manager->reveal());
+  public function setUp() {
+    $this->dummy = new DemoModuleExampleService(TRUE);
   }
 
   /**
-   * @covers ::__construct
+   * @covers Drupal\my_d8_module\DemoModuleExampleService::isDummy
    */
-  public function testConstruct() {
-    $this->assertInstanceOf(DemoModuleExampleService::class, $this->demoModuleExampleService);
+  public function testIsDummy() {
+    // Dummy test.
+    $this->assertEquals($this->dummy->isDummy(), TRUE);
   }
 
   /**
-   * @covers ::getLastNode
+   * Once test method has finished running, whether it succeeded or failed, tearDown() will be invoked.
+   * Unset the $dummy object.
    */
-  public function testGetLastNode() {
-    /** @var \Prophecy\Prophecy\ObjectProphecy $query_interface */
-    $query_interface = $this->prophesize(QueryInterface::class);
-    $query_interface->sort('created', 'DESC')
-      ->willReturn($query_interface->reveal());
-    $query_interface->range(0, 1)
-      ->willReturn($query_interface->reveal());
-    $query_interface->execute()
-      ->willReturn([1]);
-
-    /** @var \Prophecy\Prophecy\ObjectProphecy $query_interface */
-    $node_storage_interface = $this->prophesize(NodeStorageInterface::class);
-    $node_storage_interface->getQuery()
-      ->willReturn($query_interface->reveal());
-
-    /** @var \Prophecy\Prophecy\ObjectProphecy $query_interface */
-    $entity_interface = $this->prophesize(EntityInterface::class);
-    $node_storage_interface->load(1)
-      ->willReturn($entity_interface->reveal());
-
-    /** @var \Prophecy\Prophecy\ObjectProphecy $query_interface */
-    $entity_type_manager = $this->prophesize(EntityTypeManagerInterface::class);
-    $entity_type_manager->getStorage('node')
-      ->willReturn($node_storage_interface->reveal());
-
-    $this->demoModuleExampleService = new DemoModuleExampleService($entity_type_manager->reveal());
-
-    $this->assertInstanceOf(EntityInterface::class, $this->demoModuleExampleService->getLastNode());
+  public function tearDown() {
+    unset($this->dummy);
   }
 
 }

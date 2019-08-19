@@ -17,10 +17,12 @@ variables:
 
   # Minor Drupal version to work with, limited to tags on
   # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
+  # Current stable is 8.7.x, dev is 8.8.x-dev, you can choose "8.7" or "8.8".
   DRUPAL_VERSION: "8.7"
 
   # [CI_TYPE] Select the base image for all tests and actions.
   # For a module or theme, this image include Drupal from the official Docker
+  #
   # image with tools for CI and selenium.
   # CI_IMAGE_TYPE: selenium
   #

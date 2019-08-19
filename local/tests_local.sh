@@ -214,9 +214,7 @@ _tests_prepare() {
     _dkexec cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml
 
     # RoboFile.php is already at root.
-    _dkexec mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output
-    _dkexec chmod -R g+s ${BROWSERTEST_OUTPUT_DIRECTORY}
-    _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${BROWSERTEST_OUTPUT_DIRECTORY}
+    _dkexec robo $__simulate ensure:tests-folders
   fi
 }
 
@@ -292,6 +290,7 @@ _simulate_cache() {
 
 _copy_robofile() {
   _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
+  _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT}
 }
 
 ####### Tests jobs
@@ -320,18 +319,10 @@ _functional() {
   _build
   _tests_prepare
 
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+  _dkexec touch ${REPORT_DIR} . '/phpunit.html'
   _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
-  _functional_cmd
-}
 
-_functional_cmd() {
-  if [ $__clean == 1 ];
-  then
-    _clean_browser_output
-    sudo rm -rf reports/functional
-  fi
-  _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional
+  _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate --load-from ${DOC_ROOT} test:suite ${PHPUNIT_TESTS}functional
   _copy_output functional
 }
 
@@ -348,23 +339,8 @@ _functional_js() {
     _dkexecb "curl -s http://localhost:4444/wd/hub/status | jq '.'"
   fi
 
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
-
-  _functional_js_cmd
-}
-
-_functional_js_cmd() {
-  if [ $__clean == 1 ];
-  then
-    _clean_browser_output
-    sudo rm -rf reports/functional-javascript
-  fi
-  _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript
-  # _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate test:phpunit ${PHPUNIT_TESTS}functional-javascript
-
+  _dkexec sudo -E -u ${APACHE_RUN_USER} robo $__simulate --load-from ${DOC_ROOT} test:suite ${PHPUNIT_TESTS}functional-javascript
   _copy_output functional-javascript
-
 }
 
 _nightwatch() {
@@ -384,72 +360,15 @@ _nightwatch() {
   _copy_robofile
   _prepare_folders
 
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
 
-  if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
-    printf ">>> [SKIP] yarn install / chrome check\\n"
-  else
-    docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
-    _ensure_chrome
-  fi
+  _dkexec robo $__simulate test:nightwatch
 
-  _dkexec mkdir -p ${REPORT_DIR}/nightwatch
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}/nightwatch
-  _dkexec mkdir -p ${WEB_ROOT}/core/reports/
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/core/reports/
-
-  _nightwatch_cmd
-
-  _dkexec mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch
-  _dkexec cp -r ${WEB_ROOT}/core/reports/report.html ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/
-  _dkexec cp -r ${WEB_ROOT}/core/chromedriver.log ${CI_PROJECT_DIR}/${REPORT_DIR}/nightwatch/chromedriver.log
 }
 
 _patch_nightwatch() {
-
-  printf ">>> [NOTICE] Patching nightwatch to upgrade to ^1.2 with %s ...\\n" "3059356-32.${DRUPAL_VERSION}.patch"
-  # _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-08-16/3059356-32.patch -o ${WEB_ROOT}/3059356-32.patch"
-  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-32.${DRUPAL_VERSION}.patch ${WEB_ROOT}/3059356-32.${DRUPAL_VERSION}.patch
-  docker exec -t -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3059356-32.${DRUPAL_VERSION}.patch"
-  printf ">>> Done!\\n"
-
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal yarn install
-  printf "\\n"
-  docker exec -it ci-drupal ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
-  printf ">>> Done!\\n"
-
-  printf ">>> [NOTICE] Patching nightwatch for Drupal profile support with 3017176-7.patch...\\n"
-  _dkexecb "curl -fsSL https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch -o ${WEB_ROOT}/3017176-7.patch"
-  docker exec -t -w ${WEB_ROOT} ci-drupal bash -c "patch -N -p1 < ${WEB_ROOT}/3017176-7.patch"
-  printf ">>> Done!\\n"
-}
-
-_nightwatch_cmd() {
-
-  if [ $__clean == 1 ];
-  then
-    # _clean_browser_output
-    sudo rm -rf reports/nightwatch
-  fi
-
-  __verbose=""
-  if [ ${VERBOSE} == "1" ]; then
-    __verbose="--verbose"
-  fi
-
-  if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
-    printf ">>> [SKIP] patch_nightwatch\\n"
-  else
-    _test_html_reporter=$(docker exec -t ci-drupal sh -c "[ -f ${WEB_ROOT}/core/node_modules/.bin/nightwatch-html-reporter ] && echo true")
-    if [ -z "${_test_html_reporter}" ]; then
-      docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn add nightwatch-html-reporter"
-    fi
-  fi
-
-  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
-
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} --env local ${NIGHTWATCH_TESTS} --reporter ./html-reporter.js"
-  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn test:nightwatch ${__verbose} ${NIGHTWATCH_TESTS}"
+  _dkexec robo $__simulate patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-32.${DRUPAL_VERSION}.patch
+  _dkexec robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch 1
 }
 
 _test_site() {
@@ -469,10 +388,10 @@ _behat() {
   _copy_robofile
   _prepare_folders
 
-  DRUPAL_INSTALL_PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
-  _install_drupal
+  _PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
+  _install_drupal $_PROFILE
 
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
 
   # Starting Chrome.
   _ensure_chrome
@@ -490,23 +409,14 @@ _install_drupal() {
   if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] install\\n"
   else
-    printf ">>> [NOTICE] install Drupal\\n"
-    if [ -z ${DRUPAL_INSTALL_PROFILE} ]; then
-      $__drupal_profile = ${DRUPAL_INSTALL_PROFILE}
-    fi
-    _dkexec robo $__simulate install:drupal $__drupal_profile
+    printf ">>> [NOTICE] install Drupal %s\\n" "${1}"
+    _dkexec robo $__simulate install:drupal ${1}
   fi
 }
 
 _behat_cmd() {
-
-  if [ $__clean == 1 ];
-  then
-    # _clean_browser_output
-    sudo rm -rf reports/behat
-  fi
   _dkexec drush cr
-  _dkexec robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
+  _dkexec robo $__simulate test:behat "${REPORT_DIR}"
 }
 
 
@@ -519,22 +429,12 @@ _pa11y() {
   _copy_robofile
   _prepare_folders
 
-  DRUPAL_INSTALL_PROFILE=$(yq r ./.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
-  _install_drupal
+  _PROFILE=$(yq r ./.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
+  _install_drupal $_PROFILE
 
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
+  _dkexec robo $__simulate test:pa11y
 
-  _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json ${WEB_ROOT}/core
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "yarn add pa11y-ci"
-
-  if [ $__clean == 1 ];
-  then
-    sudo rm -rf reports/pa11y*.png
-  fi
-
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "node_modules/.bin/pa11y-ci --config ./pa11y-ci.json"
-
-  _dkexecd cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
+  _dkexecd cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${REPORT_DIR}/
 }
 
 _security_checker() {
@@ -561,11 +461,6 @@ _code_quality() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  if [ $__clean == 1 ];
-  then
-    sudo rm -rf reports/code_quality
-  fi
-
   _dkexecb "phpqa \${PHPQA_REPORT}/code_quality --tools \${TOOLS} ${PHPQA_PHP_CODE}"
 }
 
@@ -574,11 +469,6 @@ _best_practices() {
   _cp_qa_lint_metrics
   sed -i 's/Drupal/DrupalPractice/g' .phpqa.yml
   _prepare_folders
-
-  if [ $__clean == 1 ];
-  then
-    sudo rm -rf reports/best_practices
-  fi
 
   _dkexecb "phpqa \${PHPQA_REPORT}/best_practices --tools \${BEST_PRACTICES} ${PHPQA_PHP_CODE}"
 }
@@ -589,11 +479,6 @@ _eslint() {
   printf "\\n%s[INFO]%s Perform job 'Js lint' (eslint)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
   _prepare_folders
-
-  if [ $__clean == 1 ];
-  then
-    sudo rm -rf reports/js-lint-report.html
-  fi
 
   # _dkexecb "eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json \${JS_CODE}"
   _dkexecb "eslint --config ${WEB_ROOT}/core/.eslintrc.passing.json --format html --output-file ${REPORT_DIR}/js-lint-report.html \${JS_CODE}"
@@ -614,14 +499,9 @@ _sass_lint() {
   _prepare_folders
 
   printf ">>> [NOTICE] Install Sass-lint\\n"
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal npm install --no-audit git://github.com/sasstools/sass-lint.git#develop
+  _dkexec robo $__simulate install:sass-lint
 
-  if [ $__clean == 1 ];
-  then
-    sudo rm -rf reports/sass-lint-report.html
-  fi
-
-  # _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit"
+  _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit"
   _dkexecb "${WEB_ROOT}/core/node_modules/.bin/sass-lint --config \${SASS_CONFIG} --verbose --no-exit --format html --output ${REPORT_DIR}/sass-lint-report.html"
 }
 
@@ -632,11 +512,6 @@ _phpmetrics() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  if [ $__clean == 1 ];
-  then
-    sudo rm -rf reports/phpmetrics
-  fi
-
   _dkexecb "phpqa \${PHPQA_REPORT}/phpmetrics --tools phpmetrics ${PHPQA_PHP_CODE}"
 }
 
@@ -644,11 +519,6 @@ _phpstats() {
   printf "\\n%s[INFO]%s Perform job 'Php stats' (phpstats)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
   _prepare_folders
-
-  if [ $__clean == 1 ];
-  then
-    sudo rm -rf reports/phpstats
-  fi
 
   _dkexecb "phpqa \${PHPQA_REPORT}/phpstats --tools phploc,pdepend ${PHPQA_PHP_CODE}"
 }
@@ -863,7 +733,7 @@ _down() {
 }
 
 _copy_output() {
-  _dkexecd cp -r ${DOC_ROOT}/sites/simpletest/browser_output/ ${CI_PROJECT_DIR}/${REPORT_DIR}/${1}
+  _dkexecd cp -r ${DOC_ROOT}/sites/simpletest/browser_output/ ${REPORT_DIR}/${1}
 }
 _copy_output_functional() {
   _copy_output functional
@@ -873,8 +743,9 @@ _copy_output_functional_js() {
 }
 
 _clean() {
+  _clean_browser_output
   _clean_config
-  sudo rm -rf reports
+  sudo rm -rf reports/*
 }
 
 _clean_browser_output() {
