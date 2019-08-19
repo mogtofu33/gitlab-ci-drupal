@@ -49,17 +49,22 @@ Push your module to a Gitlab with CI and runners enabled.
 accounts.
 
 - Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
-- Go to Gitlab **Settings > CI/ CD > Variables** and add those variables:
+- Go to Gitlab **Settings > CI/ CD > Variables** and add variables:
 
 ```bash
+DRUPAL_VERSION          8.7
+# or 8.8 to test against 8.8.x-dev
 CI_IMAGE_TYPE           selenium
 CI_TYPE                 module
-NIGHTWATCH_TESTS        --tag my_module
 WEB_ROOT                /var/www/html
 PHP_CODE                /var/www/html/modules/custom
 SKIP_TEST_SECURITY      1
 SKIP_TEST_BEHAT         1
 SKIP_TEST_PA11Y         1
+# If Nightwatch.js tests, add your tag:
+NIGHTWATCH_TESTS        --tag my_module
+# Or you can disable Nightwatch tests with:
+SKIP_TEST_NIGHTWATCH    1
 ```
 
 ![gitlab-variables](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/9a12c6590d5001ecde3330ff8af3a9c0/gitlab-variables.jpg)
@@ -95,6 +100,14 @@ Check your project pipeline or
 [Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines)
 
 - Create a branch **master** and push, see the pipeline running!
+
+To test against Drupal 8.8.x-dev last version, go to Gitlab **Settings > CI/ CD > Variables** and add variables:
+
+```bash
+DRUPAL_VERSION          8.8
+```
+
+See [Skip jobs](#skip-jobs) to adapt the default jobs.
 
 As an example you can check my project on a Drupal 8 template:
 [Drupal 8 project template](https://gitlab.com/mog33/drupal-composer-advanced-template)
@@ -440,8 +453,6 @@ You want to help me make this better? Good! just PR!
 I would like to:
 
 - Add Nightwatch [visual regression testing](https://github.com/Crunch-io/nightwatch-vrt)
-
-- Add a Drupal dev version so you can test your module for the next version
 
 - Add a matrix option like Travis to test against multiple Php versions and
 databases when [Gitlab-ci support it](https://gitlab.com/gitlab-org/gitlab-ce/issues/49557)

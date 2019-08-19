@@ -2,8 +2,6 @@
 
 namespace Drupal\my_d8_module;
 
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-
 /**
  * DemoModuleExampleService service.
  */
@@ -12,33 +10,25 @@ class DemoModuleExampleService {
   /**
    * Node storage.
    *
-   * @var \Drupal\Node\NodeStorageInterface
+   * @var bool
    */
-  protected $nodeStorage;
+  protected $dummy;
 
   /**
    * Constructs a DemoModuleExampleService object.
-   *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   *   The entity type manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
-    $this->nodeStorage = $entity_type_manager->getStorage('node');
+  public function __construct($dummy) {
+    $this->dummy = $dummy;
   }
 
   /**
-   * Retrieves the last created node.
+   * Retrieves the dummy!
    *
-   * @return \Drupal\Core\Entity\EntityInterface|false
-   *   A node entity or FALSE if none was found.
+   * @return bool
+   *   The dummy!
    */
-  public function getLastNode() {
-    $nids = $this->nodeStorage->getQuery()
-      ->sort('created', 'DESC')
-      ->range(0, 1)
-      ->execute();
-    $nid = reset($nids);
-    return $nid ? $this->nodeStorage->load($nid) : FALSE;
+  public function isDummy() {
+    return $this->dummy;
   }
 
 }

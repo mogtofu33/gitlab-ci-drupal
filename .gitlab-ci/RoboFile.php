@@ -103,6 +103,42 @@ class RoboFile extends \Robo\Tasks {
   protected $ciProjectName = "my_project";
 
   /**
+   * NIGHTWATCH_TESTS context.
+   *
+   * @var string
+   *   The Nightwatch tests to run, look at env values for This can be 
+   *   overridden by specifying a $NIGHTWATCH_TESTS environment variable.
+   */
+  protected $nightwatchTests = "--skiptags core";
+
+  /**
+   * BROWSERTEST_OUTPUT_DIRECTORY context.
+   *
+   * @var string
+   *   The Drupal browser test output look at env values for This can be 
+   *   overridden by specifying a $BROWSERTEST_OUTPUT_DIRECTORY environment variable.
+   */
+  protected $browsertestOutput = "/var/www/html/sites/simpletest";
+
+  /**
+   * APACHE_RUN_USER context.
+   *
+   * @var string
+   *   The CI apache run user, look at env values for This can be 
+   *   overridden by specifying a $APACHE_RUN_USER environment variable.
+   */
+  protected $apacheUser = "www-data";
+
+  /**
+   * APACHE_RUN_GROUP context.
+   *
+   * @var string
+   *   The CI apache run group, look at env values for This can be 
+   *   overridden by specifying a $APACHE_RUN_GROUP environment variable.
+   */
+  protected $apacheGroup = "www-data";
+
+  /**
    * RoboFile constructor.
    */
   public function __construct() {
@@ -160,6 +196,20 @@ class RoboFile extends \Robo\Tasks {
     // Pull a REPORT_DIR from the environment, if it exists.
     if (getenv('REPORT_DIR')) {
       $this->reportDir = getenv('REPORT_DIR');
+    }
+
+    // Pull a BROWSERTEST_OUTPUT_DIRECTORY from the environment, if it exists.
+    if (getenv('BROWSERTEST_OUTPUT_DIRECTORY')) {
+      $this->browsertestOutput = getenv('BROWSERTEST_OUTPUT_DIRECTORY');
+    }
+
+    // Pull a APACHE_RUN_USER from the environment, if it exists.
+    if (getenv('APACHE_RUN_USER')) {
+      $this->apacheUser = getenv('APACHE_RUN_USER');
+    }
+    // Pull a APACHE_RUN_GROUP from the environment, if it exists.
+    if (getenv('APACHE_RUN_GROUP')) {
+      $this->apacheGroup = getenv('APACHE_RUN_GROUP');
     }
   }
 
@@ -417,7 +467,9 @@ class RoboFile extends \Robo\Tasks {
    */
   public function dumpDrupal($profile) {
     if (!file_exists($this->dbDump)) {
-      $this->taskFilesystemStack()->mkdir($this->dbDump)->run();
+      $this->taskFilesystemStack()
+        ->mkdir($this->dbDump)
+        ->run();
     }
     $this->drush()
       ->args('sql-dump')
@@ -426,35 +478,50 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Run PHPUnit Unit and Kernel for the testsuite or module.
+   * Prepare folders for the testsuite.
+   *
+   * @param string $testsuite
+   *   (optional) The testsuite names, separated by commas.
+   */
+  public function testPrepare($testsuite = 'functional') {
+    // Prepare report dir.
+    $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
+    if (!is_dir($reportDir)) {
+      $this->taskFilesystemStack()
+        ->mkdir($reportDir)
+        ->chown($reportDir, $this->apacheUser, true)
+        ->chgrp($reportDir, $this->apacheGroup, true)
+        ->chmod($reportDir, 0777, 0000, true)
+        ->run();
+    }
+    else {
+      $this->say("Report folder already exist: $reportDir");
+    }
+  }
+
+  /**
+   * Run PHPUnit testsuite or module.
    *
    * @param string $testsuite
    *   (optional) The testsuite names, separated by commas.
    *
-   * @param bool $xml
-   *   (optional) Add coverage xml report (--log-junit).
-   *
-   * @param bool $html
-   *   (optional) Add coverage html report (--testdox-html).
-   *
-   * @param string $module
-   *   (optional) The module name.
+   * @param string|null $module
+   *   (optional) The name of the module.
    */
-  public function testSuite($testsuite = 'unit,kernel', $xml = true, $html = true, $module = null) {
+  public function testSuite($testsuite = 'unit,kernel', $module = null) {
     // Prepare report dir.
     $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
-    if (!file_exists($this->reportDir)) {
-      $this->taskFilesystemStack()->mkdir($reportDir)->run();
+
+    if (!is_dir($reportDir)) {
+      $this->taskFilesystemStack()
+        ->mkdir($reportDir)
+        ->run();
     }
 
-    $test = $this->phpUnit($module, $testsuite);
-    if ($xml) {
-      $test->xml($reportDir . '/phpunit.xml');
-    }
-    if ($html) {
-      $test->option('testdox-html', $reportDir . '/phpunit.html');
-    }
-    $test->run();
+    $test = $this->phpUnit($module, $testsuite)
+      ->xml($reportDir . '/phpunit.xml')
+      ->option('testdox-html', $reportDir . '/phpunit.html')
+      ->run();
   }
 
   /**
@@ -479,13 +546,17 @@ class RoboFile extends \Robo\Tasks {
   public function testCoverage($testsuite = 'unit,kernel', $xml = true, $html = true, $text = true, $module = null) {
     $test = $this->phpUnit($module, $testsuite);
     if ($xml) {
-      $this->taskFilesystemStack()->mkdir($this->reportDir . '/coverage-xml')->run();
+      $this->taskFilesystemStack()
+        ->mkdir($this->reportDir . '/coverage-xml')
+        ->run();
       $test->option('coverage-xml', $this->reportDir . '/coverage-xml');
       // For Codecov.
       $test->option('coverage-clover', $this->reportDir . '/coverage.xml');
     }
     if ($html) {
-      $this->taskFilesystemStack()->mkdir($this->reportDir . '/coverage-html')->run();
+      $this->taskFilesystemStack()
+        ->mkdir($this->reportDir . '/coverage-html')
+        ->run();
       $test->option('coverage-html', $this->reportDir . '/coverage-html');
     }
     if ($text) {
@@ -510,15 +581,11 @@ class RoboFile extends \Robo\Tasks {
    *
    * @return \Robo\Task\Testing\PHPUnit
    */
-  protected function phpUnit($module = null, $testsuite = null) {
+  private function phpUnit($module = null, $testsuite = null) {
 
-    if (!file_exists($this->reportDir)) {
-      $this->taskFilesystemStack()->mkdir($this->reportDir)->run();
-    }
+    $bin = $this->locatePhpunit();
 
-    // $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
-    //   ->configFile($this->webRoot . '/core');
-    $task = $this->taskPhpUnit('/var/www/.composer/vendor/bin/phpunit')
+    $task = $this->taskPhpUnit($bin)
       ->configFile($this->webRoot . '/core');
 
     if ($this->verbose) {
@@ -538,21 +605,23 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Runs Behat tests from a tests folder.
+   * Locate Phpunit, if not found install with composer for Drupal 8.x
    *
-   * @param string|null $reportRootDir
-   *   (optional) Report root dir for this task.
+   * @return string
    */
-  public function testBehat($reportRootDir = null) {
-    # First we check if we have behat.
-    if (!file_exists($this->docRoot . '/vendor/bin/behat')) {
+  public function locatePhpunit() {
+    $bin = $this->docRoot . '/vendor/bin/phpunit';
+
+    if (!file_exists($bin)) {
       $task = $this->taskComposerRequire()
         ->workingDir($this->docRoot)
         ->noInteraction()
-        ->dependency('dmore/behat-chrome-extension')
-        ->dependency('bex/behat-screenshot', '^1.2')
-        ->dependency('emuse/behat-html-formatter', '0.1.*')
-        ->dependency('drupal/drupal-extension', '^4.0');
+        ->dependency("phpunit/phpunit", "^6.5")
+        ->dependency("symfony/phpunit-bridge", "^3.4.3")
+        ->dependency("phpspec/prophecy", "^1.7")
+        ->dependency("symfony/css-selector", "^3.4.0")
+        ->dependency("symfony/debug", "^3.4.0")
+        ->dependency("justinrainbow/json-schema", "^5.2");
       if ($this->verbose) {
         $task->arg('--verbose');
       }
@@ -565,8 +634,24 @@ class RoboFile extends \Robo\Tasks {
       $task->run();
     }
 
+    $this->_exec($bin . ' --version');
+
+    return $bin;
+  }
+
+  /**
+   * Runs Behat tests from a tests folder.
+   *
+   * @param string|null $reportRootDir
+   *   (optional) Report root dir for this task.
+   */
+  public function testBehat($reportRootDir = null) {
+    # First we check if we have behat.
+    $bin = $this->locateBehat();
+
+    // Add to bin to use taskBehat().
     if (!file_exists('/usr/local/bin/behat')) {
-      $this->symlink($this->docRoot . '/vendor/bin/behat', '/usr/local/bin/behat');
+      $this->symlink($bin, '/usr/local/bin/behat');
     }
 
     if (!$reportRootDir) {
@@ -574,8 +659,12 @@ class RoboFile extends \Robo\Tasks {
     }
     $this->say("[NOTICE] Behat tests on $reportRootDir");
 
-    $this->taskFilesystemStack()->mkdir($reportRootDir . '/behat')->run();
-    $this->taskFilesystemStack()->mkdir($this->docRoot . '/tests')->run();
+    $this->taskFilesystemStack()
+      ->mkdir($reportRootDir . '/behat')
+      ->run();
+    $this->taskFilesystemStack()
+      ->mkdir($this->docRoot . '/tests')
+      ->run();
     $this->taskFilesystemStack()->mirror($this->ciProjectDir . '/tests', $this->docRoot . '/tests')->run();
 
     #$this->taskFilesystemStack()
@@ -595,6 +684,193 @@ class RoboFile extends \Robo\Tasks {
       $task->noColors();
     }
     $task->run();
+  }
+
+  /**
+   * Locate Behat, if not found install with composer for Drupal 8.x
+   *
+   * @return string
+   */
+  public function locateBehat() {
+    $bin = $this->docRoot . '/vendor/bin/behat';
+
+    if (!file_exists($bin)) {
+      $task = $this->taskComposerRequire()
+        ->workingDir($this->docRoot)
+        ->noInteraction()
+        ->dependency('dmore/behat-chrome-extension')
+        ->dependency('bex/behat-screenshot', '^1.2')
+        ->dependency('emuse/behat-html-formatter', '0.1.*')
+        ->dependency('drupal/drupal-extension', '^4.0');
+      if ($this->verbose) {
+        $task->arg('--verbose');
+      }
+      else {
+        $task->arg('--quiet');
+      }
+      if ($this->noAnsi) {
+        $task->noAnsi();
+      }
+      $task->run();
+    }
+
+    $this->_exec($bin . ' --version');
+
+    return $bin;
+  }
+
+  /**
+   * Runs Nightwatch.js tests from a tests folder.
+   *
+   * @param string|null $reportRootDir
+   *   (optional) Report root dir for this task.
+   */
+  public function testNightwatch($reportRootDir = null) {
+    $this->prepareNightwatch();
+
+    $this->yarn('install')->run();
+
+    $this->checkNightwatch();
+
+    // Install html reporter if not present.
+    if (!file_exists($this->webRoot . '/core/node_modules/.bin/nightwatch-html-reporter')) {
+      $this->yarn(['add', 'nightwatch-html-reporter'])
+        ->run();
+    }
+
+    $task = $this->yarn(['test:nightwatch', $this->nightwatchTests])
+      ->option("reporter", './html-reporter.js', " ")
+      ->run();
+
+    if ($task->wasSuccessful()) {
+      $this->artifactsNightwatch();
+    }
+  }
+
+  /**
+   * Prepare Nightwatch.js tests folders.
+   */
+  public function prepareNightwatch() {
+    $this->say("Prepare reports for Nightwatch");
+    $this->taskFilesystemStack()
+      ->mkdir($this->reportDir . '/nightwatch')
+      ->chown($this->reportDir . '/nightwatch', $this->apacheUser, true)
+      ->mkdir($this->webRoot . '/core/reports/')
+      ->chown($this->webRoot . '/core/reports/', $this->apacheUser, true)
+      ->run();
+  }
+
+  /**
+   * Prepare Nightwatch.js tests folders.
+   */
+  private function artifactsNightwatch() {
+    $this->say("Create artifact for Nightwatch");
+    $target = $this->ciProjectDir . '/' . $this->reportDir . '/nightwatch';
+    $task = $this->taskFilesystemStack()
+      ->mkdir($target)
+      ->mirror($this->webRoot . '/core/reports/', $target);
+
+    if (file_exists($this->webRoot . '/core/chromedriver.log')) {
+      $task->copy($this->webRoot . '/core/chromedriver.log', $target, true);
+    }
+
+    $task->run();
+  }
+
+  /**
+   * Execute a patch.
+   *
+   * @param string $patch
+   *   Local patch file or remote url.
+   *
+   * @param bool $remote
+   *   (optional) Flag for a remote patch.
+   */
+  public function patchNightwatch($patch, $remote = FALSE) {
+    if ($remote) {
+      $patch = file_get_contents($patch);
+      file_put_contents($this->webRoot . '/remote_patch.patch', $patch);
+      $patch = $this->webRoot . '/remote_patch.patch';
+    }
+    $this->say("Apply Nightwatch patch $patch");
+    $this->_exec("patch -d $this->webRoot -N -p1 < $patch || true");
+  }
+
+  /**
+   * Print Nightwatch, Chromedriver and Chromium versions.
+   */
+  private function checkNightwatch() {
+    $bins = [
+      $this->webRoot . '/core/node_modules/.bin/nightwatch',
+      $this->webRoot . '/core/node_modules/.bin/chromedriver',
+      '/usr/bin/chromium',
+    ];
+    foreach ($bins as $bin) {
+      if (file_exists($bin)) {
+        $this->_exec($bin . ' --version');
+      }
+      else {
+        $this->io()->warning("Missing bin: $bin");
+      }
+    }
+  }
+
+  /**
+   * Runs Pa11y tests.
+   */
+  public function testPa11y() {
+    $this->yarn(['add', 'pa11y-ci'])->run();
+    $task = $this->_exec($this->webRoot . '/core/node_modules/.bin/pa11y-ci --config ' . $this->ciProjectDir . '/.gitlab-ci/pa11y-ci.json');
+  }
+
+  /**
+   * Return a yarn task.
+   *
+   * @param string|array $args
+   *   (optional) Arguments for yarn command.
+   *
+   * @param string|null $cwd
+   *   (optional) Working directory to use.
+   *
+   * @return \Robo\Task\Base\Exec
+   */
+  private function yarn($args = null, $cwd = null) {
+    if (!$cwd) {
+      $cwd = $this->webRoot . '/core';
+    }
+
+    $task = $this->taskExec('yarn')
+      ->option('cwd', $cwd)
+      ->arg('--no-progress');
+
+    if ($args) {
+      if (is_array($args)) {
+        $task->args($args);
+      }
+      else {
+        $task->arg($args);
+      }
+    }
+
+    if ($this->verbose) {
+      $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--silent');
+    }
+
+    return $task;
+  }
+
+  /**
+   * Install Sass-lint
+   */
+  public function installSassLint() {
+    // Install Sass lint if not present.
+    if (!file_exists($this->webRoot . '/core/node_modules/.bin/sass-lint')) {
+      $this->yarn(['add', 'git://github.com/sasstools/sass-lint.git#develop'])
+        ->run();
+    }
   }
 
   /**
@@ -694,6 +970,27 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
+   * Ensure owner for permissions on tests and reports dir.
+   */
+  public function ensureTestsFolders() {
+    $dirs = [
+      $this->webRoot . '/sites',
+      $this->browsertestOutput,
+      $this->browsertestOutput . '/browser_output',
+      $this->reportDir,
+    ];
+
+    foreach ($dirs as $dir) {
+      $this->taskFilesystemStack()
+        ->mkdir($dir)
+        ->chown($dir, $this->apacheUser, true)
+        ->chgrp($dir, $this->apacheGroup, true)
+        ->chmod($dir, 0777, 0000, true)
+        ->run();
+    }
+  }
+
+  /**
    * Helper to symlink.
    *
    * @param string $src
@@ -787,7 +1084,7 @@ class RoboFile extends \Robo\Tasks {
    * @param string|null $dir
    *   (optional) Working dir for this task.
    */
-  protected function ensureDrush($dir = null) {
+  private function ensureDrush($dir = null) {
     if (!file_exists('/var/www/.composer/vendor/bin/drush')) {
       if (!$dir) {
         $dir = $this->docRoot;
