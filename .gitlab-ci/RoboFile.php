@@ -139,6 +139,15 @@ class RoboFile extends \Robo\Tasks {
   protected $apacheGroup = "www-data";
 
   /**
+   * COMPOSER_HOME context.
+   *
+   * @var string
+   *   The composer home dir, look at env values for This can be 
+   *   overridden by specifying a $COMPOSER_HOME environment variable.
+   */
+  protected $composerHome = "/var/www/.composer";
+
+  /**
    * RoboFile constructor.
    */
   public function __construct() {
@@ -211,6 +220,10 @@ class RoboFile extends \Robo\Tasks {
     if (getenv('APACHE_RUN_GROUP')) {
       $this->apacheGroup = getenv('APACHE_RUN_GROUP');
     }
+    // Pull a COMPOSER_HOME from the environment, if it exists.
+    if (getenv('COMPOSER_HOME')) {
+      $this->composerHome = getenv('COMPOSER_HOME');
+    }
   }
 
   /**
@@ -223,6 +236,8 @@ class RoboFile extends \Robo\Tasks {
     if (!$dir) {
       $dir = $this->docRoot;
     }
+
+    $this->checkPrestissimo();
 
     // The git checkout includes a composer.lock, and running Composer update
     // on it fails for the first time.
@@ -330,6 +345,8 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
 
+    $this->checkPrestissimo();
+
     $task = $this->taskComposerCreateProject()
       ->source('drupal-composer/drupal-project:8.x-dev')
       ->target($tmp_destination)
@@ -362,6 +379,9 @@ class RoboFile extends \Robo\Tasks {
     if (!$dir) {
       $dir = $this->docRoot;
     }
+
+    $this->checkPrestissimo();
+
     $task = $this->taskComposerInstall()
       ->workingDir($dir)
       ->preferDist()
@@ -478,28 +498,6 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Prepare folders for the testsuite.
-   *
-   * @param string $testsuite
-   *   (optional) The testsuite names, separated by commas.
-   */
-  public function testPrepare($testsuite = 'functional') {
-    // Prepare report dir.
-    $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
-    if (!is_dir($reportDir)) {
-      $this->taskFilesystemStack()
-        ->mkdir($reportDir)
-        ->chown($reportDir, $this->apacheUser, true)
-        ->chgrp($reportDir, $this->apacheGroup, true)
-        ->chmod($reportDir, 0777, 0000, true)
-        ->run();
-    }
-    else {
-      $this->say("Report folder already exist: $reportDir");
-    }
-  }
-
-  /**
    * Run PHPUnit testsuite or module.
    *
    * @param string $testsuite
@@ -508,9 +506,14 @@ class RoboFile extends \Robo\Tasks {
    * @param string|null $module
    *   (optional) The name of the module.
    */
-  public function testSuite($testsuite = 'unit,kernel', $module = null) {
+  public function testSuite($testsuite = 'unit,kernel', $module = null, $reportDir = null) {
     // Prepare report dir.
-    $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
+    if ($reportDir) {
+      $reportDir = $reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
+    }
+    else {
+      $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
+    }
 
     if (!is_dir($reportDir)) {
       $this->taskFilesystemStack()
@@ -583,9 +586,7 @@ class RoboFile extends \Robo\Tasks {
    */
   private function phpUnit($module = null, $testsuite = null) {
 
-    $bin = $this->locatePhpunit();
-
-    $task = $this->taskPhpUnit($bin)
+    $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
       ->configFile($this->webRoot . '/core');
 
     if ($this->verbose) {
@@ -593,7 +594,7 @@ class RoboFile extends \Robo\Tasks {
       $task->arg('--debug');
     }
 
-    if ($module) {
+    if ($module && $module != "null") {
       $task->group($module);
     }
 
@@ -605,38 +606,30 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Locate Phpunit, if not found install with composer for Drupal 8.x
+   * Install or locate Phpunit.
    *
-   * @return string
+   * @param bool $list
+   *   (Optional) Return the bin and dependencies instead of run.
+   *
+   * @return array
    */
-  public function locatePhpunit() {
-    $bin = $this->docRoot . '/vendor/bin/phpunit';
-
-    if (!file_exists($bin)) {
-      $task = $this->taskComposerRequire()
-        ->workingDir($this->docRoot)
-        ->noInteraction()
-        ->dependency("phpunit/phpunit", "^6.5")
-        ->dependency("symfony/phpunit-bridge", "^3.4.3")
-        ->dependency("phpspec/prophecy", "^1.7")
-        ->dependency("symfony/css-selector", "^3.4.0")
-        ->dependency("symfony/debug", "^3.4.0")
-        ->dependency("justinrainbow/json-schema", "^5.2");
-      if ($this->verbose) {
-        $task->arg('--verbose');
-      }
-      else {
-        $task->arg('--quiet');
-      }
-      if ($this->noAnsi) {
-        $task->noAnsi();
-      }
-      $task->run();
+  public function installPhpunit($list = false) {
+    $install = [
+      'phpunit' => [
+        "phpunit/phpunit" => "^6.5",
+        "symfony/phpunit-bridge" => "^3.4.3",
+        "phpspec/prophecy" => "^1.7",
+        "symfony/css-selector" => "^3.4.0",
+        "symfony/debug" => "^3.4.0",
+        "justinrainbow/json-schema" => "^5.2",
+      ],
+    ];
+    if ($list) {
+      return $install;
     }
-
-    $this->_exec($bin . ' --version');
-
-    return $bin;
+    else {
+      $this->installWithComposer($install);
+    }
   }
 
   /**
@@ -646,14 +639,6 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Report root dir for this task.
    */
   public function testBehat($reportRootDir = null) {
-    # First we check if we have behat.
-    $bin = $this->locateBehat();
-
-    // Add to bin to use taskBehat().
-    if (!file_exists('/usr/local/bin/behat')) {
-      $this->symlink($bin, '/usr/local/bin/behat');
-    }
-
     if (!$reportRootDir) {
       $reportRootDir = $this->reportDir;
     }
@@ -661,11 +646,9 @@ class RoboFile extends \Robo\Tasks {
 
     $this->taskFilesystemStack()
       ->mkdir($reportRootDir . '/behat')
-      ->run();
-    $this->taskFilesystemStack()
       ->mkdir($this->docRoot . '/tests')
+      ->mirror($this->ciProjectDir . '/tests', $this->docRoot . '/tests')
       ->run();
-    $this->taskFilesystemStack()->mirror($this->ciProjectDir . '/tests', $this->docRoot . '/tests')->run();
 
     #$this->taskFilesystemStack()
     #  ->copy('tests/behat.yml', $this->docRoot . '/tests/behat.yml', true)
@@ -687,36 +670,36 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Locate Behat, if not found install with composer for Drupal 8.x
+   * Install or locate Behat.
    *
-   * @return string
+   * @param bool $list
+   *   (Optional) Return the bin and dependencies instead of run.
+   *
+   * @return array
    */
-  public function locateBehat() {
-    $bin = $this->docRoot . '/vendor/bin/behat';
-
-    if (!file_exists($bin)) {
-      $task = $this->taskComposerRequire()
-        ->workingDir($this->docRoot)
-        ->noInteraction()
-        ->dependency('dmore/behat-chrome-extension')
-        ->dependency('bex/behat-screenshot', '^1.2')
-        ->dependency('emuse/behat-html-formatter', '0.1.*')
-        ->dependency('drupal/drupal-extension', '^4.0');
-      if ($this->verbose) {
-        $task->arg('--verbose');
-      }
-      else {
-        $task->arg('--quiet');
-      }
-      if ($this->noAnsi) {
-        $task->noAnsi();
-      }
-      $task->run();
+  public function installBehat($list = false) {
+    $bin = 'behat';
+    $install = [
+      $bin => [
+        'behat/mink' => '1.7.x-dev',
+        'behat/mink-goutte-driver' => '^1.2',
+        'dmore/behat-chrome-extension' => '^1.3.0',
+        'bex/behat-screenshot' => '^1.2',
+        'emuse/behat-html-formatter' => '0.1.*',
+        'drupal/drupal-extension' => '^4.0',
+      ],
+    ];
+    if ($list) {
+      return $install;
+    }
+    else {
+      $this->installWithComposer($install);
     }
 
-    $this->_exec($bin . ' --version');
-
-    return $bin;
+    // Add to bin to use taskBehat().
+    if (!file_exists('/usr/local/bin/behat')) {
+      $this->symlink($this->docRoot . '/vendor/bin/' . $bin, '/usr/local/bin/behat');
+    }
   }
 
   /**
@@ -726,19 +709,18 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Report root dir for this task.
    */
   public function testNightwatch($reportRootDir = null) {
-    $this->prepareNightwatch();
 
-    $this->yarn('install')->run();
+    $this->prepareNightwatch();
 
     $this->checkNightwatch();
 
     // Install html reporter if not present.
     if (!file_exists($this->webRoot . '/core/node_modules/.bin/nightwatch-html-reporter')) {
-      $this->yarn(['add', 'nightwatch-html-reporter'])
+      $this->yarnCmd(['add', 'nightwatch-html-reporter'])
         ->run();
     }
 
-    $task = $this->yarn(['test:nightwatch', $this->nightwatchTests])
+    $task = $this->yarnCmd(['test:nightwatch', $this->nightwatchTests])
       ->option("reporter", './html-reporter.js', " ")
       ->run();
 
@@ -778,7 +760,7 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Execute a patch.
+   * Execute a patch on Drupal.
    *
    * @param string $patch
    *   Local patch file or remote url.
@@ -792,7 +774,7 @@ class RoboFile extends \Robo\Tasks {
       file_put_contents($this->webRoot . '/remote_patch.patch', $patch);
       $patch = $this->webRoot . '/remote_patch.patch';
     }
-    $this->say("Apply Nightwatch patch $patch");
+    $this->say("Apply patch $patch");
     $this->_exec("patch -d $this->webRoot -N -p1 < $patch || true");
   }
 
@@ -801,8 +783,8 @@ class RoboFile extends \Robo\Tasks {
    */
   private function checkNightwatch() {
     $bins = [
-      $this->webRoot . '/core/node_modules/.bin/nightwatch',
-      $this->webRoot . '/core/node_modules/.bin/chromedriver',
+      $this->docRoot . '/core/node_modules/.bin/nightwatch',
+      $this->docRoot . '/core/node_modules/.bin/chromedriver',
       '/usr/bin/chromium',
     ];
     foreach ($bins as $bin) {
@@ -816,11 +798,209 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
+   * Install or locate Phpqa.
+   *
+   * @param bool $list
+   *   (Optional) Return the bin and dependencies instead of run.
+   *
+   * @return array
+   */
+  public function installPhpqa($list = false) {
+    $install = [
+      'phpqa' => [
+        'edgedesign/phpqa' => '^1.21',
+        'jakub-onderka/php-parallel-lint' => '^1.0',
+        'jakub-onderka/php-console-highlighter' => '^0.4.0',
+        'twig/twig' => '^1',
+      ],
+    ];
+    if ($list) {
+      return $install;
+    }
+    else {
+      $this->installWithComposer($install);
+    }
+  }
+
+  /**
+   * Install or locate Drush.
+   *
+   * @param bool $list
+   *   (Optional) Return the bin and dependencies instead of run.
+   *
+   * @return array
+   */
+  public function installDrush($list = false) {
+    $install = [
+      'drush' => [
+        'drush/drush' => '^9',
+      ],
+    ];
+    if ($list) {
+      return $install;
+    }
+    else {
+      $this->installWithComposer($install);
+    }
+  }
+
+  /**
+   * Install or locate security-checker.
+   *
+   * @param bool $list
+   *   (Optional) Return the bin and dependencies instead of run.
+   *
+   * @return array
+   */
+  public function installSecurityChecker($list = false) {
+    $install = [
+      'security-checker' => [
+        'sensiolabs/security-checker' => '^5.0',
+      ],
+    ];
+    if ($list) {
+      return $install;
+    }
+    else {
+      $this->installWithComposer($install);
+    }
+  }
+
+  /**
+   * Install with composer.
+   *
+   * @param array $bins_dependencies
+   *   Keys are bins to look for, values array of dependencies.
+   *
+   * @return \Robo\Task\Base\Exec
+   */
+  private function installWithComposer(array $bins_dependencies) {
+    $this->checkPrestissimo();
+    $this->checkCoder();
+
+    // Base task.
+    $task = $this->taskComposerRequire()
+      ->workingDir($this->docRoot)
+      ->noInteraction();
+
+    $hasDependency = false;
+    foreach ($bins_dependencies as $bin => $dependencies) {
+      $bin = $this->docRoot . '/vendor/bin/' . $bin;
+
+      if (!file_exists($bin)) {
+        foreach ($dependencies as $dependency => $version) {
+          $hasDependency = true;
+          $task->dependency($dependency, $version);
+        }
+      }
+      else {
+        // $this->say("[SKIP] Already installed: $bin");
+      }
+    }
+
+    if (!$hasDependency) {
+      // $this->say("[SKIP] Composer install, nothing to install!");
+    }
+    else {
+      if ($this->verbose) {
+        $task->arg('--verbose');
+      }
+      else {
+        $task->arg('--quiet');
+      }
+      if ($this->noAnsi) {
+        $task->noAnsi();
+      }
+      $task->run();
+    }
+
+  }
+
+  /**
+   * Install prestissimo for Composer.
+   *
+   */
+  private function checkPrestissimo() {
+    // First check if we have prestissimo.
+    if (!file_exists($this->composerHome . '/vendor/hirak/prestissimo/composer.json')) {
+      $this->taskComposerRequire()
+        ->workingDir($this->docRoot)
+        ->noInteraction()
+        ->dependency('hirak/prestissimo', '^0.3.8')
+        ->arg('--quiet')
+        ->noAnsi()
+        ->run();
+    }
+  }
+
+  /**
+   * Install Coder for Composer.
+   *
+   */
+  private function checkCoder() {
+    $hasDependency = false;
+    $task = $this->taskComposerRequire()
+      ->workingDir($this->docRoot)
+      ->noInteraction()
+      ->arg('--quiet')
+      ->noAnsi();
+    // First check if we have coder.
+    if (!file_exists($this->composerHome . '/vendor/drupal/coder/composer.json')) {
+      $hasDependency = true;
+      $task->dependency('drupal/coder', '^8.3');
+    }
+    if (!file_exists($this->composerHome . '/vendor/dealerdirect/phpcodesniffer-composer-installer/composer.json')) {
+      $hasDependency = true;
+      $task->dependency('dealerdirect/phpcodesniffer-composer-installer', '^0.5.0');
+    }
+    if ($hasDependency) {
+      $task->run();
+    }
+  }
+
+  /**
+   * Install Pa11y with yarn.
+   */
+  public function installPa11y() {
+    $this->yarn('add', 'pa11y-ci');
+  }
+
+  /**
    * Runs Pa11y tests.
    */
   public function testPa11y() {
-    $this->yarn(['add', 'pa11y-ci'])->run();
     $task = $this->_exec($this->webRoot . '/core/node_modules/.bin/pa11y-ci --config ' . $this->ciProjectDir . '/.gitlab-ci/pa11y-ci.json');
+  }
+
+  /**
+   * Run a yarn command.
+   *
+   * @param string $arg1
+   *   First argument for yarn command.
+   *
+   * @param string\null $arg2
+   *   (optional) Second argument for yarn command.
+   */
+  public function yarn($arg1, $arg2 = null) {
+    $args = [];
+    if ($arg2) {
+      $args = [$arg1, $arg2];
+    }
+    else {
+      $args = [$arg1];
+    }
+    $this->say("yarn " . implode(' ', $args));
+    $this->yarnCmd($args)->run();
+  }
+
+  /**
+   * Run a yarn install from Drupal core.
+   */
+  public function yarnInstall() {
+    // Simply check one of the program.
+    if (!file_exists($this->docRoot . '/core/node_modules/.bin/stylelint')) {
+      $this->yarn('install');
+    }
   }
 
   /**
@@ -834,7 +1014,7 @@ class RoboFile extends \Robo\Tasks {
    *
    * @return \Robo\Task\Base\Exec
    */
-  private function yarn($args = null, $cwd = null) {
+  private function yarnCmd($args = null, $cwd = null) {
     if (!$cwd) {
       $cwd = $this->webRoot . '/core';
     }
@@ -863,17 +1043,6 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Install Sass-lint
-   */
-  public function installSassLint() {
-    // Install Sass lint if not present.
-    if (!file_exists($this->webRoot . '/core/node_modules/.bin/sass-lint')) {
-      $this->yarn(['add', 'git://github.com/sasstools/sass-lint.git#develop'])
-        ->run();
-    }
-  }
-
-  /**
    * Perform a build for the project.
    *
    * Depending the type of project, composer will install the codebase from a 
@@ -886,8 +1055,8 @@ class RoboFile extends \Robo\Tasks {
    * @param bool $forceInstall
    *   (optional) Flag to force the drupal setup.
    */
-  public function performBuild($dir = null, $forceInstall = false) {
-    $this->say("Perform build for type: $this->ciType");
+  public function projectBuild($dir = null, $forceInstall = false) {
+    $this->say("Build for type: $this->ciType");
 
     if (!$dir) {
       $dir = $this->docRoot;
@@ -927,7 +1096,7 @@ class RoboFile extends \Robo\Tasks {
         }
         break;
       default:
-        $this->say("[SKIP] Build");
+        $this->say("[SKIP] Nothing to build");
     }
   }
 
@@ -1040,7 +1209,7 @@ class RoboFile extends \Robo\Tasks {
           ->run();
       }
       if (!file_exists($target)) {
-        $this->io()->warning("Missing target folder: $target");
+        $this->say("[NOTICE] Missing target folder: $target");
       }
 
       $this->say("Mirror $src to $target");
@@ -1054,47 +1223,35 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Return drush with default arguments.
    *
-   * @param string $cmd
-   *   (optional) Commands for drush.
-   *
    * @return \Robo\Task\Base\Exec
    *   A drush exec command.
    */
-  public function drush($cmd = null) {
+  public function drush() {
+    $this->installDrush();
+
     // Drush needs an absolute path to the webroot.
-    $task = $this->taskExec('/var/www/.composer/vendor/bin/drush')
+    $task = $this->taskExec($this->docRoot . '/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {
       $task->arg('--verbose');
     }
 
-    if ($cmd) {
-      $task->arg($cmd)
-        ->run();
-    }
-    else {
-      return $task;
-    }
+    return $task;
   }
 
   /**
-   * Test if drush exist, if not install.
-   *
-   * @param string|null $dir
-   *   (optional) Working dir for this task.
+   * Install all things needed for CI.
    */
-  private function ensureDrush($dir = null) {
-    if (!file_exists('/var/www/.composer/vendor/bin/drush')) {
-      if (!$dir) {
-        $dir = $this->docRoot;
-      }
-      $this->taskComposerRequire()
-        ->workingDir($dir)
-        ->noInteraction()
-        ->dependency('drush/drush', '^9')
-        ->run();
-      }
+  public function installCi() {
+    $list = [];
+    # Composer install.
+    $list += $this->installDrush(true);
+    $list += $this->installPhpunit(true);
+    $list += $this->installBehat(true);
+    $list += $this->installPhpqa(true);
+    $list += $this->installSecurityChecker(true);
+    $this->installWithComposer($list);
   }
 
 }

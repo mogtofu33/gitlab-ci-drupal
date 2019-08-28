@@ -135,17 +135,8 @@ variables:
   #
   # Space separated for eslint and sass lint.
   JS_CODE: "${WEB_ROOT}/**/custom/**/*.js"
-  CSS_FILES: "${WEB_ROOT}/(themes|modules)/custom/**/css/*.css"
-  SCSS_FILES: "${WEB_ROOT}/(themes|modules)/custom/**/scss/*.scss"
-  SASS_CONFIG: "${CI_PROJECT_DIR}/.gitlab-ci/.sass-lint.yml"
-
-  # PhpQA specific variables not set in gitlab-ci/.phpqa.yml.
-  # Options for Phpqa to build a report to download, need artifacts set on the
-  # job, see '.report' below.
-  PHPQA_REPORT: "--buildDir ${REPORT_DIR}"
-  PHPQA_PHP_CODE: "--analyzedDirs ${PHP_CODE}"
-  # Include all code from the project and not only contrib or custom.
-  # PHPQA_PHP_CODE: "--analyzedDirs ${WEB_ROOT}"
+  CSS_FILES: "${WEB_ROOT}/**/custom/**/css/*.css"
+  SCSS_FILES: "${WEB_ROOT}/**/custom/**/scss/*.scss"
 
   ##############################################################################
   # [DEPLOY] Global settings for all env used for deploy.

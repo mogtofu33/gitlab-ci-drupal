@@ -27,8 +27,8 @@ class ExampleFunctionalJavascriptTest extends WebDriverTestBase {
     $assert_session = $this->assertSession();
     $page = $session->getPage();
     $this->drupalGet('<front>');
-    $this->createScreenshot('public://screenshot.jpg');
-    $this->assertFileExists('public://screenshot.jpg');
+    $this->createScreenshot('public://screenshot2.jpg');
+    $this->assertFileExists('public://screenshot2.jpg');
   }
 
 }

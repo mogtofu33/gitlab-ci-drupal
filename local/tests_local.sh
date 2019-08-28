@@ -139,8 +139,8 @@ Arguments:
     pa11y
     code_quality
     best_practices
-    eslint
-    stylelint
+    js_lint
+    css_lint
     sass_lint
     phpmetrics
     phpstats
@@ -165,31 +165,25 @@ HEREDOC
 
 _status() {
 
-  _status_vars
+  printf "DRUPAL_VERSION: %s\\nCI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
+  ${DRUPAL_VERSION} ${CI_TYPE} ${DOC_ROOT} ${WEB_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
+  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\n" \
+  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY}
 
   _dkexec_bash /scripts/run-tests.sh
   sleep 2s
 
-  docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone"
+  docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.sh"
+  docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   sleep 2s
 
   printf "Selenium running? (If nothing, no!)\\n"
   _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
-  docker exec -d ci-drupal bash -c "/scripts/start-chrome."
-  sleep 2s
 
   printf "Chrome running? (If nothing, no!)\\n"
   _dkexec_bash "curl -s http://localhost:9222/json/version | jq '.'"
 
   printf "\\n"
-}
-
-_status_vars() {
-
-  printf "DRUPAL_VERSION: %s\\nCI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
-  ${DRUPAL_VERSION} ${CI_TYPE} ${DOC_ROOT} ${WEB_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
-  printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\n" \
-  ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY}
 }
 
 _st() {
@@ -203,7 +197,7 @@ _tests_prepare() {
   else
     printf ">>> [NOTICE] tests_prepare\\n"
 
-    _copy_robofile
+    # _copy_robofile
 
     _prepare_folders
     
@@ -225,16 +219,16 @@ _build() {
     _copy_robofile
   else
     printf ">>> [NOTICE] build\\n"
-    # _simulate_cache
 
     _copy_robofile
 
-    _dkexec_apache robo $__simulate perform:build
+    _dkexec robo $__simulate project:build
 
-    _dkexec_apache robo $__simulate install:ci
+    _dkexec robo $__simulate yarn:install
 
-    _create_cache
-    # _create_artifacts
+    _dkexec robo $__simulate install:ci
+
+    _create_artifacts
   fi
 }
 
@@ -242,45 +236,8 @@ _prepare_folders() {
   if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] prepare_folders\\n"
   else
-    _copy_robofile
+    # _copy_robofile
     _dkexec robo $__simulate prepare:folders
-  fi
-}
-
-_create_cache() {
-  printf ">>> [NOTICE] Create cache...\\n"
-
-  if ! [ -f tmp/cache.tgz ]
-  then
-    mkdir -p ./tmp
-    if ! [ ${CI_TYPE} == "project" ]; then
-      __folders="vendor core/node_modules web"
-
-    else
-      __folders="vendor core/node_modules"
-    fi
-
-    tar -czf ${DOC_ROOT}/cache.tgz \
-      --exclude="web/modules/custom" \
-      --exclude="web/themes/custom" \
-      --exclude="modules/custom" \
-      --exclude="themes/custom" \
-      $__folders
-    docker cp ci-drupal:${DOC_ROOT}/cache.tgz ./tmp/
-  fi
-}
-
-# Replicate Build job artifacts.
-_extract_cache() {
-  if [ -f ./tmp/cache.tgz ]
-  then
-    printf ">>> [NOTICE] extract_cache..."
-    _dkexec mv ./tmp/cache.tgz ${DOC_ROOT}
-    _dkexec_apache tar -xzf --strip-components=3 ${DOC_ROOT}/cache.tgz
-    _dkexec rm -f ${DOC_ROOT}/cache.tgz
-    printf " Done!\\n"
-  else
-    printf ">>> [SKIP] No cache!\\n" "${_blu}" "${_end}"
   fi
 }
 
@@ -295,7 +252,7 @@ _create_artifacts() {
       _dkexec tar -czf /tmp/artifacts.tgz \
         --exclude="${WEB_ROOT}/modules/custom" \
         --exclude="${WEB_ROOT}/themes/custom" \
-        ${DOC_ROOT}/vendor ${DOC_ROOT}/web ${DOC_ROOT}/core/node_modules \
+        ${DOC_ROOT}/vendor ${DOC_ROOT}/web ${WEB_ROOT}/core/node_modules \
         ${DOC_ROOT}/drush ${DOC_ROOT}/scripts ${DOC_ROOT}/composer.json \
         ${DOC_ROOT}/composer.lock ${DOC_ROOT}/.env.example ${DOC_ROOT}/load.environment.php
       docker cp ci-drupal:/tmp/artifacts.tgz ./tmp/
@@ -323,17 +280,6 @@ _extract_artifacts() {
   fi
 }
 
-# Replicate Build job cache.
-_simulate_cache() {
-  printf ">>> [NOTICE] simulate_cache\\n"
-  _extract_cache
-  # if ! [ ${CI_TYPE} == "project" ]; then
-  #   if [ -f 'composer.lock' ] || [ -f 'load.environment.php' ]; then
-  #     sudo rm -rf drush scripts composer.json composer.lock .env.example load.environment.php
-  #   fi
-  # fi
-}
-
 _copy_robofile() {
   printf ">>> [NOTICE] copy_robofile\\n"
   _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
@@ -348,7 +294,6 @@ _unit_kernel() {
   _build
   _tests_prepare
 
-  _dkexec_apache install:phpunit
   _dkexec robo $__simulate test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
 }
 
@@ -358,7 +303,6 @@ _code_coverage() {
   _build
   _tests_prepare
 
-  _dkexec_apache install:phpunit
   _dkexec robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
   _dkexec cp -r ${WEB_ROOT}/${REPORT_DIR} ./
   # bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml -t ${CODECOV_TOKEN}
@@ -370,12 +314,16 @@ _functional() {
   _build
   _tests_prepare
 
-  _dkexec touch ${REPORT_DIR} . '/phpunit.html'
-  _dkexec mkdir -p ${REPORT_DIR} . '/functional'
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
+  # _dkexec touch "${REPORT_DIR}/phpunit.html"
+  # _dkexec mkdir -p "${REPORT_DIR}/functional"
+  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
 
-  _dkexec_apache install:phpunit
-  _dkexec_apache robo $__simulate --load-from ${DOC_ROOT} test:suite ${PHPUNIT_TESTS}functional
+  # Specific to run a local test as apache.
+  _dkexec touch "/var/www/${REPORT_DIR}/phpunit.html"
+  _dkexec mkdir -p "/var/www/${REPORT_DIR}/functional"
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} "/var/www/${REPORT_DIR}"
+
+  _dkexec_apache robo $__simulate test:suite ${PHPUNIT_TESTS}functional "null" "/var/www/${REPORT_DIR}"
 
   _copy_output functional
 }
@@ -393,11 +341,11 @@ _functional_js() {
     _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
   fi
 
-  _dkexec mkdir -p ${REPORT_DIR} . '/functional-javascript'
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
+  # Specific to run a local test as apache.
+  # _dkexec mkdir -p "/var/www/${REPORT_DIR}/functional-javascript"
+  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} "/var/www/${REPORT_DIR}"
 
-  _dkexec_apache install:phpunit
-  _dkexec_apache robo $__simulate --load-from ${DOC_ROOT} test:suite ${PHPUNIT_TESTS}functional-javascript
+  _dkexec_apache robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript "null" "/var/www/${REPORT_DIR}"
 
   _copy_output functional-javascript
 }
@@ -421,7 +369,7 @@ _nightwatch() {
     if [ ${DRUPAL_VERSION} == "8.7" ]; then _dkexec robo $__simulate patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-46_8.7.x_.patch 1; fi
   fi
 
-  _dkexec robo $__simulate yarn install
+  _dkexec robo $__simulate yarn:install
 
   _dkexec robo $__simulate test:nightwatch
 
@@ -431,11 +379,14 @@ _security_checker() {
   printf "\\n%s[INFO]%s Perform job 'Security report' (security_checker)\\n\\n" "${_blu}" "${_end}"
 
   _build
-  _copy_robofile
+  # _copy_robofile
   _prepare_folders
-
-  _dkexec_apache install:security-checker
-  _dkexec security-checker security:check
+  
+  _dkexec phpqa \
+    --buildDir ${REPORT_DIR}/security \
+    --tools security-checker \
+    --analyzedDirs ${DOC_ROOT} \
+    --verbose
 }
 
 _behat() {
@@ -444,13 +395,11 @@ _behat() {
   _build
   _tests_prepare
 
-  _copy_robofile
+  # _copy_robofile
   _prepare_folders
 
   _PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
   _install_drupal $_PROFILE
-
-  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${WEB_ROOT}/sites
 
   # Starting Chrome.
   _ensure_chrome
@@ -461,9 +410,9 @@ _behat() {
     _dkexec_bash "curl -s http://localhost:9222/json/version | jq '.'"
   fi
 
-  _dkexec_apache robo $__simulate install:behat
-  # _dkexec drush cr
-  _dkexec robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
+  _dkexec_docroot robo $__simulate install:behat
+
+  _dkexec_docroot robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
 }
 
 _pa11y() {
@@ -472,14 +421,14 @@ _pa11y() {
   _build
   _tests_prepare
 
-  _copy_robofile
+  # _copy_robofile
   _prepare_folders
 
   _PROFILE=$(yq r ./.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
   _install_drupal $_PROFILE
 
-  _dkexec_apache robo $__simulate add pa11y-ci
-  _dkexec_apache robo $__simulate test:pa11y
+  _dkexec robo $__simulate install:pa11y
+  _dkexec robo $__simulate test:pa11y
 
   _dkexec_background cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${REPORT_DIR}/
 }
@@ -503,8 +452,10 @@ _code_quality() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  _dkexec_apache install:phpqa
-  _dkexec_bash "phpqa \${PHPQA_REPORT}/code_quality --tools \${TOOLS} ${PHPQA_PHP_CODE}"
+  _dkexec phpqa \
+    --buildDir ${REPORT_DIR}/code_quality \
+    --tools ${TOOLS} \
+    --analyzedDirs ${PHP_CODE}
 
   _clean_qa_lint_metrics
 }
@@ -515,8 +466,10 @@ _best_practices() {
   sed -i 's/Drupal/DrupalPractice/g' .phpqa.yml
   _prepare_folders
 
-  _dkexec_apache install:phpqa
-  _dkexec_bash "phpqa \${PHPQA_REPORT}/best_practices --tools \${BEST_PRACTICES} ${PHPQA_PHP_CODE}"
+  _dkexec phpqa \
+    --buildDir ${REPORT_DIR}/best_practices \
+    --tools ${BEST_PRACTICES} \
+    --analyzedDirs ${PHP_CODE}
 
   _clean_qa_lint_metrics
 }
@@ -534,15 +487,17 @@ _eslint() {
 
   _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json -o ${WEB_ROOT}/core/.eslintrc.passing.json
 
-  _dkexec_apache robo $__simulate yarn install
-
   _dkexec_bash "${WEB_ROOT}/core/node_modules/.bin/eslint \
     --config ${WEB_ROOT}/core/.eslintrc.passing.json \
     --format html \
     --output-file ${REPORT_DIR}/js-lint-report.html \
-    \${JS_CODE}"
+    ${JS_CODE}"
 
   _clean_qa_lint_metrics
+}
+
+_js_lint() {
+  _eslint
 }
 
 _stylelint() {
@@ -552,6 +507,7 @@ _stylelint() {
 
   _dkexec mkdir -p ${WEB_ROOT}/core
   _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json -o ${WEB_ROOT}/core/.stylelintrc.json
+
   # printf ">>> [NOTICE] Install Stylelint-formatter-pretty\\n"
   # _dkexec robo $__simulate install:stylelint-formatter-pretty
 
@@ -559,15 +515,17 @@ _stylelint() {
   #   --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-formatter-pretty \
   #   --config ${WEB_ROOT}/core/.stylelintrc.json \${CSS_FILES}"
 
-  _dkexec_apache robo $__simulate yarn install
-
   _dkexec_bash "${WEB_ROOT}/core/node_modules/.bin/stylelint \
-    --config-basedir ${WEB_ROOT}/core/node_modules/ \
-    --formatter verbose \
-    --config ${WEB_ROOT}/core/.stylelintrc.json \
-    \${CSS_FILES}"
+      --config-basedir ${WEB_ROOT}/core/node_modules/ \
+      --config ${WEB_ROOT}/core/.stylelintrc.json \
+      --formatter verbose \
+      ${CSS_FILES}"
 
   _clean_qa_lint_metrics
+}
+
+_css_lint() {
+  _stylelint
 }
 
 _sass_lint() {
@@ -576,7 +534,7 @@ _sass_lint() {
   _prepare_folders
 
   printf ">>> [NOTICE] Install Sass-lint\\n"
-  _dkexec_apache robo $__simulate yarn add git://github.com/sasstools/sass-lint.git#develop
+  _dkexec robo $__simulate yarn add git://github.com/sasstools/sass-lint.git#develop
 
   _dkexec_bash "${WEB_ROOT}/core/node_modules/.bin/sass-lint \
     --config ${CI_PROJECT_DIR}/.gitlab-ci/.sass-lint.yml \
@@ -595,8 +553,10 @@ _phpmetrics() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  _dkexec_apache robo install:phpqa
-  _dkexec_bash "phpqa \${PHPQA_REPORT}/phpmetrics --tools phpmetrics ${PHPQA_PHP_CODE}"
+  _dkexec phpqa \
+    --buildDir ${REPORT_DIR}/phpmetrics \
+    --tools phpmetrics \
+    --analyzedDirs ${PHP_CODE}
 
   _clean_qa_lint_metrics
 }
@@ -606,8 +566,10 @@ _phpstats() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  _dkexec_apache robo install:phpqa
-  _dkexec_bash "phpqa \${PHPQA_REPORT}/phpstats --tools phploc,pdepend ${PHPQA_PHP_CODE}"
+  _dkexec phpqa \
+    --buildDir ${REPORT_DIR}/phpstats \
+    --tools phploc,pdepend \
+    --analyzedDirs ${PHP_CODE}
 
   _clean_qa_lint_metrics
 }
@@ -620,6 +582,13 @@ _dkexec() {
   if ! [ -f "/.dockerenv" ]; then
     if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
     docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
+  fi
+}
+
+_dkexec_docroot() {
+  if ! [ -f "/.dockerenv" ]; then
+    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    docker exec -it -w ${DOC_ROOT} ci-drupal "$@" || true
   fi
 }
 
@@ -678,10 +647,11 @@ _init_variables() {
   REPORT_DIR=$(yq r $__yaml_variables variables.REPORT_DIR)
   PHPUNIT_TESTS=$(yq r $__yaml_variables variables.PHPUNIT_TESTS)
   PHP_CODE=$(yq r $__yaml_variables variables.PHP_CODE)
-  PHPQA_IGNORE_DIRS=$(yq r $__yaml_variables variables.PHPQA_IGNORE_DIRS)
-  PHPQA_IGNORE_FILES=$(yq r $__yaml_variables variables.PHPQA_IGNORE_FILES)
+  TOOLS=$(yq r $__yaml_variables variables.TOOLS)
+  BEST_PRACTICES=$(yq r $__yaml_variables variables.BEST_PRACTICES)
   NIGHTWATCH_TESTS=$(yq r $__yaml_variables variables.NIGHTWATCH_TESTS)
-  PHPQA_PHP_CODE=$(yq r $__yaml_variables variables.PHPQA_PHP_CODE)
+  JS_CODE=$(yq r $__yaml_variables variables.JS_CODE)
+  CSS_FILES=$(yq r $__yaml_variables variables.CSS_FILES)
 
   DRUPAL_SETUP_FROM_CONFIG=$(yq r $__yaml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
   APACHE_RUN_USER=$(yq r $__yaml [.test_variables].APACHE_RUN_USER)
@@ -752,8 +722,8 @@ _generate_env_from_yaml() {
   sed -i "s#\${CI_PROJECT_DIR}#${CI_PROJECT_DIR}#g" $__env
   sed -i "s#\${REPORT_DIR}#${REPORT_DIR}#g" $__env
   sed -i "s#\${PHP_CODE}#${PHP_CODE}#g" $__env
-  sed -i "s#\${PHPQA_IGNORE_DIRS}#${PHPQA_IGNORE_DIRS}#g" $__env
-  sed -i "s#\${PHPQA_IGNORE_FILES}#${PHPQA_IGNORE_FILES}#g" $__env
+  # sed -i "s#\${PHPQA_IGNORE_DIRS}#${PHPQA_IGNORE_DIRS}#g" $__env
+  # sed -i "s#\${PHPQA_IGNORE_FILES}#${PHPQA_IGNORE_FILES}#g" $__env
 
   sed -i 's#: #=#g' $__env
   # Remove empty values.
@@ -858,6 +828,9 @@ _copy_output_functional_js() {
 _clean() {
   _clean_browser_output
   _clean_config
+  if [ -f "tmp/cache.tgz" ]; then
+    rm -f tmp/cache.tgz
+  fi
   sudo rm -rf reports/*
 }
 
