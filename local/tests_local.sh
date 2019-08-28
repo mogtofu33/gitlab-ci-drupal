@@ -367,8 +367,8 @@ _nightwatch() {
 }
 
 _patch_nightwatch() {
-  _dkexec robo $__simulate patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-32.${DRUPAL_VERSION}.patch
-  _dkexec robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch 1
+  if [ ${DRUPAL_VERSION} == "8.8" ]; then _dkexec robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch; fi
+  if [ ${DRUPAL_VERSION} == "8.7" ]; then _dkexec robo $__simulate patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-46_8.7.x_.patch 1; fi
 }
 
 _test_site() {

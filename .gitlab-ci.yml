@@ -231,8 +231,9 @@ Nightwatch Js:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
     # [TEMPORARY] Patch for Nightwatch 1.2+ and allow install profile.
-    - robo patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-32.${DRUPAL_VERSION}.patch
-    - robo patch:nightwatch https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch 1
+    - if [ ${DRUPAL_VERSION} == "8.8" ]; then robo patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch; fi
+    - if [ ${DRUPAL_VERSION} == "8.7" ]; then robo patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-46_8.7.x_.patch 1; fi
+    - robo patch:nightwatch https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch
     # This is the main script, 'yarn install' and 'test:nightwatch' from core folder.
     - robo test:nightwatch
   artifacts:

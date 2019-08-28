@@ -783,11 +783,11 @@ class RoboFile extends \Robo\Tasks {
    * @param string $patch
    *   Local patch file or remote url.
    *
-   * @param bool $remote
-   *   (optional) Flag for a remote patch.
+   * @param bool $local
+   *   (optional) Flag for a local patch, default is false, means remote.
    */
-  public function patchNightwatch($patch, $remote = FALSE) {
-    if ($remote) {
+  public function patchNightwatch($patch, $local = FALSE) {
+    if (!$local) {
       $patch = file_get_contents($patch);
       file_put_contents($this->webRoot . '/remote_patch.patch', $patch);
       $patch = $this->webRoot . '/remote_patch.patch';
