@@ -1002,8 +1002,11 @@ class RoboFile extends \Robo\Tasks {
    *
    * @param string\null $arg2
    *   (optional) Second argument for yarn command.
+   *
+   * @param string\null $cwd
+   *   (optional) Dir to run the command in.
    */
-  public function yarn($arg1, $arg2 = null) {
+  public function yarn($arg1, $arg2 = null, $cwd = null) {
     $args = [];
     if ($arg2) {
       $args = [$arg1, $arg2];
@@ -1011,17 +1014,26 @@ class RoboFile extends \Robo\Tasks {
     else {
       $args = [$arg1];
     }
-    $this->say("yarn " . implode(' ', $args));
-    $this->yarnCmd($args)->run();
+    if (!$cwd) {
+      $cwd = $this->webRoot . '/core';
+    }
+    $this->say("yarn " . implode(' ', $args) . " cwd: " . $cwd);
+    $this->yarnCmd($args, $cwd)->run();
   }
 
   /**
    * Run a yarn install from Drupal core.
+   *
+   * @param string\null $cwd
+   *   (optional) Dir to run the command in.
    */
-  public function yarnInstall() {
+  public function yarnInstall($cwd = null) {
+    if (!$cwd) {
+      $cwd = $this->webRoot . '/core';
+    }
     // Simply check one of the program.
-    if (!file_exists($this->docRoot . '/core/node_modules/.bin/stylelint')) {
-      $this->yarn('install');
+    if (!file_exists($cwd . '/node_modules/.bin/stylelint')) {
+      $this->yarn('install', null, $cwd);
     }
   }
 

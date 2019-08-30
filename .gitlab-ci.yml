@@ -132,11 +132,11 @@ Build:
   script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # Check Drupal codebase and run 'composer install' for a project.
-    - robo project:build
+    - robo project:build ${CI_PROJECT_DIR}
     # After Drupal install we install core/package.json.
-    - robo yarn:install
+    - robo yarn:install ${CI_PROJECT_DIR}
     # Install specific CI tools.
-    - robo install:ci
+    - robo install:ci ${CI_PROJECT_DIR}
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
   variables:
     <<: *test_variables
