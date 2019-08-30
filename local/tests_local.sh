@@ -197,8 +197,6 @@ _tests_prepare() {
   else
     printf ">>> [NOTICE] tests_prepare\\n"
 
-    # _copy_robofile
-
     _prepare_folders
     
     # Apache launch is entrypoint.
@@ -214,13 +212,16 @@ _tests_prepare() {
 
 # Replicate Build job.
 _build() {
+  _copy_robofile
+
   if [ $__skip_build = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] build\\n"
-    _copy_robofile
   else
     printf ">>> [NOTICE] build\\n"
 
-    _copy_robofile
+    # Extra local step, ensure composer permissions.
+    _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/.composer /var/www/${REPORT_DIR}
+    _dkexec chmod -R 777 /var/www/.composer /var/www/${REPORT_DIR}
 
     _dkexec robo $__simulate project:build
 
@@ -236,7 +237,6 @@ _prepare_folders() {
   if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] prepare_folders\\n"
   else
-    # _copy_robofile
     _dkexec robo $__simulate prepare:folders
   fi
 }
@@ -257,7 +257,7 @@ _create_artifacts() {
         ${DOC_ROOT}/composer.lock ${DOC_ROOT}/.env.example ${DOC_ROOT}/load.environment.php
       docker cp ci-drupal:/tmp/artifacts.tgz ./tmp/
     else
-      printf ">>> [SKIP] Not a project, create_artifacts skipped.\\n"
+      printf ">>> [SKIP] Artifact already exist.\\n"
     fi
   fi
 }
@@ -282,7 +282,7 @@ _extract_artifacts() {
 
 _copy_robofile() {
   printf ">>> [NOTICE] copy_robofile\\n"
-  _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
+  # _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
   _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${DOC_ROOT}
 }
 
@@ -305,6 +305,7 @@ _code_coverage() {
 
   _dkexec robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
   _dkexec cp -r ${WEB_ROOT}/${REPORT_DIR} ./
+
   # bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml -t ${CODECOV_TOKEN}
 }
 
@@ -314,18 +315,14 @@ _functional() {
   _build
   _tests_prepare
 
-  # _dkexec touch "${REPORT_DIR}/phpunit.html"
-  # _dkexec mkdir -p "${REPORT_DIR}/functional"
-  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} ${REPORT_DIR}
-
   # Specific to run a local test as apache.
-  _dkexec touch "/var/www/${REPORT_DIR}/phpunit.html"
-  _dkexec mkdir -p "/var/www/${REPORT_DIR}/functional"
-  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} "/var/www/${REPORT_DIR}"
+  # _dkexec touch "/var/www/${REPORT_DIR}/phpunit.html"
+  # _dkexec mkdir -p "/var/www/${REPORT_DIR}/functional"
+  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} "/var/www/${REPORT_DIR}"
 
   _dkexec_apache robo $__simulate test:suite ${PHPUNIT_TESTS}functional "null" "/var/www/${REPORT_DIR}"
 
-  _copy_output functional
+  _copy_output ${PHPUNIT_TESTS}functional
 }
 
 _functional_js() {
@@ -339,15 +336,12 @@ _functional_js() {
 
   if [ ${_DEBUG} == "1" ]; then
     _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
+    _dkexec curl -d '{"desiredCapabilities":{"browserName":"chrome","name":"Behat Test","chromeOptions":{"w3c":false,"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}}' -H "Content-Type: application/json" -X POST http://ci-chromedriver:4444/wd/hub/session >> /var/www/${REPORT_DIR}/webdriver.log
   fi
-
-  # Specific to run a local test as apache.
-  # _dkexec mkdir -p "/var/www/${REPORT_DIR}/functional-javascript"
-  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} "/var/www/${REPORT_DIR}"
 
   _dkexec_apache robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript "null" "/var/www/${REPORT_DIR}"
 
-  _copy_output functional-javascript
+  _copy_output ${PHPUNIT_TESTS}functional-javascript
 }
 
 _nightwatch() {
@@ -356,9 +350,6 @@ _nightwatch() {
   _build
   _tests_prepare
 
-  # _copy_robofile
-  # _prepare_folders
-
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
 
@@ -366,7 +357,7 @@ _nightwatch() {
     printf ">>> [SKIP] patch_nightwatch\\n"
   else
     if [ ${DRUPAL_VERSION} == "8.8" ]; then _dkexec robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch; fi
-    if [ ${DRUPAL_VERSION} == "8.7" ]; then _dkexec robo $__simulate patch:nightwatch ${CI_PROJECT_DIR}/.gitlab-ci/patches/3059356-46_8.7.x_.patch 1; fi
+    if [ ${DRUPAL_VERSION} == "8.7" ]; then _dkexec robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-30/3059356-51.patch; fi
   fi
 
   _dkexec robo $__simulate yarn:install
@@ -379,12 +370,12 @@ _security_checker() {
   printf "\\n%s[INFO]%s Perform job 'Security report' (security_checker)\\n\\n" "${_blu}" "${_end}"
 
   _build
-  # _copy_robofile
+
   _prepare_folders
   
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/security \
-    --tools security-checker \
+    --tools security-checker:0 \
     --analyzedDirs ${DOC_ROOT} \
     --verbose
 }
@@ -395,7 +386,6 @@ _behat() {
   _build
   _tests_prepare
 
-  # _copy_robofile
   _prepare_folders
 
   _PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
@@ -421,7 +411,6 @@ _pa11y() {
   _build
   _tests_prepare
 
-  # _copy_robofile
   _prepare_folders
 
   _PROFILE=$(yq r ./.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
@@ -430,7 +419,7 @@ _pa11y() {
   _dkexec robo $__simulate install:pa11y
   _dkexec robo $__simulate test:pa11y
 
-  _dkexec_background cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${REPORT_DIR}/
+  _dkexec_bash "cp -f ${CI_PROJECT_DIR}/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/"
 }
 
 ####### QA jobs
@@ -481,7 +470,7 @@ _eslint() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  _dkexec mkdir -p ${WEB_ROOT}/core
+  _dkexec mkdir -p ${DOC_ROOT}/core
 
   _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.json -o ${WEB_ROOT}/core/.eslintrc.json
 
@@ -505,7 +494,7 @@ _stylelint() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  _dkexec mkdir -p ${WEB_ROOT}/core
+  _dkexec mkdir -p ${DOC_ROOT}/core
   _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json -o ${WEB_ROOT}/core/.stylelintrc.json
 
   # printf ">>> [NOTICE] Install Stylelint-formatter-pretty\\n"
@@ -619,9 +608,9 @@ _dkexec_bash() {
 
 _test_site() {
   if [ ${_ARGS} == "install" ]; then
-    docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "sudo -u www-data php ./scripts/test-site.php install --setup-file 'core/tests/Drupal/TestSite/TestSiteInstallTestScript.php' --install-profile 'demo_umami' --base-url http://localhost --db-url mysql://root@mariadb/drupal"
+    docker exec -it -w ${DOC_ROOT}/core ci-drupal bash -c "sudo -u www-data php ./scripts/test-site.php install --setup-file 'core/tests/Drupal/TestSite/TestSiteInstallTestScript.php' --install-profile 'demo_umami' --base-url http://localhost --db-url mysql://root@mariadb/drupal"
   else
-    docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "sudo -u www-data php ./scripts/test-site.php ${_ARGS}"
+    docker exec -it -w ${DOC_ROOT}/core ci-drupal bash -c "sudo -u www-data php ./scripts/test-site.php ${_ARGS}"
   fi
 }
 
@@ -722,8 +711,6 @@ _generate_env_from_yaml() {
   sed -i "s#\${CI_PROJECT_DIR}#${CI_PROJECT_DIR}#g" $__env
   sed -i "s#\${REPORT_DIR}#${REPORT_DIR}#g" $__env
   sed -i "s#\${PHP_CODE}#${PHP_CODE}#g" $__env
-  # sed -i "s#\${PHPQA_IGNORE_DIRS}#${PHPQA_IGNORE_DIRS}#g" $__env
-  # sed -i "s#\${PHPQA_IGNORE_FILES}#${PHPQA_IGNORE_FILES}#g" $__env
 
   sed -i 's#: #=#g' $__env
   # Remove empty values.
@@ -733,11 +720,11 @@ _generate_env_from_yaml() {
   sed -i 's#"0"#0#g' $__env
   # Remove quotes on DRUPAL_VERSION.
   sed -i 's#DRUPAL_VERSION="8\(.*\)"#DRUPAL_VERSION=8\1#g' $__env
-  # sed -i 's/MINK_DRIVER_ARGS_WEBDRIVER/#MINK_DRIVER_ARGS_WEBDRIVER/g' $__env
+
   # Remove single quotes
   sed -i "s#'##g" $__env
-  # Fix selenium local.
-  sed -i 's#http://localhost:4444#http://127.0.0.1:4444#g' $__env
+  # Fix selenium local access
+  sed -i 's#http://localhost:4444#http://ci-chromedriver:4444#g' $__env
 
   sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
 
@@ -816,13 +803,9 @@ _down() {
 }
 
 _copy_output() {
-  _dkexec_background cp -r ${DOC_ROOT}/sites/simpletest/browser_output/ ${REPORT_DIR}/${1}
-}
-_copy_output_functional() {
-  _copy_output functional
-}
-_copy_output_functional_js() {
-  _copy_output functional-javascript
+  _dkexec_background cp -r ${WEB_ROOT}/sites/simpletest/browser_output/ ${REPORT_DIR}/${1}
+  sleep 1s
+  _dkexec_bash "rm -rf ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/*"
 }
 
 _clean() {
@@ -832,6 +815,19 @@ _clean() {
     rm -f tmp/cache.tgz
   fi
   sudo rm -rf reports/*
+}
+
+_clean_project() {
+  _clean_config
+  if [ -f "tmp/cache.tgz" ]; then
+    rm -f tmp/cache.tgz
+  fi
+  sudo rm -rf reports/*
+  sudo rm -rf .editorconfig .gitattributes composer.lock console/
+  sudo composer run-script nuke
+  rm -f /tmp/*.tgz
+  sudo git clean -fd
+  git checkout -- composer.json
 }
 
 _clean_browser_output() {
@@ -844,14 +840,6 @@ _clean_browser_output() {
 
 _clean_config() {
   rm -f .env.nightwatch .eslintignore .phpmd.xml .phpqa.yml .sass-lint.yml phpunit.local.xml phpunit.xml RoboFile.php
-}
-
-_clean_full() {
-  _clean
-}
-
-_clean_unit() {
-  _clean_config
 }
 
 ###############################################################################

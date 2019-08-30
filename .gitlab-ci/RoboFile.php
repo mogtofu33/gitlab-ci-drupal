@@ -628,7 +628,7 @@ class RoboFile extends \Robo\Tasks {
       return $install;
     }
     else {
-      $this->installWithComposer($install);
+      $this->installWithComposer($install, 'drupal');
     }
   }
 
@@ -642,7 +642,7 @@ class RoboFile extends \Robo\Tasks {
     if (!$reportRootDir) {
       $reportRootDir = $this->reportDir;
     }
-    $this->say("[NOTICE] Behat tests on $reportRootDir");
+    // $this->say("[NOTICE] Behat tests on $reportRootDir");
 
     $this->taskFilesystemStack()
       ->mkdir($reportRootDir . '/behat')
@@ -693,7 +693,7 @@ class RoboFile extends \Robo\Tasks {
       return $install;
     }
     else {
-      $this->installWithComposer($install);
+      $this->installWithComposer($install, 'drupal');
     }
 
     // Add to bin to use taskBehat().
@@ -734,12 +734,19 @@ class RoboFile extends \Robo\Tasks {
    */
   public function prepareNightwatch() {
     $this->say("Prepare reports for Nightwatch");
-    $this->taskFilesystemStack()
-      ->mkdir($this->reportDir . '/nightwatch')
-      ->chown($this->reportDir . '/nightwatch', $this->apacheUser, true)
-      ->mkdir($this->webRoot . '/core/reports/')
-      ->chown($this->webRoot . '/core/reports/', $this->apacheUser, true)
-      ->run();
+    $dirs = [
+      $this->reportDir . '/nightwatch',
+      $this->webRoot . '/core/reports/',
+    ];
+
+    $task = $this->taskFilesystemStack();
+    foreach ($dirs as $dir) {
+      $task->mkdir($dir)
+        ->chown($dir, $this->apacheUser, true)
+        ->chgrp($dir, $this->apacheGroup, true)
+        ->chmod($dir, 0777, 0000, true);
+    }
+    $task->run();
   }
 
   /**
@@ -753,7 +760,7 @@ class RoboFile extends \Robo\Tasks {
       ->mirror($this->webRoot . '/core/reports/', $target);
 
     if (file_exists($this->webRoot . '/core/chromedriver.log')) {
-      $task->copy($this->webRoot . '/core/chromedriver.log', $target, true);
+      $task->copy($this->webRoot . '/core/chromedriver.log', $target . '/chromedriver.log', true);
     }
 
     $task->run();
@@ -783,8 +790,8 @@ class RoboFile extends \Robo\Tasks {
    */
   private function checkNightwatch() {
     $bins = [
-      $this->docRoot . '/core/node_modules/.bin/nightwatch',
-      $this->docRoot . '/core/node_modules/.bin/chromedriver',
+      $this->webRoot . '/core/node_modules/.bin/nightwatch',
+      $this->webRoot . '/core/node_modules/.bin/chromedriver',
       '/usr/bin/chromium',
     ];
     foreach ($bins as $bin) {
@@ -818,7 +825,7 @@ class RoboFile extends \Robo\Tasks {
       return $install;
     }
     else {
-      $this->installWithComposer($install);
+      $this->installWithComposer($install, 'user');
     }
   }
 
@@ -840,7 +847,7 @@ class RoboFile extends \Robo\Tasks {
       return $install;
     }
     else {
-      $this->installWithComposer($install);
+      $this->installWithComposer($install, 'user');
     }
   }
 
@@ -862,7 +869,7 @@ class RoboFile extends \Robo\Tasks {
       return $install;
     }
     else {
-      $this->installWithComposer($install);
+      $this->installWithComposer($install, 'user');
     }
   }
 
@@ -872,20 +879,37 @@ class RoboFile extends \Robo\Tasks {
    * @param array $bins_dependencies
    *   Keys are bins to look for, values array of dependencies.
    *
+   * @param string\null $target
+   *   (optional) Working dir, can be drupal, ie:/var/www/html
+   *   or user, ie: /var/www/.composer
+   *
+   * @param bool $dev
+   *   (optional) Install as require-dev. Default true.
+   *
    * @return \Robo\Task\Base\Exec
    */
-  private function installWithComposer(array $bins_dependencies) {
+  private function installWithComposer(array $bins_dependencies, $target = 'drupal', $dev = true) {
     $this->checkPrestissimo();
     $this->checkCoder();
 
+    if ($target == 'drupal') {
+      $workingDir = $this->docRoot;
+    }
+    else {
+      $workingDir = $this->composerHome;
+    }
+
     // Base task.
     $task = $this->taskComposerRequire()
-      ->workingDir($this->docRoot)
+      ->workingDir($workingDir)
       ->noInteraction();
+    if ($dev) {
+      $task->dev();
+    }
 
     $hasDependency = false;
     foreach ($bins_dependencies as $bin => $dependencies) {
-      $bin = $this->docRoot . '/vendor/bin/' . $bin;
+      $bin = $workingDir . '/vendor/bin/' . $bin;
 
       if (!file_exists($bin)) {
         foreach ($dependencies as $dependency => $version) {
@@ -893,15 +917,12 @@ class RoboFile extends \Robo\Tasks {
           $task->dependency($dependency, $version);
         }
       }
-      else {
-        // $this->say("[SKIP] Already installed: $bin");
+      elseif ($this->verbose) {
+        $this->say("[SKIP] Already installed: $bin");
       }
     }
 
-    if (!$hasDependency) {
-      // $this->say("[SKIP] Composer install, nothing to install!");
-    }
-    else {
+    if ($hasDependency) {
       if ($this->verbose) {
         $task->arg('--verbose');
       }
@@ -913,18 +934,20 @@ class RoboFile extends \Robo\Tasks {
       }
       $task->run();
     }
+    elseif ($this->verbose) {
+      $this->say("[SKIP] Composer install, nothing to install!");
+    }
 
   }
 
   /**
    * Install prestissimo for Composer.
-   *
    */
   private function checkPrestissimo() {
     // First check if we have prestissimo.
     if (!file_exists($this->composerHome . '/vendor/hirak/prestissimo/composer.json')) {
       $this->taskComposerRequire()
-        ->workingDir($this->docRoot)
+        // ->workingDir($this->docRoot)
         ->noInteraction()
         ->dependency('hirak/prestissimo', '^0.3.8')
         ->arg('--quiet')
@@ -935,12 +958,11 @@ class RoboFile extends \Robo\Tasks {
 
   /**
    * Install Coder for Composer.
-   *
    */
   private function checkCoder() {
     $hasDependency = false;
     $task = $this->taskComposerRequire()
-      ->workingDir($this->docRoot)
+      // ->workingDir($this->docRoot)
       ->noInteraction()
       ->arg('--quiet')
       ->noAnsi();
@@ -1065,15 +1087,12 @@ class RoboFile extends \Robo\Tasks {
     switch($this->ciType) {
       case "project":
         $task = $this->taskComposerValidate()
-          ->workingDir($this->ciProjectDir)
+          ->workingDir($this->docRoot)
           ->noInteraction()
           ->noCheckAll()
           ->noCheckPublish();
         if ($this->verbose) {
           $task->arg('--verbose');
-        }
-        else {
-          $task->arg('--quiet');
         }
         if ($this->noAnsi) {
           $task->noAnsi();
@@ -1199,7 +1218,7 @@ class RoboFile extends \Robo\Tasks {
    */
   private function mirror($src, $target, $remove_if_exist = false) {
     if (!file_exists($src)) {
-      $this->io()->warning("Missing src folder: $src");
+      $this->say("[NOTICE] Missing src folder: $src");
     }
     else {
       if (file_exists($target) && $remove_if_exist) {
@@ -1212,7 +1231,6 @@ class RoboFile extends \Robo\Tasks {
         $this->say("[NOTICE] Missing target folder: $target");
       }
 
-      $this->say("Mirror $src to $target");
       // Mirror our folder in the target.
       $this->taskFilesystemStack()
         ->mirror($src, $target)
@@ -1245,13 +1263,15 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installCi() {
     $list = [];
-    # Composer install.
-    $list += $this->installDrush(true);
     $list += $this->installPhpunit(true);
     $list += $this->installBehat(true);
+    $this->installWithComposer($list, 'drupal');
+
+    $list = [];
+    # Composer install.
+    $list += $this->installDrush(true);
     $list += $this->installPhpqa(true);
-    $list += $this->installSecurityChecker(true);
-    $this->installWithComposer($list);
+    $this->installWithComposer($list, 'user');
   }
 
 }
