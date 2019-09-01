@@ -133,7 +133,7 @@ Build:
     # Check Drupal codebase and run 'composer install' for a project.
     - robo project:build
     # After Drupal install we install core/package.json.
-    - robo yarn:install
+    - robo yarn:install ${WEB_ROOT}/core
     # Install specific CI tools.
     - robo install:ci
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
