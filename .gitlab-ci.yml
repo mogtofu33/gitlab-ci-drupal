@@ -451,7 +451,7 @@ Js lint:
     - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
       -o ${WEB_ROOT}/core/.eslintrc.passing.json
     # Install stylelint from core/package.json
-    - robo yarn:install
+    - robo yarn:install ${WEB_ROOT}/core
   script:
     # Run the eslint command to generate an html report.
     - ${WEB_ROOT}/core/node_modules/.bin/eslint
@@ -480,7 +480,7 @@ Css lint:
     - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json
       -o ${WEB_ROOT}/core/.stylelintrc.json
     # Install stylelint from core/package.json
-    - robo yarn:install
+    - robo yarn:install ${WEB_ROOT}/core/
   script:
     # Css report, terminal only for now.
     - ${WEB_ROOT}/core/node_modules/.bin/stylelint
