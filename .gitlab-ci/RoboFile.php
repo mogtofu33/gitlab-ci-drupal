@@ -91,7 +91,7 @@ class RoboFile extends \Robo\Tasks {
    *   The CI dir, look at env values for This can be  overridden by specifying
    *   a $CI_PROJECT_DIR environment variable.
    */
-  protected $ciProjectDir = '';
+  protected $ciProjectDir = "";
 
   /**
    * CI_PROJECT_NAME context.
@@ -118,7 +118,7 @@ class RoboFile extends \Robo\Tasks {
    *   The Drupal browser test output look at env values for This can be 
    *   overridden by specifying a $BROWSERTEST_OUTPUT_DIRECTORY environment variable.
    */
-  protected $browsertestOutput = "/var/www/html/sites/simpletest";
+  protected $browsertestOutput = "/var/www/html/web/sites/simpletest";
 
   /**
    * APACHE_RUN_USER context.
@@ -512,7 +512,7 @@ class RoboFile extends \Robo\Tasks {
       $reportDir = $reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
     }
     else {
-      $reportDir = $this->reportDir . '/' . str_replace(',', '_', str_replace('custom', '', $testsuite));
+      $reportDir = $this->reportDir;
     }
 
     if (!is_dir($reportDir)) {
@@ -630,6 +630,11 @@ class RoboFile extends \Robo\Tasks {
     else {
       $this->installWithComposer($install, 'drupal');
     }
+
+    // Add bin globally.
+    if (!file_exists('/usr/local/bin/phpunit')) {
+      $this->symlink($this->docRoot . '/vendor/bin/' . $bin, '/usr/local/bin/phpunit');
+    }
   }
 
   /**
@@ -642,10 +647,9 @@ class RoboFile extends \Robo\Tasks {
     if (!$reportRootDir) {
       $reportRootDir = $this->reportDir;
     }
-    // $this->say("[NOTICE] Behat tests on $reportRootDir");
 
     $this->taskFilesystemStack()
-      ->mkdir($reportRootDir . '/behat')
+      ->mkdir($reportRootDir )
       ->mkdir($this->docRoot . '/tests')
       ->mirror($this->ciProjectDir . '/tests', $this->docRoot . '/tests')
       ->run();
@@ -659,7 +663,7 @@ class RoboFile extends \Robo\Tasks {
       ->config('tests/behat.yml')
       ->noInteraction()
       ->option('format', 'html', '=')
-      ->option('out', $reportRootDir . '/behat', '=');
+      ->option('out', $reportRootDir, '=');
     if ($this->verbose) {
       $task->verbose('v');
     }
@@ -696,7 +700,7 @@ class RoboFile extends \Robo\Tasks {
       $this->installWithComposer($install, 'drupal');
     }
 
-    // Add to bin to use taskBehat().
+    // Add bin to use taskBehat().
     if (!file_exists('/usr/local/bin/behat')) {
       $this->symlink($this->docRoot . '/vendor/bin/' . $bin, '/usr/local/bin/behat');
     }
@@ -705,10 +709,10 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Runs Nightwatch.js tests from a tests folder.
    *
-   * @param string|null $reportRootDir
-   *   (optional) Report root dir for this task.
+   * @param string|null $reportDir
+   *   (Optional) Report dir.
    */
-  public function testNightwatch($reportRootDir = null) {
+  public function testNightwatch($reportDir = null) {
 
     $this->prepareNightwatch();
 
@@ -725,7 +729,10 @@ class RoboFile extends \Robo\Tasks {
       ->run();
 
     if ($task->wasSuccessful()) {
-      $this->artifactsNightwatch();
+      if (!$reportDir) {
+        $reportDir = $this->ciProjectDir . '/' . $this->reportDir;
+      }
+      $this->artifactsNightwatch($reportDir);
     }
   }
 
@@ -751,16 +758,19 @@ class RoboFile extends \Robo\Tasks {
 
   /**
    * Prepare Nightwatch.js tests folders.
+   *
+   * @param string $reportDir
+   *   Report dir.
    */
-  private function artifactsNightwatch() {
+  private function artifactsNightwatch($reportDir) {
     $this->say("Create artifact for Nightwatch");
-    $target = $this->ciProjectDir . '/' . $this->reportDir . '/nightwatch';
+
     $task = $this->taskFilesystemStack()
-      ->mkdir($target)
-      ->mirror($this->webRoot . '/core/reports/', $target);
+      ->mkdir($reportDir)
+      ->mirror($this->webRoot . '/core/reports/', $reportDir);
 
     if (file_exists($this->webRoot . '/core/chromedriver.log')) {
-      $task->copy($this->webRoot . '/core/chromedriver.log', $target . '/chromedriver.log', true);
+      $task->copy($this->webRoot . '/core/chromedriver.log', $reportDir . '/chromedriver.log', true);
     }
 
     $task->run();
@@ -786,13 +796,13 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Print Nightwatch, Chromedriver and Chromium versions.
+   * Print Nightwatch, Chromedriver and Chrome versions.
    */
   private function checkNightwatch() {
     $bins = [
       $this->webRoot . '/core/node_modules/.bin/nightwatch',
       $this->webRoot . '/core/node_modules/.bin/chromedriver',
-      '/usr/bin/chromium',
+      '/usr/bin/google-chrome',
     ];
     foreach ($bins as $bin) {
       if (file_exists($bin)) {
@@ -852,28 +862,6 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Install or locate security-checker.
-   *
-   * @param bool $list
-   *   (Optional) Return the bin and dependencies instead of run.
-   *
-   * @return array
-   */
-  public function installSecurityChecker($list = false) {
-    $install = [
-      'security-checker' => [
-        'sensiolabs/security-checker' => '^5.0',
-      ],
-    ];
-    if ($list) {
-      return $install;
-    }
-    else {
-      $this->installWithComposer($install, 'user');
-    }
-  }
-
-  /**
    * Install with composer.
    *
    * @param array $bins_dependencies
@@ -883,25 +871,30 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Working dir, can be drupal, ie:/var/www/html
    *   or user, ie: /var/www/.composer
    *
+   * @param string\null $dir
+   *   (optional) Dir to run the command in.
+   *
    * @param bool $dev
    *   (optional) Install as require-dev. Default true.
    *
    * @return \Robo\Task\Base\Exec
    */
-  private function installWithComposer(array $bins_dependencies, $target = 'drupal', $dev = true) {
+  private function installWithComposer(array $bins_dependencies, $target = 'drupal', $dir = null, $dev = true) {
     $this->checkPrestissimo();
     $this->checkCoder();
 
     if ($target == 'drupal') {
-      $workingDir = $this->docRoot;
+      if (!$dir) {
+        $dir = $this->ciProjectDir;
+      }
     }
     else {
-      $workingDir = $this->composerHome;
+      $dir = $this->composerHome;
     }
 
     // Base task.
     $task = $this->taskComposerRequire()
-      ->workingDir($workingDir)
+      ->workingDir($dir)
       ->noInteraction();
     if ($dev) {
       $task->dev();
@@ -909,7 +902,7 @@ class RoboFile extends \Robo\Tasks {
 
     $hasDependency = false;
     foreach ($bins_dependencies as $bin => $dependencies) {
-      $bin = $workingDir . '/vendor/bin/' . $bin;
+      $bin = $dir . '/vendor/bin/' . $bin;
 
       if (!file_exists($bin)) {
         foreach ($dependencies as $dependency => $version) {
@@ -1029,7 +1022,7 @@ class RoboFile extends \Robo\Tasks {
    */
   public function yarnInstall($cwd = null) {
     if (!$cwd) {
-      $cwd = $this->webRoot . '/core';
+      $cwd = $this->ciProjectDir . '/web/core';
     }
     // Simply check one of the program.
     if (!file_exists($cwd . '/node_modules/.bin/stylelint')) {
@@ -1093,13 +1086,13 @@ class RoboFile extends \Robo\Tasks {
     $this->say("Build for type: $this->ciType");
 
     if (!$dir) {
-      $dir = $this->docRoot;
+      $dir = $this->ciProjectDir;
     }
 
     switch($this->ciType) {
       case "project":
         $task = $this->taskComposerValidate()
-          ->workingDir($this->docRoot)
+          ->workingDir($dir)
           ->noInteraction()
           ->noCheckAll()
           ->noCheckPublish();
@@ -1111,9 +1104,9 @@ class RoboFile extends \Robo\Tasks {
         }
         $task->run();
 
-        $this->composerInstall($this->ciProjectDir);
+        $this->composerInstall($dir);
 
-        if (!file_exists($this->ciProjectDir . '/web/index.php')) {
+        if (!file_exists($dir . '/web/index.php')) {
           $this->io()->error("Missing Drupal, did composer install failed?");
         }
         if ($forceInstall) {

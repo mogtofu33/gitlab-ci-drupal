@@ -23,11 +23,11 @@ variables:
   # [CI_TYPE] Select the base image for all tests and actions.
   # For a module or theme, this image include Drupal from the official Docker
   #
-  # image with tools for CI and selenium.
-  # CI_IMAGE_TYPE: selenium
+  # image with tools for CI, leave empty.
+  CI_IMAGE_TYPE:
   #
   # For a project including a composer.json file.
-  CI_IMAGE_TYPE: selenium-no-drupal
+  # CI_IMAGE_TYPE: -no-drupal
 
   # [CI_TYPE] Select if you are using CI to test, options are:
   #   project

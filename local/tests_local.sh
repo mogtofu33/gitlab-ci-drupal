@@ -327,15 +327,15 @@ _functional() {
 
 _functional_js() {
   printf "\\n%s[INFO]%s Perform job 'Functional Js' (functional_js)\\n\\n" "${_blu}" "${_end}"
-  # Starting Selenium.
-  docker exec -d ci-drupal /scripts/start-selenium-standalone.sh
+  # Starting Chromedriver.
+  docker exec -d ci-drupal /scripts/start-chromedriver.sh
   sleep 5s
 
   _build
   _tests_prepare
 
   if [ ${_DEBUG} == "1" ]; then
-    _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
+    _dkexec_bash "curl -s http://localhost:4444/status | jq '.'"
     _dkexec curl -d '{"desiredCapabilities":{"browserName":"chrome","name":"Behat Test","chromeOptions":{"w3c":false,"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}}' -H "Content-Type: application/json" -X POST http://ci-chromedriver:4444/wd/hub/session >> /var/www/${REPORT_DIR}/webdriver.log
   fi
 
