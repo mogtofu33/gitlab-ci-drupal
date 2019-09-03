@@ -51,6 +51,7 @@ stages:
       - $SKIP_TESTS == "1"
   only:
     refs:
+      - 8.x-1.x
       - 8.x-dev
       - testing
       - tags
@@ -133,7 +134,7 @@ Build:
     # Check Drupal codebase and run 'composer install' for a project.
     - robo project:build
     # After Drupal install we install core/package.json.
-    - robo yarn:install ${WEB_ROOT}/core
+    - robo yarn:install
     # Install specific CI tools.
     - robo install:ci
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
@@ -220,7 +221,8 @@ Functional Js:
   script:
     # Launch Chromedriver.
     - /scripts/start-chromedriver.sh&
-    - sleep 5s && curl -s http://localhost:4444/status | jq '.'
+    - sleep 5s
+    - curl -s http://localhost:9515/status | jq '.' || true
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
   after_script:
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ || true
@@ -385,7 +387,7 @@ Code quality:
     - phpqa
         --buildDir ${REPORT_DIR}
         --tools ${TOOLS}
-        --analyzedDirs ${PHP_CODE}
+        --analyzedDirs ${PHP_CODE_QA}
 
 # Drupal coding standard best practices report.
 Best practices:
@@ -406,7 +408,7 @@ Best practices:
     - phpqa
         --buildDir ${REPORT_DIR}
         --tools ${BEST_PRACTICES}
-        --analyzedDirs ${PHP_CODE}
+        --analyzedDirs ${PHP_CODE_QA}
   # Allow failure to produce report and warning.
   allow_failure: true
 
@@ -451,7 +453,7 @@ Js lint:
     - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
       -o ${WEB_ROOT}/core/.eslintrc.passing.json
     # Install stylelint from core/package.json
-    - robo yarn:install ${WEB_ROOT}/core
+    - robo yarn:install
   script:
     # Run the eslint command to generate an html report.
     - ${WEB_ROOT}/core/node_modules/.bin/eslint
@@ -480,7 +482,7 @@ Css lint:
     - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json
       -o ${WEB_ROOT}/core/.stylelintrc.json
     # Install stylelint from core/package.json
-    - robo yarn:install ${WEB_ROOT}/core/
+    - robo yarn:install
   script:
     # Css report, terminal only for now.
     - ${WEB_ROOT}/core/node_modules/.bin/stylelint
@@ -525,6 +527,7 @@ Sass lint:
 .metrics_template:
   only:
     refs:
+      - 8.x-1.x
       - 8.x-dev
       - master
       - tags
@@ -553,7 +556,7 @@ Php metrics:
     - phpqa
         --buildDir ${REPORT_DIR}
         --tools phpmetrics
-        --analyzedDirs ${PHP_CODE}
+        --analyzedDirs ${PHP_CODE_METRICS}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
 Php stats:
@@ -567,7 +570,7 @@ Php stats:
     - phpqa
         --buildDir ${REPORT_DIR}
         --tools phploc,pdepend
-        --analyzedDirs ${PHP_CODE}
+        --analyzedDirs ${PHP_CODE_METRICS}
 
 ################################################################################
 # [DEPLOY] Deploy jobs definition.
@@ -661,4 +664,4 @@ include:
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
 
-image: mogtofu33/drupal8ci:${DRUPAL_VERSION}${CI_IMAGE_TYPE}
+image: mogtofu33/drupal8ci:${DRUPAL_VERSION}${CI_IMAGE_VARIANT}

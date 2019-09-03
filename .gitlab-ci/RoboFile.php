@@ -212,6 +212,11 @@ class RoboFile extends \Robo\Tasks {
       $this->browsertestOutput = getenv('BROWSERTEST_OUTPUT_DIRECTORY');
     }
 
+    // Pull a NIGHTWATCH_TESTS from the environment, if it exists.
+    if (getenv('NIGHTWATCH_TESTS')) {
+      $this->nightwatchTests = getenv('NIGHTWATCH_TESTS');
+    }
+
     // Pull a APACHE_RUN_USER from the environment, if it exists.
     if (getenv('APACHE_RUN_USER')) {
       $this->apacheUser = getenv('APACHE_RUN_USER');
@@ -867,11 +872,11 @@ class RoboFile extends \Robo\Tasks {
    * @param array $bins_dependencies
    *   Keys are bins to look for, values array of dependencies.
    *
-   * @param string\null $target
+   * @param string|null $target
    *   (optional) Working dir, can be drupal, ie:/var/www/html
    *   or user, ie: /var/www/.composer
    *
-   * @param string\null $dir
+   * @param string|null $dir
    *   (optional) Dir to run the command in.
    *
    * @param bool $dev
@@ -885,7 +890,13 @@ class RoboFile extends \Robo\Tasks {
 
     if ($target == 'drupal') {
       if (!$dir) {
-        $dir = $this->ciProjectDir;
+        if ($this->ciType == "project") {
+          $dir = $this->ciProjectDir;
+        }
+        # For a module, use included Drupal.
+        else {
+          $dir = $this->docRoot;
+        }
       }
     }
     else {
@@ -993,13 +1004,13 @@ class RoboFile extends \Robo\Tasks {
    * @param string $arg1
    *   First argument for yarn command.
    *
-   * @param string\null $arg2
+   * @param string|null $arg2
    *   (optional) Second argument for yarn command.
    *
-   * @param string\null $cwd
+   * @param string|null $dir
    *   (optional) Dir to run the command in.
    */
-  public function yarn($arg1, $arg2 = null, $cwd = null) {
+  public function yarn($arg1, $arg2 = null, $dir = null) {
     $args = [];
     if ($arg2) {
       $args = [$arg1, $arg2];
@@ -1007,26 +1018,37 @@ class RoboFile extends \Robo\Tasks {
     else {
       $args = [$arg1];
     }
-    if (!$cwd) {
-      $cwd = $this->webRoot . '/core';
+    if (!$dir) {
+      $dir = $this->webRoot . '/core';
     }
-    $this->say("yarn " . implode(' ', $args) . " cwd: " . $cwd);
-    $this->yarnCmd($args, $cwd)->run();
+    $this->say("yarn " . implode(' ', $args) . " dir: " . $dir);
+    $this->yarnCmd($args, $dir)->run();
   }
 
   /**
    * Run a yarn install from Drupal core.
    *
-   * @param string\null $cwd
+   * @param string|null $dir
    *   (optional) Dir to run the command in.
    */
-  public function yarnInstall($cwd = null) {
-    if (!$cwd) {
-      $cwd = $this->ciProjectDir . '/web/core';
+  public function yarnInstall($dir = null) {
+    if (!$dir) {
+      if ($this->ciType == "project") {
+        $dir = $this->ciProjectDir . '/web/core';
+      }
+      else {
+        $dir = $this->webRoot . '/core';
+      }
     }
-    // Simply check one of the program.
-    if (!file_exists($cwd . '/node_modules/.bin/stylelint')) {
-      $this->yarn('install', null, $cwd);
+
+    if (!file_exists($dir . '/package.json')) {
+      $this->io()->warning("Missing $dir/package.json file.");
+    }
+    else {
+      // Simply check one of the program.
+      if (!file_exists($dir . '/node_modules/.bin/stylelint')) {
+        $this->yarn('install', null, $dir);
+      }
     }
   }
 
@@ -1036,18 +1058,18 @@ class RoboFile extends \Robo\Tasks {
    * @param string|array $args
    *   (optional) Arguments for yarn command.
    *
-   * @param string|null $cwd
+   * @param string|null $dir
    *   (optional) Working directory to use.
    *
    * @return \Robo\Task\Base\Exec
    */
-  private function yarnCmd($args = null, $cwd = null) {
-    if (!$cwd) {
-      $cwd = $this->webRoot . '/core';
+  private function yarnCmd($args = null, $dir = null) {
+    if (!$dir) {
+      $dir = $this->webRoot . '/core';
     }
 
     $task = $this->taskExec('yarn')
-      ->option('cwd', $cwd)
+      ->option('cwd', $dir)
       ->arg('--no-progress');
 
     if ($args) {
@@ -1114,7 +1136,6 @@ class RoboFile extends \Robo\Tasks {
         }
         break;
       case "module":
-      case "theme":
         if ($this->verbose) {
           $this->say("[SKIP] No needed build.");
         }
@@ -1132,7 +1153,7 @@ class RoboFile extends \Robo\Tasks {
 
     // Handle CI values.
     switch($this->ciType) {
-      case "custom":
+      case "demo":
       case "project":
         // Root is the Drupal with a web/ folder.
         $targetFolder = $this->docRoot;
@@ -1153,7 +1174,6 @@ class RoboFile extends \Robo\Tasks {
         $this->mirror($folder, $targetFolder, true);
         break;
       case "module":
-      case "theme":
         // Root contain the theme / module, we symlink with project name.
         $folder = $this->ciProjectDir;
         $target = $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName;
