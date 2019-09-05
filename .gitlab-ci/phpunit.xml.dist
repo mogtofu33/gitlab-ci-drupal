@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit bootstrap="tests/bootstrap.php" colors="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutChangesToGlobalState="true"
+         checkForUnintentionallyCoveredCode="false"
+         printerClass="\Drupal\Tests\Listeners\HtmlOutputPrinter">
+  <php>
+    <!-- Set error reporting to E_ALL. -->
+    <ini name="error_reporting" value="32767"/>
+    <!-- Do not limit the amount of memory tests take to run. -->
+    <ini name="memory_limit" value="-1"/>
+    <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
+  </php>
+  <testsuites>
+    <!-- Demo only purpose-->
+    <testsuite name="demo_unit">
+      <directory>./modules/action/tests/src/Unit</directory>
+    </testsuite>
+    <testsuite name="demo_kernel">
+      <directory>./modules/action/tests/src/Kernel</directory>
+    </testsuite>
+    <testsuite name="demo_functional">
+      <directory>./modules/action/tests/src/Functional</directory>
+    </testsuite>
+    <testsuite name="demo_functional-javascript">
+      <directory>./modules/action/tests/src/FunctionalJavascript</directory>
+    </testsuite>
+  </testsuites>
+  <listeners>
+    <listener class="\Drupal\Tests\Listeners\DrupalListener">
+    </listener>
+    <!-- The Symfony deprecation listener has to come after the Drupal listener -->
+    <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener">
+    </listener>
+  </listeners>
+  <!-- Filter for coverage reports. -->
+  <filter>
+    <whitelist processUncoveredFilesFromWhitelist="true">
+      <!-- <directory>./includes</directory> -->
+      <!-- <directory>./lib</directory> -->
+      <directory>./modules/action</directory>
+      <!-- <directory>../modules</directory> -->
+      <!-- <directory>../themes</directory> -->
+      <!-- <directory>../sites</directory> -->
+      <!-- By definition test classes have no tests. -->
+      <exclude>
+        <directory suffix="Test.php">./</directory>
+        <directory suffix="TestBase.php">./</directory>
+      </exclude>
+    </whitelist>
+  </filter>
+</phpunit>

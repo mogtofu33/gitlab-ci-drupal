@@ -31,8 +31,10 @@ variables:
   # [CI_TYPE] Select the base image for all tests and actions.
   # For a module or theme, base image include Drupal from the official Docker.
   #
-  # For a project including a composer.json file, uncomment this.
-  CI_IMAGE_VARIANT: "-no-drupal"
+  # For a project including a composer.json file.
+  CI_IMAGE_VARIANT: "no-drupal"
+  # For a module or a theme, use this value to include Drupal code.
+  # CI_IMAGE_VARIANT: "drupal"
 
   # Path is relative to project root, for included Drupal in the
   # image, DOC_ROOT and WEB_ROOT must be the same. For a project based on Drupal
@@ -49,7 +51,7 @@ variables:
   # 'custom' matches dir **/modules/custom/** and **/themes/custom/**
   PHPUNIT_TESTS: "custom"
 
-  # Comma separated for code quality jobs.
+  # Comma separated for code quality jobs (phpcs).
   # Will fail if a folder is empty, default to your custom code only.
   # PHP_CODE_QA: "${WEB_ROOT}/modules/custom"
   # PHP_CODE_QA: "${WEB_ROOT}/themes/custom"

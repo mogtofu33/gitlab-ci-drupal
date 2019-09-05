@@ -664,4 +664,4 @@ include:
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
 
-image: mogtofu33/drupal8ci:${DRUPAL_VERSION}${CI_IMAGE_VARIANT}
+image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
