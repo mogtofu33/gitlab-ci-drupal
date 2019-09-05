@@ -21,7 +21,7 @@
     <!-- <env name="BROWSERTEST_OUTPUT_DIRECTORY" value="/var/www/html/web/sites/simpletest"/> -->
     <!-- To disable deprecation testing uncomment the next line. -->
     <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
-    <env name="MINK_DRIVER_ARGS_WEBDRIVER" value='["chrome", {"browserName":"chrome","chromeOptions":{"w3c": false, "args":["--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}, "http://127.0.0.1:4444/wd/hub"]'/>
+    <env name="MINK_DRIVER_ARGS_WEBDRIVER" value='["chrome", {"browserName":"chrome","chromeOptions":{"w3c": false, "args":["--disable-gpu","--headless","--no-sandbox"]}}, "http://127.0.0.1:4444/wd/hub"]'/>
   </php>
   <testsuites>
     <testsuite name="unit">
@@ -49,6 +49,19 @@
     <testsuite name="customfunctional-javascript">
       <directory>../**/custom/**/tests/src/FunctionalJavascript</directory>
     </testsuite>
+    <!-- Demo only purpose-->
+    <testsuite name="demo_unit">
+      <directory>./modules/action/tests/src/Unit</directory>
+    </testsuite>
+    <testsuite name="demo_kernel">
+      <directory>./modules/action/tests/src/Kernel</directory>
+    </testsuite>
+    <testsuite name="demo_functional">
+      <directory>./modules/action/tests/src/Functional</directory>
+    </testsuite>
+    <testsuite name="demo_functional-javascript">
+      <directory>./modules/action/tests/src/FunctionalJavascript</directory>
+    </testsuite>
   </testsuites>
   <listeners>
     <listener class="\Drupal\Tests\Listeners\DrupalListener">
@@ -62,7 +75,7 @@
     <whitelist processUncoveredFilesFromWhitelist="true">
       <!-- <directory>./includes</directory> -->
       <!-- <directory>./lib</directory> -->
-      <!-- <directory>./modules</directory> -->
+      <directory>./modules</directory>
       <directory>../modules</directory>
       <directory>../themes</directory>
       <!-- <directory>../profiles</directory> -->

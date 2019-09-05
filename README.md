@@ -28,6 +28,7 @@ Include **Build**,
   - [PHPunit tests for Drupal 8](#phpunit-tests-for-drupal-8)
   - [Codecov.io support in PHPUNIT Code coverage](#codecovio-support-in-phpunit-code-coverage)
   - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
+  - [Metrics jobs](#metrics-jobs)
   - [Accessibility with Pa11y](#accessibility-with-pa11y)
 - [Jobs detail](#jobs-detail)
 - [CI image including tools](#ci-image-including-tools)
@@ -52,12 +53,13 @@ accounts.
 - Go to Gitlab **Settings > CI/ CD > Variables** and add variables:
 
 ```bash
+CI_IMAGE_VARIANT        drupal
+# 8.7 or 8.8 to test against 8.8.x-dev
 DRUPAL_VERSION          8.7
-# or 8.8 to test against 8.8.x-dev
-CI_IMAGE_TYPE           selenium
 CI_TYPE                 module
 WEB_ROOT                /var/www/html
-PHP_CODE                /var/www/html/modules/custom
+PHP_CODE_QA             /var/www/html/modules/custom
+PHP_CODE_METRICS        /var/www/html/modules/custom
 SKIP_TEST_SECURITY      1
 SKIP_TEST_BEHAT         1
 SKIP_TEST_PA11Y         1
@@ -65,9 +67,15 @@ SKIP_TEST_PA11Y         1
 NIGHTWATCH_TESTS        --tag my_module
 # Or you can disable Nightwatch tests with:
 SKIP_TEST_NIGHTWATCH    1
+# If you don't have sass files, you can skip with
+SKIP_LINT_SASS          1
+# If you don't have any css files, you can skip with
+SKIP_LINT_CSS           1
+# If you don't have any javascript files, you can skip with
+SKIP_LINT_JS            1
 ```
 
-![gitlab-variables](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/9a12c6590d5001ecde3330ff8af3a9c0/gitlab-variables.jpg)
+![gitlab-variables](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/3676704eb083be3edf9035aaadebe10c/gitlab-ci-drupal-variables.jpg)
 
 - Create a branch **testing** and push to Gitlab.
 
@@ -197,6 +205,8 @@ Tests (and Build) are by default on a branch `testing` and on all `tags`
       - $SKIP_TESTS == "1"
   only:
     refs:
+      - 8.x-1.x
+      - 8.x-dev
       - testing
       - tags
 ```
@@ -359,6 +369,26 @@ Stylelint is based on the official
 
 [Sass-lint](.gitlab-ci/.sass-lint.yml) is based on
 [Wolox](https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml)
+
+A variable define the code to be tested, relative to the web root of the image, for a project the root is `/var/www/html/web`, for a module included Drupal is on `/var/www/html`:
+
+```bash
+PHP_CODE_QA /var/www/html/web/modules/custom
+# For a module, code is relative to the included Drupal:
+PHP_CODE_QA /var/www/html/modules/custom
+```
+
+### Metrics jobs
+
+Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org), [Phploc](https://github.com/sebastianbergmann/phploc) and [Pdepend](https://pdepend.org/).
+
+A variable define the code to be tested, relative to the web root of the image, for a project the root is `/var/www/html/web`, for a module included Drupal is on `/var/www/html`:
+
+```bash
+PHP_CODE_METRICS /var/www/html/web/modules/custom
+# For a module, code is relative to the included Drupal:
+PHP_CODE_METRICS /var/www/html/modules/custom
+```
 
 ### Accessibility with Pa11y
 

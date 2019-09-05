@@ -630,7 +630,7 @@ _init_variables() {
   CI_PROJECT_DIR="/builds"
   VERBOSE=$(yq r $__yaml_variables variables.VERBOSE)
   CI_TYPE=$(yq r $__yaml_variables variables.CI_TYPE)
-  CI_IMAGE_TYPE=$(yq r $__yaml_variables variables.CI_IMAGE_TYPE)
+  CI_IMAGE_VARIANT=$(yq r $__yaml_variables variables.CI_IMAGE_VARIANT)
   WEB_ROOT=$(yq r $__yaml_variables variables.WEB_ROOT)
   DOC_ROOT=$(yq r $__yaml_variables variables.DOC_ROOT)
   REPORT_DIR=$(yq r $__yaml_variables variables.REPORT_DIR)
@@ -772,7 +772,7 @@ _nuke() {
 
 _up() {
   if ! [ -f "./local/.env" ]; then
-    printf "[NOTICE] Generate .env file for %s-%s\\n"  "${DRUPAL_VERSION}" "${CI_IMAGE_TYPE}"
+    printf "[NOTICE] Generate .env file for %s-%s\\n"  "${DRUPAL_VERSION}" "${CI_IMAGE_VARIANT}"
     _generate_env_from_yaml
   fi
 
