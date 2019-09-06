@@ -99,17 +99,17 @@ stages:
     <<: *test_variables
   before_script:
     # Copy RoboFile.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
     # Symlink Drupal codebase or the module/theme to the web root of the ci
     # image.
     - robo prepare:folders
     # Start Apache.
     - apache2-foreground&
     # Copy files and prepare test folder with permissions.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${DOC_ROOT}/core || true
-    # Allow phpunit.xml override
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${DOC_ROOT}/core
+    # Allow phpunit.xml override if a dist file exist.
     - if [ -f ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.dist ]; then
-        cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.dist ${WEB_ROOT}/core/phpunit.xml || true;
+        cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.dist ${WEB_ROOT}/core/phpunit.xml;
       fi
     - robo ensure:tests-folders
   artifacts:
@@ -135,8 +135,8 @@ Build:
     - robo project:build
     # After Drupal install we install core/package.json.
     - robo yarn:install
-    # Install specific CI tools.
-    - robo install:ci
+    # Ensure we have Phpunit for next tests.
+    - robo install:phpunit
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
   variables:
     <<: *test_variables
@@ -221,7 +221,7 @@ Functional Js:
   script:
     # Launch Chromedriver.
     - /scripts/start-chromedriver.sh&
-    - sleep 5s
+    - sleep 3s
     - curl -s http://localhost:9515/status | jq '.' || true
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
   after_script:
@@ -238,16 +238,18 @@ Nightwatch Js:
       - $SKIP_TESTS == "1"
       - $SKIP_TEST_NIGHTWATCH == "1"
   script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env || true
+    # Nightwatch .env file for CI is a snippet on the project page.
+    - curl -f -N ${CI_NIGHTWATCH_ENV} -o ${WEB_ROOT}/core/.env
+    - sleep 2s
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
     # [TEMPORARY] Patch for Nightwatch 1.2+, see https://drupal.org/node/3059356
-    - if [ ${DRUPAL_VERSION} == "8.8" ]; then
+    - if [ ${CI_DRUPAL_VERSION} == "8.8" ]; then
         robo patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch;
-      elif [ ${DRUPAL_VERSION} == "8.7" ]; then
-        robo patch:nightwatch  https://www.drupal.org/files/issues/2019-08-30/3059356-51.patch;
+      elif [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
+        robo patch:nightwatch https://www.drupal.org/files/issues/2019-08-30/3059356-51.patch;
       fi
     # [TEMPORARY] Patch to allow install profile, see https://drupal.org/node/3017176
-    - robo patch:nightwatch https://www.drupal.org/files/issues/2019-02-05/3017176-7.patch
+    - robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch
     # Install from core/package.json
     - robo yarn:install
     # This is the main script, 'yarn install' and 'test:nightwatch' from core folder.
@@ -277,14 +279,13 @@ Security report:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - robo prepare:folders
   script:
-    - phpqa
+    - phpqa --tools security-checker:0
         --buildDir ${REPORT_DIR}
-        --tools security-checker:0
         --analyzedDirs ${DOC_ROOT}
         --verbose
   dependencies:
     - Build
-  # Allow failure to produce report and warning.
+  # Allow failure to produce report and warning when we have an error.
   allow_failure: true
 
 # Behat tests from tests/ folder.
@@ -301,7 +302,7 @@ Behat tests:
     - robo install:drupal
     # Starting Chrome, we are not using Chromedriver.
     - /scripts/start-chrome.sh&
-    - sleep 5s && curl -s http://localhost:9222/json/version | jq '.'
+    - sleep 3s && curl -s http://localhost:9222/json/version | jq '.'
     - robo install:behat
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   variables:
@@ -384,9 +385,8 @@ Code quality:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
   script:
-    - phpqa
+    - phpqa --tools ${TOOLS}
         --buildDir ${REPORT_DIR}
-        --tools ${TOOLS}
         --analyzedDirs ${PHP_CODE_QA}
 
 # Drupal coding standard best practices report.
@@ -401,13 +401,13 @@ Best practices:
     <<: *default_artifacts
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
+    # Move from Drupal to DrupalPractice standard.
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
   script:
-    - phpqa
+    - phpqa --tools ${BEST_PRACTICES}
         --buildDir ${REPORT_DIR}
-        --tools ${BEST_PRACTICES}
         --analyzedDirs ${PHP_CODE_QA}
   # Allow failure to produce report and warning.
   allow_failure: true
@@ -445,13 +445,6 @@ Js lint:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}/.eslintignore || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
-    # We grab the latest eslint rules for Drupal 8.
-    - mkdir -p ${DOC_ROOT}/core
-    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.json
-      -o ${WEB_ROOT}/core/.eslintrc.json
-    # Drupal 8.x specific rules override for passing.
-    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json
-      -o ${WEB_ROOT}/core/.eslintrc.passing.json
     # Install stylelint from core/package.json
     - robo yarn:install
   script:
@@ -477,16 +470,11 @@ Css lint:
   before_script:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
-    # We grab the latest stylelint rules for Drupal 8.
-    - mkdir -p ${DOC_ROOT}/core
-    - curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json
-      -o ${WEB_ROOT}/core/.stylelintrc.json
     # Install stylelint from core/package.json
     - robo yarn:install
   script:
     # Css report, terminal only for now.
     - ${WEB_ROOT}/core/node_modules/.bin/stylelint
-        --config-basedir ${WEB_ROOT}/core/node_modules/
         --config ${WEB_ROOT}/core/.stylelintrc.json
         --formatter verbose "${CSS_FILES}"
 
@@ -553,9 +541,8 @@ Php metrics:
     paths:
       - ${REPORT_DIR}/
   script:
-    - phpqa
+    - phpqa --tools phpmetrics
         --buildDir ${REPORT_DIR}
-        --tools phpmetrics
         --analyzedDirs ${PHP_CODE_METRICS}
 
 # Phploc, Pdepend report, no pass or failure as it's just informative.
@@ -567,9 +554,8 @@ Php stats:
       - $SKIP_METRICS == "1"
       - $SKIP_METRICS_PHPSTATS == "1"
   script:
-    - phpqa
+    - phpqa --tools phploc,pdepend
         --buildDir ${REPORT_DIR}
-        --tools phploc,pdepend
         --analyzedDirs ${PHP_CODE_METRICS}
 
 ################################################################################
@@ -664,4 +650,4 @@ include:
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
 
-image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
+image: mogtofu33/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}

@@ -148,6 +148,15 @@ class RoboFile extends \Robo\Tasks {
   protected $composerHome = "/var/www/.composer";
 
   /**
+   * CI_DRUPAL_VERSION context.
+   *
+   * @var string
+   *   The drupal version used, look at env values for This can be 
+   *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
+   */
+  protected $ciDrupalVersion = "8.7";
+
+  /**
    * RoboFile constructor.
    */
   public function __construct() {
@@ -173,6 +182,9 @@ class RoboFile extends \Robo\Tasks {
     }
     if (getenv('CI_PROJECT_NAME')) {
       $this->ciProjectName = getenv('CI_PROJECT_NAME');
+    }
+    if (getenv('CI_DRUPAL_VERSION')) {
+      $this->ciDrupalVersion = getenv('CI_DRUPAL_VERSION');
     }
 
     // Pull a DB_URL from the environment, if it exists.
@@ -242,7 +254,7 @@ class RoboFile extends \Robo\Tasks {
       $dir = $this->docRoot;
     }
 
-    $this->checkPrestissimo();
+    $this->installPrestissimo();
 
     // The git checkout includes a composer.lock, and running Composer update
     // on it fails for the first time.
@@ -350,7 +362,7 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
 
-    $this->checkPrestissimo();
+    $this->installPrestissimo();
 
     $task = $this->taskComposerCreateProject()
       ->source('drupal-composer/drupal-project:8.x-dev')
@@ -385,7 +397,7 @@ class RoboFile extends \Robo\Tasks {
       $dir = $this->docRoot;
     }
 
-    $this->checkPrestissimo();
+    $this->installPrestissimo();
 
     $task = $this->taskComposerInstall()
       ->workingDir($dir)
@@ -613,12 +625,9 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Install or locate Phpunit.
    *
-   * @param bool $list
-   *   (Optional) Return the bin and dependencies instead of run.
-   *
    * @return array
    */
-  public function installPhpunit($list = false) {
+  public function installPhpunit() {
     $install = [
       'phpunit' => [
         "phpunit/phpunit" => "^6.5",
@@ -629,12 +638,7 @@ class RoboFile extends \Robo\Tasks {
         "justinrainbow/json-schema" => "^5.2",
       ],
     ];
-    if ($list) {
-      return $install;
-    }
-    else {
-      $this->installWithComposer($install, 'drupal');
-    }
+    $this->installWithComposer($install, 'drupal');
 
     // Add bin globally.
     if (!file_exists('/usr/local/bin/phpunit')) {
@@ -659,10 +663,6 @@ class RoboFile extends \Robo\Tasks {
       ->mirror($this->ciProjectDir . '/tests', $this->docRoot . '/tests')
       ->run();
 
-    #$this->taskFilesystemStack()
-    #  ->copy('tests/behat.yml', $this->docRoot . '/tests/behat.yml', true)
-    #  ->run();
-
     $task = $this->taskBehat()
       ->dir($this->docRoot)
       ->config('tests/behat.yml')
@@ -681,12 +681,9 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Install or locate Behat.
    *
-   * @param bool $list
-   *   (Optional) Return the bin and dependencies instead of run.
-   *
    * @return array
    */
-  public function installBehat($list = false) {
+  public function installBehat() {
     $bin = 'behat';
     $install = [
       $bin => [
@@ -698,12 +695,8 @@ class RoboFile extends \Robo\Tasks {
         'drupal/drupal-extension' => '^4.0',
       ],
     ];
-    if ($list) {
-      return $install;
-    }
-    else {
-      $this->installWithComposer($install, 'drupal');
-    }
+
+    $this->installWithComposer($install, 'drupal');
 
     // Add bin to use taskBehat().
     if (!file_exists('/usr/local/bin/behat')) {
@@ -822,12 +815,9 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Install or locate Phpqa.
    *
-   * @param bool $list
-   *   (Optional) Return the bin and dependencies instead of run.
-   *
    * @return array
    */
-  public function installPhpqa($list = false) {
+  public function installPhpqa() {
     $install = [
       'phpqa' => [
         'edgedesign/phpqa' => '^1.21',
@@ -836,12 +826,7 @@ class RoboFile extends \Robo\Tasks {
         'twig/twig' => '^1',
       ],
     ];
-    if ($list) {
-      return $install;
-    }
-    else {
-      $this->installWithComposer($install, 'user');
-    }
+    $this->installWithComposer($install, 'user');
   }
 
   /**
@@ -852,18 +837,13 @@ class RoboFile extends \Robo\Tasks {
    *
    * @return array
    */
-  public function installDrush($list = false) {
+  public function installDrush() {
     $install = [
       'drush' => [
         'drush/drush' => '^9',
       ],
     ];
-    if ($list) {
-      return $install;
-    }
-    else {
-      $this->installWithComposer($install, 'user');
-    }
+    $this->installWithComposer($install, 'user');
   }
 
   /**
@@ -876,27 +856,22 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Working dir, can be drupal, ie:/var/www/html
    *   or user, ie: /var/www/.composer
    *
-   * @param string|null $dir
-   *   (optional) Dir to run the command in.
-   *
    * @param bool $dev
    *   (optional) Install as require-dev. Default true.
    *
    * @return \Robo\Task\Base\Exec
    */
-  private function installWithComposer(array $bins_dependencies, $target = 'drupal', $dir = null, $dev = true) {
-    $this->checkPrestissimo();
-    $this->checkCoder();
+  private function installWithComposer(array $bins_dependencies, $target = 'drupal', $dev = true) {
+    $this->installPrestissimo();
+    $this->installCoder();
 
     if ($target == 'drupal') {
-      if (!$dir) {
-        if ($this->ciType == "project") {
-          $dir = $this->ciProjectDir;
-        }
-        # For a module, use included Drupal.
-        else {
-          $dir = $this->docRoot;
-        }
+      if ($this->ciType == "project") {
+        $dir = $this->ciProjectDir;
+      }
+      # For a module, use included Drupal.
+      else {
+        $dir = $this->docRoot;
       }
     }
     else {
@@ -947,11 +922,10 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Install prestissimo for Composer.
    */
-  private function checkPrestissimo() {
+  private function installPrestissimo() {
     // First check if we have prestissimo.
     if (!file_exists($this->composerHome . '/vendor/hirak/prestissimo/composer.json')) {
       $this->taskComposerRequire()
-        // ->workingDir($this->docRoot)
         ->noInteraction()
         ->dependency('hirak/prestissimo', '^0.3.8')
         ->arg('--quiet')
@@ -963,10 +937,9 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Install Coder for Composer.
    */
-  private function checkCoder() {
+  private function installCoder() {
     $hasDependency = false;
     $task = $this->taskComposerRequire()
-      // ->workingDir($this->docRoot)
       ->noInteraction()
       ->arg('--quiet')
       ->noAnsi();
@@ -1081,10 +1054,7 @@ class RoboFile extends \Robo\Tasks {
       }
     }
 
-    if ($this->verbose) {
-      $task->arg('--verbose');
-    }
-    else {
+    if (!$this->verbose) {
       $task->arg('--silent');
     }
 
@@ -1281,22 +1251,6 @@ class RoboFile extends \Robo\Tasks {
     }
 
     return $task;
-  }
-
-  /**
-   * Install all things needed for CI.
-   */
-  public function installCi() {
-    $list = [];
-    $list += $this->installPhpunit(true);
-    $list += $this->installBehat(true);
-    $this->installWithComposer($list, 'drupal');
-
-    $list = [];
-    # Composer install.
-    $list += $this->installDrush(true);
-    $list += $this->installPhpqa(true);
-    $this->installWithComposer($list, 'user');
   }
 
 }
