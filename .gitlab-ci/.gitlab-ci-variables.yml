@@ -19,7 +19,7 @@ variables:
   # Minor Drupal version to work with, limited to tags on
   # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
   # Current stable is 8.7.x, dev is 8.8.x-dev, you can choose "8.7" or "8.8".
-  DRUPAL_VERSION: "8.7"
+  CI_DRUPAL_VERSION: "8.7"
 
   # [CI_TYPE] Select what you are running CI on, options are:
   #   project
@@ -158,3 +158,6 @@ variables:
   STAGING_HOST: "localhost"
   # Production config, set host or ip
   PRODUCTION_HOST: "localhost"
+
+  # Internal variables for "static" files that do not need editing.
+  CI_NIGHTWATCH_ENV: "https://gitlab.com/mog33/gitlab-ci-drupal/snippets/1892526/raw"

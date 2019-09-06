@@ -227,7 +227,7 @@ _build() {
 
     _dkexec robo $__simulate yarn:install
 
-    _dkexec robo $__simulate install:ci
+    _dkexec robo $__simulate install:phpunit
 
     _create_artifacts
   fi

@@ -52,9 +52,9 @@
     <whitelist processUncoveredFilesFromWhitelist="true">
       <!-- <directory>./includes</directory> -->
       <!-- <directory>./lib</directory> -->
-      <directory>./modules</directory>
-      <directory>../modules</directory>
-      <directory>../themes</directory>
+      <!-- <directory>./modules</directory> -->
+      <directory>../modules/custom</directory>
+      <directory>../themes/custom</directory>
       <!-- <directory>../sites</directory> -->
       <!-- By definition test classes have no tests. -->
       <exclude>
