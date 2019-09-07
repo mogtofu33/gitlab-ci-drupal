@@ -55,7 +55,7 @@ accounts.
 ```bash
 CI_IMAGE_VARIANT        drupal
 # 8.7 or 8.8 to test against 8.8.x-dev
-DRUPAL_VERSION          8.7
+CI_DRUPAL_VERSION          8.7
 CI_TYPE                 module
 WEB_ROOT                /var/www/html
 PHP_CODE_QA             /var/www/html/modules/custom
@@ -112,7 +112,7 @@ Check your project pipeline or
 To test against Drupal 8.8.x-dev last version, go to Gitlab **Settings > CI/ CD > Variables** and add variables:
 
 ```bash
-DRUPAL_VERSION          8.8
+CI_DRUPAL_VERSION          8.8
 ```
 
 See [Skip jobs](#skip-jobs) to adapt the default jobs.

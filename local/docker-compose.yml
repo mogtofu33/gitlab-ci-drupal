@@ -13,8 +13,8 @@ services:
   drupal:
     # Drupal included from official docker image + ci tools. Edit in .env file.
     # see https://gitlab.com/mog33/drupal8ci
-    image: mogtofu33/drupal8ci:${DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
-    # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
+    image: mogtofu33/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
+    # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
     ports:
       - "88:80"
       - "4444:4444"
@@ -24,8 +24,8 @@ services:
       - mariadb
     volumes:
       # Mount current module, theme or project, mimic Gitlab-ci.
-      - ../:/builds
-      - ../:/var/www/html
+      - ../:${CI_PROJECT_DIR}
+      # - ../:/var/www/html
       # Reports folder for results.
       - ../reports:/var/www/reports
       # [OPTIONAL] composer cache folder to speed up the process.

@@ -627,7 +627,6 @@ _init_variables() {
   __yaml="./.gitlab-ci.yml"
   __yaml_variables="./.gitlab-ci/.gitlab-ci-variables.yml"
 
-  CI_PROJECT_DIR="/builds"
   VERBOSE=$(yq r $__yaml_variables variables.VERBOSE)
   CI_TYPE=$(yq r $__yaml_variables variables.CI_TYPE)
   CI_IMAGE_VARIANT=$(yq r $__yaml_variables variables.CI_IMAGE_VARIANT)
@@ -694,14 +693,14 @@ _generate_env_from_yaml() {
   fi
 
   touch $__env
-  echo 'CI_PROJECT_NAME: my_module' >> $__env
+  echo 'CI_PROJECT_NAME: my-project' >> $__env
   echo "CI_PROJECT_DIR: ${CI_PROJECT_DIR}" >> $__env
 
   yq r $__yaml_variables variables >> $__env
   yq r $__yaml "[.test_variables]" >> $__env
 
-  CHROMIUM_OPTS=$(yq r $__yaml "[Behat tests].variables.CHROMIUM_OPTS")
-  echo 'CHROMIUM_OPTS='"${CHROMIUM_OPTS}"'' >> $__env
+  CHROME_OPTS=$(yq r $__yaml "[Behat tests].variables.CHROME_OPTS")
+  echo 'CHROME_OPTS='"${CHROME_OPTS}"'' >> $__env
   # Fix BEHAT_PARAMS, remove spaces and escape \.
   BEHAT_PARAMS=$(yq r $__yaml "[Behat tests].variables.BEHAT_PARAMS")
   BEHAT_PARAMS="$(echo -e "${BEHAT_PARAMS}" | tr -d '[:space:]')"
@@ -740,11 +739,12 @@ _gen() {
 }
 
 _ensure_chrome() {
-  _test_chrome=$(docker exec -t ci-drupal sh -c "[ -f /usr/bin/chromium ] && echo true")
+  _test_chrome=$(docker exec -t ci-drupal sh -c "[ -f /usr/bin/google-chrome ] && echo true")
   if [ -z "${_test_chrome}" ]; then
-    docker exec -t ci-drupal sudo apt update && sudo apt install -y chromium
+    printf "%s[ERROR]%s Missing Google Chrome!\\n" "${_red}" "${_end}"
+    exit 1
   fi
-  docker exec -t ci-drupal chromium --version
+  docker exec -t ci-drupal google-chrome --version
 }
 
 _reset() {
