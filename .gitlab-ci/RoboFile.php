@@ -499,7 +499,7 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Dump Drupal DB with Drush.
    *
-  * @param string $profile
+   * @param string $profile
    *   The profile to install, default to minimal.
    */
   public function dumpDrupal($profile) {
@@ -685,16 +685,28 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installBehat() {
     $bin = 'behat';
-    $install = [
-      $bin => [
-        'behat/mink' => '1.7.x-dev',
-        'behat/mink-goutte-driver' => '^1.2',
-        'dmore/behat-chrome-extension' => '^1.3.0',
-        'bex/behat-screenshot' => '^1.2',
-        'emuse/behat-html-formatter' => '0.1.*',
-        'drupal/drupal-extension' => '^4.0',
-      ],
-    ];
+    if ($this->ciDrupalVersion == "8.8") {
+      $install = [
+        $bin => [
+          'dmore/behat-chrome-extension' => '^1.3.0',
+          'bex/behat-screenshot' => '^1.2',
+          'emuse/behat-html-formatter' => '0.1.*',
+          'drupal/drupal-extension' => '^4.0',
+        ],
+      ];
+    }
+    else {
+      $install = [
+        $bin => [
+          'behat/mink' => '1.7.x-dev',
+          'behat/mink-goutte-driver' => '^1.2',
+          'dmore/behat-chrome-extension' => '^1.3.0',
+          'bex/behat-screenshot' => '^1.2',
+          'emuse/behat-html-formatter' => '0.1.*',
+          'drupal/drupal-extension' => '^4.0',
+        ],
+      ];
+    }
 
     $this->installWithComposer($install, 'drupal');
 
@@ -832,9 +844,6 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Install or locate Drush.
    *
-   * @param bool $list
-   *   (Optional) Return the bin and dependencies instead of run.
-   *
    * @return array
    */
   public function installDrush() {
@@ -844,6 +853,10 @@ class RoboFile extends \Robo\Tasks {
       ],
     ];
     $this->installWithComposer($install, 'user');
+
+    if (!file_exists('/usr/local/bin/drush')) {
+      $this->symlink($this->composerHome . '/vendor/bin/drush', '/usr/local/bin/drush');
+    }
   }
 
   /**
@@ -922,7 +935,7 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Install prestissimo for Composer.
    */
-  private function installPrestissimo() {
+  public function installPrestissimo() {
     // First check if we have prestissimo.
     if (!file_exists($this->composerHome . '/vendor/hirak/prestissimo/composer.json')) {
       $this->taskComposerRequire()
@@ -932,12 +945,15 @@ class RoboFile extends \Robo\Tasks {
         ->noAnsi()
         ->run();
     }
+    elseif ($this->verbose) {
+      $this->say("Prestissimo already installed!");
+    }
   }
 
   /**
    * Install Coder for Composer.
    */
-  private function installCoder() {
+  public function installCoder() {
     $hasDependency = false;
     $task = $this->taskComposerRequire()
       ->noInteraction()
@@ -954,6 +970,9 @@ class RoboFile extends \Robo\Tasks {
     }
     if ($hasDependency) {
       $task->run();
+    }
+    elseif ($this->verbose) {
+      $this->say("Coder already installed!");
     }
   }
 
@@ -1239,11 +1258,11 @@ class RoboFile extends \Robo\Tasks {
    * @return \Robo\Task\Base\Exec
    *   A drush exec command.
    */
-  public function drush() {
+  private function drush() {
     $this->installDrush();
 
     // Drush needs an absolute path to the webroot.
-    $task = $this->taskExec($this->docRoot . '/vendor/bin/drush')
+    $task = $this->taskExec($this->composerHome . '/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {
