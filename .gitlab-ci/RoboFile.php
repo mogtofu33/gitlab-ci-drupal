@@ -157,6 +157,15 @@ class RoboFile extends \Robo\Tasks {
   protected $ciDrupalVersion = "8.7";
 
   /**
+   * CI_DRUPAL_SETTINGS context.
+   *
+   * @var string
+   *   The drupal settings file, look at env values for This can be 
+   *   overridden by specifying a $CI_DRUPAL_SETTINGS environment variable.
+   */
+  protected $ciDrupalSettings = "https://gitlab.com/mog33/gitlab-ci-drupal/snippets/1892524/raw";
+
+  /**
    * RoboFile constructor.
    */
   public function __construct() {
@@ -185,6 +194,9 @@ class RoboFile extends \Robo\Tasks {
     }
     if (getenv('CI_DRUPAL_VERSION')) {
       $this->ciDrupalVersion = getenv('CI_DRUPAL_VERSION');
+    }
+    if (getenv('CI_DRUPAL_SETTINGS')) {
+      $this->ciDrupalSettings = getenv('CI_DRUPAL_SETTINGS');
     }
 
     // Pull a DB_URL from the environment, if it exists.
@@ -435,8 +447,12 @@ class RoboFile extends \Robo\Tasks {
       $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump-' . $profile . '.sql;');
 
       // When install from dump we need to be sure settings.php is correct.
+      $settings = file_get_contents($this->ciDrupalSettings);
+      if (!file_exists($this->webRoot . '/sites/default/settings.local.php')) {
+        file_put_contents($this->webRoot . '/sites/default/settings.local.php', $settings);
+      }
+
       $this->taskFilesystemStack()
-        ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->webRoot . '/sites/default/settings.local.php', true)
         ->remove($this->webRoot . '/sites/default/settings.php')
         ->copy($this->webRoot . '/sites/default/default.settings.php', $this->webRoot . '/sites/default/settings.php', true)
         ->run();
