@@ -206,7 +206,7 @@ _tests_prepare() {
     _dkexec cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml
 
     # RoboFile.php is already at root.
-    _dkexec robo $__simulate ensure:tests-folders
+    _dkexec_docroot robo $__simulate ensure:tests-folders
   fi
 }
 
@@ -220,14 +220,14 @@ _build() {
     printf ">>> [NOTICE] build\\n"
 
     # Extra local step, ensure composer permissions.
-    _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/.composer /var/www/${REPORT_DIR}
-    _dkexec chmod -R 777 /var/www/.composer /var/www/${REPORT_DIR}
+    # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/.composer /var/www/${REPORT_DIR}
+    # _dkexec chmod -R 777 /var/www/.composer /var/www/${REPORT_DIR}
 
-    _dkexec robo $__simulate project:build
+    _dkexec_docroot robo $__simulate project:build
 
-    _dkexec robo $__simulate yarn:install
+    _dkexec_docroot robo $__simulate yarn:install
 
-    _dkexec robo $__simulate install:phpunit
+    _dkexec_docroot robo $__simulate install:phpunit
 
     _create_artifacts
   fi
@@ -237,7 +237,7 @@ _prepare_folders() {
   if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] prepare_folders\\n"
   else
-    _dkexec robo $__simulate prepare:folders
+    _dkexec_docroot robo $__simulate prepare:folders
   fi
 }
 
@@ -294,7 +294,7 @@ _unit_kernel() {
   _build
   _tests_prepare
 
-  _dkexec robo $__simulate test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  _dkexec_docroot robo $__simulate test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
 }
 
 _code_coverage() {
@@ -303,7 +303,7 @@ _code_coverage() {
   _build
   _tests_prepare
 
-  _dkexec robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  _dkexec_docroot robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
   _dkexec cp -r ${WEB_ROOT}/${REPORT_DIR} ./
 
   # bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml -t ${CODECOV_TOKEN}
@@ -356,13 +356,13 @@ _nightwatch() {
   if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] patch_nightwatch\\n"
   else
-    if [ ${DRUPAL_VERSION} == "8.8" ]; then _dkexec robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch; fi
-    if [ ${DRUPAL_VERSION} == "8.7" ]; then _dkexec robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-30/3059356-51.patch; fi
+    if [ ${DRUPAL_VERSION} == "8.8" ]; then _dkexec_docroot robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch; fi
+    if [ ${DRUPAL_VERSION} == "8.7" ]; then _dkexec_docroot robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-30/3059356-51.patch; fi
   fi
 
-  _dkexec robo $__simulate yarn:install
+  _dkexec_docroot robo $__simulate yarn:install
 
-  _dkexec robo $__simulate test:nightwatch
+  _dkexec_docroot robo $__simulate test:nightwatch
 
 }
 
@@ -389,7 +389,7 @@ _behat() {
   _prepare_folders
 
   _PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
-  _install_drupal $_PROFILE
+  _install_drupal_robo $_PROFILE
 
   # Starting Chrome.
   _ensure_chrome
@@ -414,10 +414,10 @@ _pa11y() {
   _prepare_folders
 
   _PROFILE=$(yq r ./.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
-  _install_drupal $_PROFILE
+  _install_drupal_robo $_PROFILE
 
-  _dkexec robo $__simulate install:pa11y
-  _dkexec robo $__simulate test:pa11y
+  _dkexec_docroot robo $__simulate install:pa11y
+  _dkexec_docroot robo $__simulate test:pa11y
 
   _dkexec_bash "cp -f ${CI_PROJECT_DIR}/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/"
 }
@@ -441,10 +441,7 @@ _code_quality() {
   _cp_qa_lint_metrics
   _prepare_folders
 
-  _dkexec phpqa \
-    --buildDir ${REPORT_DIR}/code_quality \
-    --tools ${TOOLS} \
-    --analyzedDirs ${PHP_CODE}
+  _dkexec phpqa --buildDir ${REPORT_DIR}/code_quality --tools ${TOOLS} --analyzedDirs ${PHP_CODE_QA}
 
   _clean_qa_lint_metrics
 }
@@ -458,7 +455,7 @@ _best_practices() {
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/best_practices \
     --tools ${BEST_PRACTICES} \
-    --analyzedDirs ${PHP_CODE}
+    --analyzedDirs ${PHP_CODE_QA}
 
   _clean_qa_lint_metrics
 }
@@ -498,7 +495,7 @@ _stylelint() {
   _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json -o ${WEB_ROOT}/core/.stylelintrc.json
 
   # printf ">>> [NOTICE] Install Stylelint-formatter-pretty\\n"
-  # _dkexec robo $__simulate install:stylelint-formatter-pretty
+  # _dkexec_docroot robo $__simulate install:stylelint-formatter-pretty
 
   # _dkexec_bash "stylelint --config-basedir ${WEB_ROOT}/core/node_modules/ \
   #   --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-formatter-pretty \
@@ -523,7 +520,7 @@ _sass_lint() {
   _prepare_folders
 
   printf ">>> [NOTICE] Install Sass-lint\\n"
-  _dkexec robo $__simulate yarn add git://github.com/sasstools/sass-lint.git#develop
+  _dkexec_docroot robo $__simulate yarn add git://github.com/sasstools/sass-lint.git#develop
 
   _dkexec_bash "${WEB_ROOT}/core/node_modules/.bin/sass-lint \
     --config ${CI_PROJECT_DIR}/.gitlab-ci/.sass-lint.yml \
@@ -545,7 +542,7 @@ _phpmetrics() {
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/phpmetrics \
     --tools phpmetrics \
-    --analyzedDirs ${PHP_CODE}
+    --analyzedDirs ${PHP_CODE_METRICS}
 
   _clean_qa_lint_metrics
 }
@@ -558,7 +555,7 @@ _phpstats() {
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/phpstats \
     --tools phploc,pdepend \
-    --analyzedDirs ${PHP_CODE}
+    --analyzedDirs ${PHP_CODE_METRICS}
 
   _clean_qa_lint_metrics
 }
@@ -615,12 +612,36 @@ _test_site() {
 }
 
 _install_drupal() {
+  printf "\\n%s[INFO]%s Install Drupal\\n\\n" "${_blu}" "${_end}"
+
+  _build
+  # _tests_prepare
+
+  _prepare_folders
+
+  _install_drupal_robo ${1:'minimal'}
+}
+
+_install_drupal_robo() {
   if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] install\\n"
   else
     printf ">>> [NOTICE] install Drupal %s\\n" "${1}"
-    _dkexec robo $__simulate install:drupal ${1}
+    _dkexec_docroot robo $__simulate install:drupal ${1}
   fi
+}
+
+_set_dev_mode() {
+  printf "\\n%s[INFO]%s Set dev mode\\n\\n" "${_blu}" "${_end}"
+
+  _build
+  # _tests_prepare
+
+  _prepare_folders
+
+  _dkexec_apache composer require drupal/console drupal/devel drupal/devel_php
+  _dkexec_docroot ${DOC_ROOT}/vendor/bin/drupal site:mode dev
+
 }
 
 _init_variables() {
