@@ -508,7 +508,7 @@ class RoboFile extends \Robo\Tasks {
   public function checkDrupal() {
     return $this->drush()
       ->args('status')
-      ->option('field', 'bootstrap', '=')
+      ->option('fields', 'bootstrap', '=')
       ->run();
   }
 
