@@ -107,9 +107,9 @@ stages:
     - apache2-foreground&
     # Copy files and prepare test folder with permissions.
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${DOC_ROOT}/core
-    # Allow phpunit.xml override if an override file exist.
-    - if [ -f ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${CI_TYPE} ]; then
-        cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${CI_TYPE} ${WEB_ROOT}/core/phpunit.xml;
+    # Allow phpunit.xml override if a file for specific tests exist.
+    - if [ -f ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${PHPUNIT_TESTS} ]; then
+        cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${PHPUNIT_TESTS} ${WEB_ROOT}/core/phpunit.xml;
       fi
     - robo ensure:tests-folders
   artifacts:

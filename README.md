@@ -326,12 +326,12 @@ The pipeline in this project support Unit, Kernel, Functional,
 tests in Drupal 8, see
 [Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
-The location of tests is defined in [.gitlab-ci/phpunit.xml]. There is 2 set of
+The tests are defined in [.gitlab-ci/phpunit.xml](.gitlab-ci/phpunit.xml). There is 2 set of
 tests location:
 
-- Custom modules and themes only
+- Custom modules and themes only, those are prefixed with `custom` in `phpunit.xml`, as `customunit, customkernel, customfunctional, customfunctional-javascript`
   - All `tests/` from `modules/custom/**` and `themes/custom/**`
-- All tests from all folders
+- Drupal core tests, will look in all folders, defined as `unit, kernel, functional, functional-javascript` are not really used and test coverge do not match this scenario.
 
 There is a Gitlab variable to select the tests:
 
@@ -340,6 +340,11 @@ PHPUNIT_TESTS     custom
 ```
 
 Set this variable empty to run all tests.
+
+You can edit [.gitlab-ci/phpunit.xml](.gitlab-ci/phpunit.xml) but it's not recommended.
+The CI will look if a file `phpunit.xml.PHPUNIT_TESTS` exist in [.gitlab-ci](.gitlab-ci) and will use it to run the tests.
+
+You can look at the demo file use for this project to run a minimum amount of tests for demo purpose: `phpunit.xml.demo`.
 
 ### Codecov.io support in PHPUNIT Code coverage
 
