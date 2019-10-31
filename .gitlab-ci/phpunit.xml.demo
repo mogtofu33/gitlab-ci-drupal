@@ -14,17 +14,17 @@
     <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
   </php>
   <testsuites>
-    <!-- Demo only purpose-->
-    <testsuite name="demo_unit">
+    <!-- Demo only purpose, run one core module tests -->
+    <testsuite name="demounit">
       <directory>./modules/action/tests/src/Unit</directory>
     </testsuite>
-    <testsuite name="demo_kernel">
+    <testsuite name="demokernel">
       <directory>./modules/action/tests/src/Kernel</directory>
     </testsuite>
-    <testsuite name="demo_functional">
+    <testsuite name="demofunctional">
       <directory>./modules/action/tests/src/Functional</directory>
     </testsuite>
-    <testsuite name="demo_functional-javascript">
+    <testsuite name="demofunctional-javascript">
       <directory>./modules/action/tests/src/FunctionalJavascript</directory>
     </testsuite>
   </testsuites>
