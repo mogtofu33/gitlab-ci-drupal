@@ -658,7 +658,7 @@ class RoboFile extends \Robo\Tasks {
 
     // Add bin globally.
     if (!file_exists('/usr/local/bin/phpunit')) {
-      $this->symlink($this->docRoot . '/vendor/bin/' . $bin, '/usr/local/bin/phpunit');
+      $this->symlink($this->docRoot . '/vendor/bin/phpunit', '/usr/local/bin/phpunit');
     }
   }
 
