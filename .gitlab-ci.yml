@@ -106,7 +106,7 @@ stages:
     # Start Apache.
     - apache2-foreground&
     # Copy files and prepare test folder with permissions.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${DOC_ROOT}/core
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${WEB_ROOT}/core
     # Allow phpunit.xml override if a file for specific tests exist.
     - if [ -f ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${PHPUNIT_TESTS} ]; then
         cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${PHPUNIT_TESTS} ${WEB_ROOT}/core/phpunit.xml;
