@@ -32,6 +32,7 @@ Include **Build**,
   - [Accessibility with Pa11y](#accessibility-with-pa11y)
 - [Jobs detail](#jobs-detail)
 - [CI image including tools](#ci-image-including-tools)
+- [Issues](#issues)
 - [Future plan](#future-plan)
 - [Credits](#credits)
 
@@ -54,8 +55,8 @@ accounts.
 
 ```bash
 CI_IMAGE_VARIANT        drupal
-# 8.7 or 8.8 to test against 8.8.x-dev
-CI_DRUPAL_VERSION          8.7
+# 8.7, 8.8 to test 8.8.0-beta1 or 8.9 for 8.9.x-dev
+CI_DRUPAL_VERSION       8.7
 CI_TYPE                 module
 WEB_ROOT                /var/www/html
 PHP_CODE_QA             /var/www/html/modules/custom
@@ -109,11 +110,13 @@ Check your project pipeline or
 
 - Create a branch **master** and push, see the pipeline running!
 
-To test against Drupal 8.8.x-dev last version, go to Gitlab **Settings > CI/ CD > Variables** and add variables:
+To test against Drupal 8.8.0-beta1 version, go to Gitlab **Settings > CI/ CD > Variables** and add variables:
 
 ```bash
 CI_DRUPAL_VERSION          8.8
 ```
+
+Set `8.9` to test against Drupal 8.9.x-dev.
 
 See [Skip jobs](#skip-jobs) to adapt the default jobs.
 
@@ -289,10 +292,8 @@ Since Drupal 8.6, [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascri
 For now it is not really ready to be used as a replacement for _functional
 Javascript_, but soon...
 
-The CI tests here include 2 patches to be able to upgrade to nightwatch 1.2 and
-being able to install Drupal from a profile:
+The CI tests here include a patch to be able to install Drupal from a profile:
 
-- [[Security] Update yarn packages to fix 19 vulnerabilities by updating nightwatch](https://drupal.org/node/3059356)
 - [Support install profile and language code params in drupalInstall Nightwatch command](https://drupal.org/node/3017176)
 
 There is a variable in this project that you can set in Gitlab to select the
@@ -319,6 +320,8 @@ For Behat, Selenium is not needed thanks to the
 Html output of the Behat report is done thanks to
 [Behat Html formatter plugin](https://github.com/dutchiexl/BehatHtmlFormatterPlugin).
 
+**NOTE** Currently Behat tests works only for Drupal 8.7
+
 ### PHPunit tests for Drupal 8
 
 The pipeline in this project support Unit, Kernel, Functional,
@@ -326,12 +329,12 @@ The pipeline in this project support Unit, Kernel, Functional,
 tests in Drupal 8, see
 [Type of tests in Drupal 8](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
-The tests are defined in [.gitlab-ci/phpunit.xml](.gitlab-ci/phpunit.xml). There is 2 set of
-tests location:
+The tests are defined in [.gitlab-ci/phpunit.xml](.gitlab-ci/phpunit.xml).
+There is 2 set of tests location:
 
 - Custom modules and themes only, those are prefixed with `custom` in `phpunit.xml`, as `customunit, customkernel, customfunctional, customfunctional-javascript`
   - All `tests/` from `modules/custom/**` and `themes/custom/**`
-- Drupal core tests, will look in all folders, defined as `unit, kernel, functional, functional-javascript` are not really used and test coverge do not match this scenario.
+- Drupal core tests, will look in all folders, defined as `unit, kernel, functional, functional-javascript` are not really used and test coverage do not match this scenario.
 
 There is a Gitlab variable to select the tests:
 
@@ -339,12 +342,12 @@ There is a Gitlab variable to select the tests:
 PHPUNIT_TESTS     custom
 ```
 
-Set this variable empty to run all tests.
+Set this variable _empty_ to run all tests.
 
-You can edit [.gitlab-ci/phpunit.xml](.gitlab-ci/phpunit.xml) but it's not recommended.
-The CI will look if a file `phpunit.xml.PHPUNIT_TESTS` exist in [.gitlab-ci](.gitlab-ci) and will use it to run the tests.
+You can edit [.gitlab-ci/phpunit.xml](.gitlab-ci/phpunit.xml) and adapt for your tests or you can create a file named `phpunit.xml.PHPUNIT_TESTS` in [.gitlab-ci](.gitlab-ci) and CI will use it instead of `phpunit.xml` to run the tests.
 
-You can look at the demo file use for this project to run a minimum amount of tests for demo purpose: `phpunit.xml.demo`.
+For example this project use `PHPUNIT_TESTS demo` and so a file `phpunit.xml.demo`
+for demo and test purpose.
 
 ### Codecov.io support in PHPUNIT Code coverage
 
@@ -481,6 +484,12 @@ quality and analysis tools:
   - [Pdepend](https://pdepend.org/)
   - [Phpmetrics](https://www.phpmetrics.org)
 
+## Issues
+
+- Behat tests only works on Drupal 8.7, not for 8.8+
+
+- Code coverage seems broken.
+
 ## Future plan
 
 You want to help me make this better? Good! just PR!
@@ -490,10 +499,10 @@ I would like to:
 - Add Nightwatch [visual regression testing](https://github.com/Crunch-io/nightwatch-vrt)
 
 - Add a matrix option like Travis to test against multiple Php versions and
-databases when [Gitlab-ci support it](https://gitlab.com/gitlab-org/gitlab-ce/issues/49557)
+databases when [Gitlab-Ci support it](https://gitlab.com/gitlab-org/gitlab/issues/23405)
 
 - Test if all of this is working with some distributions like Lightning or
-Varbase
+Varbase...
 
 ## Credits
 

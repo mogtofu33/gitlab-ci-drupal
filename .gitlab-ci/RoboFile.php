@@ -12,7 +12,7 @@
  * @SuppressWarnings(PHPMD)
  */
 
-use GuzzleHttp\Client;
+use Symfony\Component\Process\Process;
 
 /**
  * Robofile with tasks for CI.
@@ -97,7 +97,7 @@ class RoboFile extends \Robo\Tasks {
    * CI_PROJECT_NAME context.
    *
    * @var string
-   *   The CI project name, look at env values for This can be 
+   *   The CI project name, look at env values for This can be
    *   overridden by specifying a $CI_PROJECT_NAME environment variable.
    */
   protected $ciProjectName = "my_project";
@@ -106,7 +106,7 @@ class RoboFile extends \Robo\Tasks {
    * NIGHTWATCH_TESTS context.
    *
    * @var string
-   *   The Nightwatch tests to run, look at env values for This can be 
+   *   The Nightwatch tests to run, look at env values for This can be
    *   overridden by specifying a $NIGHTWATCH_TESTS environment variable.
    */
   protected $nightwatchTests = "--skiptags core";
@@ -115,7 +115,7 @@ class RoboFile extends \Robo\Tasks {
    * BROWSERTEST_OUTPUT_DIRECTORY context.
    *
    * @var string
-   *   The Drupal browser test output look at env values for This can be 
+   *   The Drupal browser test output look at env values for This can be
    *   overridden by specifying a $BROWSERTEST_OUTPUT_DIRECTORY environment variable.
    */
   protected $browsertestOutput = "/var/www/html/web/sites/simpletest";
@@ -124,7 +124,7 @@ class RoboFile extends \Robo\Tasks {
    * APACHE_RUN_USER context.
    *
    * @var string
-   *   The CI apache run user, look at env values for This can be 
+   *   The CI apache run user, look at env values for This can be
    *   overridden by specifying a $APACHE_RUN_USER environment variable.
    */
   protected $apacheUser = "www-data";
@@ -133,7 +133,7 @@ class RoboFile extends \Robo\Tasks {
    * APACHE_RUN_GROUP context.
    *
    * @var string
-   *   The CI apache run group, look at env values for This can be 
+   *   The CI apache run group, look at env values for This can be
    *   overridden by specifying a $APACHE_RUN_GROUP environment variable.
    */
   protected $apacheGroup = "www-data";
@@ -142,7 +142,7 @@ class RoboFile extends \Robo\Tasks {
    * COMPOSER_HOME context.
    *
    * @var string
-   *   The composer home dir, look at env values for This can be 
+   *   The composer home dir, look at env values for This can be
    *   overridden by specifying a $COMPOSER_HOME environment variable.
    */
   protected $composerHome = "/var/www/.composer";
@@ -151,7 +151,7 @@ class RoboFile extends \Robo\Tasks {
    * CI_DRUPAL_VERSION context.
    *
    * @var string
-   *   The drupal version used, look at env values for This can be 
+   *   The drupal version used, look at env values for This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
   protected $ciDrupalVersion = "8.7";
@@ -160,7 +160,7 @@ class RoboFile extends \Robo\Tasks {
    * CI_DRUPAL_SETTINGS context.
    *
    * @var string
-   *   The drupal settings file, look at env values for This can be 
+   *   The drupal settings file, look at env values for This can be
    *   overridden by specifying a $CI_DRUPAL_SETTINGS environment variable.
    */
   protected $ciDrupalSettings = "https://gitlab.com/mog33/gitlab-ci-drupal/snippets/1892524/raw";
@@ -225,7 +225,7 @@ class RoboFile extends \Robo\Tasks {
     if (filter_var(getenv('DRUPAL_INSTALL_PROFILE'))) {
       $this->setupProfile = getenv('DRUPAL_INSTALL_PROFILE');
     }
-    
+
     // Pull a REPORT_DIR from the environment, if it exists.
     if (getenv('REPORT_DIR')) {
       $this->reportDir = getenv('REPORT_DIR');
@@ -257,7 +257,7 @@ class RoboFile extends \Robo\Tasks {
 
   /**
    * Updates Composer dependencies.
-   * 
+   *
    * @param string|null $dir
    *   (optional) Working dir for this task.
    */
@@ -308,12 +308,11 @@ class RoboFile extends \Robo\Tasks {
     }
     $tmp_destination = 'tmp_drupal';
 
-    $client =  new Client();
     $remote = 'https://github.com/drupal-composer/drupal-project/archive/8.x.zip';
 
     // Get and save file
     $this->say('Downloading Drupal 8 project...');
-    $client->get($remote, ['save_to' => $archive]);
+    file_put_contents($archive, file_get_contents($remote));
 
     if (!file_exists($archive)) {
       $this->io()->warning('Failed to download Drupal project!');
@@ -395,7 +394,6 @@ class RoboFile extends \Robo\Tasks {
 
     // Copy to the destination.
     $this->mirror($tmp_destination, $destination);
-    
   }
 
   /**
@@ -436,7 +434,7 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) The profile to install, default to minimal.
    */
   public function installDrupal($profile = null) {
-    
+
     if (!$profile) {
       $profile = $this->setupProfile;
     }
@@ -478,7 +476,7 @@ class RoboFile extends \Robo\Tasks {
 
     if ($profile == 'config_installer') {
       $task = $this->drush()
-        ->args('site-install', 'config_installer')
+        ->args('site:install', 'config_installer')
         ->arg('config_installer_sync_configure_form.sync_directory=' . $this->docRoot . '/config/sync')
         ->option('yes')
         ->option('db-url', $this->dbUrl, '=');
@@ -488,7 +486,7 @@ class RoboFile extends \Robo\Tasks {
         $profile = $this->setupProfile;
       }
       $task = $this->drush()
-        ->args('site-install', $profile)
+        ->args('site:install', $profile)
         ->option('yes')
         ->option('db-url', $this->dbUrl, '=');
     }
@@ -525,7 +523,7 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
     $this->drush()
-      ->args('sql-dump')
+      ->args('sql:dump')
       ->option('result-file', $this->dbDump . '/dump-' . $profile . '.sql', '=')
       ->run();
   }
@@ -634,7 +632,7 @@ class RoboFile extends \Robo\Tasks {
     if ($testsuite) {
       $task->option('testsuite', $testsuite);
     }
-  
+
     return $task;
   }
 
@@ -644,20 +642,22 @@ class RoboFile extends \Robo\Tasks {
    * @return array
    */
   public function installPhpunit() {
-    $install = [
-      'phpunit' => [
-        "phpunit/phpunit" => "^6.5",
-        "symfony/phpunit-bridge" => "^3.4.3",
-        "phpspec/prophecy" => "^1.7",
-        "symfony/css-selector" => "^3.4.0",
-        "symfony/debug" => "^3.4.0",
-        "justinrainbow/json-schema" => "^5.2",
-      ],
-    ];
-    $this->installWithComposer($install, 'drupal');
+    if (!file_exists($this->docRoot . '/vendor/bin/phpunit')) {
+      $install = [
+        'phpunit' => [
+          "phpunit/phpunit" => "^6.5",
+          "symfony/phpunit-bridge" => "^3.4.3",
+          "phpspec/prophecy" => "^1.7",
+          "symfony/css-selector" => "^3.4.0",
+          "symfony/debug" => "^3.4.0",
+          "justinrainbow/json-schema" => "^5.2",
+        ],
+      ];
+      $this->installWithComposer($install, 'drupal');
+    }
 
     // Add bin globally.
-    if (!file_exists('/usr/local/bin/phpunit')) {
+    if (!file_exists('/usr/local/bin/phpunit') && file_exists($this->docRoot . '/vendor/bin/phpunit')) {
       $this->symlink($this->docRoot . '/vendor/bin/phpunit', '/usr/local/bin/phpunit');
     }
   }
@@ -669,6 +669,10 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Report root dir for this task.
    */
   public function testBehat($reportRootDir = null) {
+    if ($this->ciDrupalVersion != "8.7") {
+      $this->io()->warning("Drupal > 8.7 not yet supported for Behat tests, skipping");
+      exit();
+    }
     if (!$reportRootDir) {
       $reportRootDir = $this->reportDir;
     }
@@ -701,17 +705,8 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installBehat() {
     $bin = 'behat';
-    if ($this->ciDrupalVersion == "8.8") {
-      $install = [
-        $bin => [
-          'dmore/behat-chrome-extension' => '^1.3.0',
-          'bex/behat-screenshot' => '^1.2',
-          'emuse/behat-html-formatter' => '0.1.*',
-          'drupal/drupal-extension' => '^4.0',
-        ],
-      ];
-    }
-    else {
+
+    if ($this->ciDrupalVersion == "8.7") {
       $install = [
         $bin => [
           'behat/mink' => '1.7.x-dev',
@@ -722,13 +717,12 @@ class RoboFile extends \Robo\Tasks {
           'drupal/drupal-extension' => '^4.0',
         ],
       ];
+      $this->installWithComposer($install, 'drupal');
     }
-
-    $this->installWithComposer($install, 'drupal');
 
     // Add bin to use taskBehat().
     if (!file_exists('/usr/local/bin/behat')) {
-      $this->symlink($this->docRoot . '/vendor/bin/' . $bin, '/usr/local/bin/behat');
+      $this->symlink($this->docRoot . '/vendor/bin/behat', '/usr/local/bin/behat');
     }
   }
 
@@ -1053,10 +1047,47 @@ class RoboFile extends \Robo\Tasks {
       $this->io()->warning("Missing $dir/package.json file.");
     }
     else {
-      // Simply check one of the program.
+
+      // Check one of the program to decide if an install is needed.
       if (!file_exists($dir . '/node_modules/.bin/stylelint')) {
         $this->yarn('install', null, $dir);
       }
+
+      $this->checkChromedriver($dir);
+    }
+  }
+
+  /**
+   * Compare Chrome / Chromedriver and update if needed.
+   *
+   * @param string|null $dir
+   *   (optional) Dir to run the command in.
+   */
+  private function checkChromedriver($dir = null) {
+
+    $chromeVersion = $chromedriverVersion = NULL;
+
+    // Check current versions.
+    $chromeProcess = new Process(['/usr/bin/google-chrome', '--version']);
+    $chromeProcess->run();
+    $chromedriverProcess = new Process([$this->webRoot . '/core/node_modules/.bin/chromedriver', '--version']);
+    $chromedriverProcess->run();
+
+    // Compare major version and upgrade Chromedriver if needed.
+    if ($chromeProcess->isSuccessful() && $chromedriverProcess->isSuccessful()) {
+      $chromeVersion = explode(" ", $chromeProcess->getOutput());
+      $chromeVersion = explode(".", $chromeVersion[2]);
+      $chromedriverVersion = explode(" ", $chromedriverProcess->getOutput());
+      $chromedriverVersion = explode(".", $chromedriverVersion[1]);
+      $chromeVersion = $chromeVersion[0];
+      $chromedriverVersion = $chromedriverVersion[0];
+      if ($chromeVersion != $chromedriverVersion && (int)$chromeVersion > (int)$chromedriverVersion) {
+        $this->say("Try to upgrade Chromedriver to Chrome version $chromeVersion");
+        $this->yarn('upgrade', 'chromedriver@' . $chromeVersion, $dir);
+      }
+    }
+    else {
+      $this->io()->error("Failed to get Chrome or chromedriver version.");
     }
   }
 
@@ -1099,7 +1130,7 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Perform a build for the project.
    *
-   * Depending the type of project, composer will install the codebase from a 
+   * Depending the type of project, composer will install the codebase from a
    * composer.json, or a Drupal project template will be created, or nothing
    * will be installed and we use an included Drupal.
    *

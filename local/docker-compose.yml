@@ -19,7 +19,7 @@ services:
       - "88:80"
       - "4444:4444"
       - "9515:9515"
-      - "9222:9222"
+      # - "9222:9222"
     links:
       - mariadb
     volumes:
@@ -34,7 +34,6 @@ services:
     container_name: ci-drupal
     env_file:
       - .env
-      - .local.env
   mariadb:
     image: mariadb:latest
     expose:
