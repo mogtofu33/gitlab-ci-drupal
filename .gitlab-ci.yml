@@ -242,14 +242,12 @@ Nightwatch Js:
     - curl -f -N ${CI_NIGHTWATCH_ENV} -o ${WEB_ROOT}/core/.env
     - sleep 2s
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
-    # [TEMPORARY] Patch for Nightwatch 1.2+, see https://drupal.org/node/3059356
-    - if [ ${CI_DRUPAL_VERSION} == "8.8" ]; then
-        robo patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch;
-      elif [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
-        robo patch:nightwatch https://www.drupal.org/files/issues/2019-08-30/3059356-51.patch;
-      fi
     # [TEMPORARY] Patch to allow install profile, see https://drupal.org/node/3017176
-    - robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch
+    - if [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
+        robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch;
+      else
+        robo patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch;
+      fi
     # Install from core/package.json
     - robo yarn:install
     # This is the main script, 'yarn install' and 'test:nightwatch' from core folder.

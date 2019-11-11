@@ -1,7 +1,15 @@
 #!/bin/bash
 
 # This script is an helper to run some tests from Gitlab-ci config in a local
-# environment with docker-compose.yml
+# environment with docker-compose.
+
+_SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$_SOURCE" ]; do # resolve $_SOURCE until the file is no longer a symlink
+  _DIR="$( cd -P "$( dirname "$_SOURCE" )" && pwd )"
+  _SOURCE="$(readlink "$_SOURCE")"
+  [[ $_SOURCE != /* ]] && _SOURCE="$_DIR/$_SOURCE" # if $_SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+_DIR="$( cd -P "$( dirname "$_SOURCE" )" && pwd )"
 
 IFS=$'\n\t'
 
@@ -13,89 +21,6 @@ IFS=$'\n\t'
 #
 # Set to the program's basename.
 _ME=$(basename "${0}")
-
-_red=$'\e[1;31m'
-_grn=$'\e[1;32m'
-_blu=$'\e[1;34m'
-_end=$'\e[0m'
-
-# Parse Options ###############################################################
-
-# Initialize program option variables.
-_PRINT_HELP=0
-_DEBUG=0
-
-__skip_prepare=0
-__skip_build=0
-__skip_install=0
-__skip_all=0
-__simulate=""
-__clean=0
-__drupal_profile="minimal"
-
-_CMD=()
-
-while [[ ${#} -gt 0 ]]
-do
-  __option="${1:-}"
-  case "${__option}" in
-    -h|--help)
-      _PRINT_HELP=1
-      shift
-      ;;
-    -sp|--skip-prepare)
-      printf ">>> [NOTICE] skip prepare set\\n"
-      __skip_prepare=1
-      shift
-      ;;
-    -sb|--skip-build)
-      printf ">>> [NOTICE] skip build set\\n"
-      __skip_build=1
-      shift
-      ;;
-    -si|--skip-install)
-      printf ">>> [NOTICE] skip install set\\n"
-      __skip_install=1
-      shift
-      ;;
-    -sa|--skip-all)
-      printf ">>> [NOTICE] skip all\\n"
-      __skip_all=1
-      shift
-      ;;
-    -sim|--simulate)
-      printf ">>> [NOTICE] simulate robo\\n"
-      __simulate="--simulate"
-      __skip_all=1
-      shift
-      ;;
-    --clean)
-      printf ">>> [NOTICE] Clean flag\\n"
-      __clean=1
-      shift
-      ;;
-    --debug)
-      printf ">>> [NOTICE] Debug mode on!\\n"
-      _DEBUG=1
-      shift
-      ;;
-    --full-debug)
-      printf ">>> [NOTICE] FULL Debug mode on!\\n"
-      set -o xtrace
-      shift
-      ;;
-    --endopts)
-      Terminate option parsing.
-      break
-      ;;
-    *)
-      _CMD+=("$1")
-      shift
-      ;;
-  esac
-done
-
-_ARGS=${_CMD[@]:1}
 
 ###############################################################################
 # Help
@@ -154,10 +79,166 @@ Options
   -sim|--simulate                 Robo simulate action.
   --clean                         Delete previous reports.
   --debug                         Debug this script.
-  --full-debug                    Debug this script.
+  --debug-fail                    Debug this script, stop on any error.
 
 HEREDOC
 }
+
+###############################################################################
+# Die
+###############################################################################
+
+# _die()
+#
+# Usage:
+#   _die printf "Error message. Variable: %s\n" "$0"
+#
+# A simple function for exiting with an error after executing the specified
+# command. The command is expected to print a message and should typically
+# be either `echo`, `printf`, or `cat`.
+_die() {
+  # Prefix die message with "cross mark (U+274C)", often displayed as a red x.
+  printf "❌  "
+  "${@}" 1>&2
+  exit 1
+}
+# die()
+#
+# Usage:
+#   die "Error message. Variable: $0"
+#
+# Exit with an error and print the specified message.
+#
+# This is a shortcut for the _die() function that simply echos the message.
+die() {
+  _die echo "${@}"
+}
+
+###############################################################################
+# Debug
+###############################################################################
+
+# _debug()
+#
+# Usage:
+#   _debug printf "Debug info. Variable: %s\n" "$0"
+#
+# A simple function for executing a specified command if the `$_USE_DEBUG`
+# variable has been set. The command is expected to print a message and
+# should typically be either `echo`, `printf`, or `cat`.
+__DEBUG_COUNTER=0
+_debug() {
+  if [[ "${_USE_DEBUG:-"0"}" -eq 1 ]]
+  then
+    __DEBUG_COUNTER=$((__DEBUG_COUNTER+1))
+    # Prefix debug message with "bug (U+1F41B)"
+    printf "🐛  %s " "${__DEBUG_COUNTER}"
+    "${@}"
+    printf "――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――\\n"
+  fi
+}
+# debug()
+#
+# Usage:
+#   debug "Debug info. Variable: $0"
+#
+# Print the specified message if the `$_USE_DEBUG` variable has been set.
+#
+# This is a shortcut for the _debug() function that simply echos the message.
+debug() {
+  _debug echo "${@}"
+}
+
+# Program Options #############################################################
+
+_red=$'\e[1;31m'
+_grn=$'\e[1;32m'
+_blu=$'\e[1;34m'
+_end=$'\e[0m'
+
+# Parse Options ###############################################################
+
+# Initialize program option variables.
+_PRINT_HELP=0
+_USE_DEBUG=0
+
+# Initialize additional expected option variables.
+__skip_prepare=0
+__skip_build=0
+__skip_install=0
+__skip_all=0
+__simulate=""
+__clean=0
+__drupal_profile="minimal"
+
+_CMD=()
+
+while [[ ${#} -gt 0 ]]
+do
+  __option="${1:-}"
+  case "${__option}" in
+    -h|--help)
+      _PRINT_HELP=1
+      shift
+      ;;
+    -sp|--skip-prepare)
+      printf ">>> [NOTICE] skip prepare set\\n"
+      __skip_prepare=1
+      shift
+      ;;
+    -sb|--skip-build)
+      printf ">>> [NOTICE] skip build set\\n"
+      __skip_build=1
+      shift
+      ;;
+    -si|--skip-install)
+      printf ">>> [NOTICE] skip install set\\n"
+      __skip_install=1
+      shift
+      ;;
+    -sa|--skip-all)
+      printf ">>> [NOTICE] skip all\\n"
+      __skip_all=1
+      shift
+      ;;
+    -sim|--simulate)
+      printf ">>> [NOTICE] simulate robo\\n"
+      __simulate="--simulate"
+      __skip_all=1
+      shift
+      ;;
+    --clean)
+      printf ">>> [NOTICE] Clean flag\\n"
+      __clean=1
+      shift
+      ;;
+    --debug)
+      printf ">>> [NOTICE] Debug mode on!\\n"
+      _USE_DEBUG=1
+      shift
+      ;;
+    --debug-fail)
+      printf ">>> [NOTICE] Debug fail stop mode on!\\n"
+      _USE_DEBUG=1
+      trap 'echo "Aborting due to errexit on line $LINENO. Exit code: $?" >&2' ERR
+      set -u -e -E -o pipefail
+      shift
+      ;;
+    --endopts)
+      # Terminate option parsing.
+      break
+      ;;
+    -*)
+      _die printf "Unexpected option: %s\\n" "${__option}"
+      ;;
+    *)
+      _CMD+=("$1")
+      shift
+      ;;
+  esac
+done
+
+_ARGS=${_CMD[@]:1}
 
 ###############################################################################
 # Program Functions
@@ -165,8 +246,8 @@ HEREDOC
 
 _status() {
 
-  printf "DRUPAL_VERSION: %s\\nCI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
-  ${DRUPAL_VERSION} ${CI_TYPE} ${DOC_ROOT} ${WEB_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
+  printf "CI_DRUPAL_VERSION: %s\\nCI_TYPE: %s\\nDOC_ROOT: %s\\nWEB_ROOT: %s\\nCI_PROJECT_DIR: %s\\nREPORT_DIR: %s\\n" \
+  ${CI_DRUPAL_VERSION} ${CI_TYPE} ${DOC_ROOT} ${WEB_ROOT} ${CI_PROJECT_DIR} ${REPORT_DIR}
   printf "APACHE_RUN_USER: %s\\nAPACHE_RUN_GROUP: %s\\nPHPUNIT_TESTS: %s\\nBROWSERTEST_OUTPUT_DIRECTORY: %s\\n" \
   ${APACHE_RUN_USER} ${APACHE_RUN_GROUP} ${PHPUNIT_TESTS} ${BROWSERTEST_OUTPUT_DIRECTORY}
 
@@ -198,7 +279,7 @@ _tests_prepare() {
     printf ">>> [NOTICE] tests_prepare\\n"
 
     _prepare_folders
-    
+
     # Apache launch is entrypoint.
     # docker exec -d ci-drupal bash -c "apache2-foreground"
 
@@ -327,16 +408,18 @@ _functional() {
 
 _functional_js() {
   printf "\\n%s[INFO]%s Perform job 'Functional Js' (functional_js)\\n\\n" "${_blu}" "${_end}"
-  # Starting Chromedriver.
-  docker exec -d ci-drupal /scripts/start-chromedriver.sh
-  sleep 5s
 
   _build
   _tests_prepare
 
-  if [ ${_DEBUG} == "1" ]; then
+  # Starting Chromedriver.
+  docker exec -d ci-drupal /scripts/start-chromedriver.sh
+  sleep 5s
+
+  if [ ${_USE_DEBUG} == "1" ]; then
+    # debug _dkexec_bash "curl -s http://localhost:4444/status | jq '.'"
     _dkexec_bash "curl -s http://localhost:4444/status | jq '.'"
-    _dkexec curl -d '{"desiredCapabilities":{"browserName":"chrome","name":"Behat Test","chromeOptions":{"w3c":false,"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}}' -H "Content-Type: application/json" -X POST http://ci-chromedriver:4444/wd/hub/session >> /var/www/${REPORT_DIR}/webdriver.log
+    # _dkexec curl -d '{"desiredCapabilities":{"browserName":"chrome","name":"Behat Test","chromeOptions":{"w3c":false,"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox","--window-size=1920,1080"]}}}' -H "Content-Type: application/json" -X POST http://ci-chromedriver:4444/wd/hub/session >> /var/www/${REPORT_DIR}/webdriver.log
   fi
 
   _dkexec_apache robo $__simulate test:suite ${PHPUNIT_TESTS}functional-javascript "null" "/var/www/${REPORT_DIR}"
@@ -350,20 +433,18 @@ _nightwatch() {
   _build
   _tests_prepare
 
-  _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/.env.nightwatch ${WEB_ROOT}/core/.env
+  _dkexec curl -f -N ${CI_NIGHTWATCH_ENV} -o ${WEB_ROOT}/core/.env
   _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js
 
   if [ $__skip_install = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] patch_nightwatch\\n"
   else
-    if [ ${DRUPAL_VERSION} == "8.8" ]; then _dkexec_docroot robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-28/3059356-46.patch; fi
-    if [ ${DRUPAL_VERSION} == "8.7" ]; then _dkexec_docroot robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-08-30/3059356-51.patch; fi
+    _dkexec_docroot robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch
   fi
 
   _dkexec_docroot robo $__simulate yarn:install
 
   _dkexec_docroot robo $__simulate test:nightwatch
-
 }
 
 _security_checker() {
@@ -372,7 +453,7 @@ _security_checker() {
   _build
 
   _prepare_folders
-  
+
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/security \
     --tools security-checker:0 \
@@ -388,7 +469,7 @@ _behat() {
 
   _prepare_folders
 
-  _PROFILE=$(yq r ./.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
+  _PROFILE=$(yq r $_DIR/../.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
   _install_drupal_robo $_PROFILE
 
   # Starting Chrome.
@@ -396,8 +477,8 @@ _behat() {
   docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   sleep 5s
 
-  if [ ${_DEBUG} == "1" ]; then
-    _dkexec_bash "curl -s http://localhost:9222/json/version | jq '.'"
+  if [ ${_USE_DEBUG} == "1" ]; then
+    debug _dkexec_bash "curl -s http://localhost:9222/json/version | jq '.'"
   fi
 
   _dkexec_docroot robo $__simulate install:behat
@@ -413,7 +494,7 @@ _pa11y() {
 
   _prepare_folders
 
-  _PROFILE=$(yq r ./.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
+  _PROFILE=$(yq r $_DIR/../.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
   _install_drupal_robo $_PROFILE
 
   _dkexec_docroot robo $__simulate install:pa11y
@@ -469,9 +550,9 @@ _eslint() {
 
   _dkexec mkdir -p ${DOC_ROOT}/core
 
-  _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.json -o ${WEB_ROOT}/core/.eslintrc.json
+  _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${CI_DRUPAL_VERSION}.x/core/.eslintrc.json -o ${WEB_ROOT}/core/.eslintrc.json
 
-  _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.eslintrc.passing.json -o ${WEB_ROOT}/core/.eslintrc.passing.json
+  _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${CI_DRUPAL_VERSION}.x/core/.eslintrc.passing.json -o ${WEB_ROOT}/core/.eslintrc.passing.json
 
   _dkexec_bash "${WEB_ROOT}/core/node_modules/.bin/eslint \
     --config ${WEB_ROOT}/core/.eslintrc.passing.json \
@@ -492,7 +573,7 @@ _stylelint() {
   _prepare_folders
 
   _dkexec mkdir -p ${DOC_ROOT}/core
-  _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${DRUPAL_VERSION}.x/core/.stylelintrc.json -o ${WEB_ROOT}/core/.stylelintrc.json
+  _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${CI_DRUPAL_VERSION}.x/core/.stylelintrc.json -o ${WEB_ROOT}/core/.stylelintrc.json
 
   # printf ">>> [NOTICE] Install Stylelint-formatter-pretty\\n"
   # _dkexec_docroot robo $__simulate install:stylelint-formatter-pretty
@@ -566,35 +647,35 @@ _phpstats() {
 
 _dkexec() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
     docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
   fi
 }
 
 _dkexec_docroot() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
     docker exec -it -w ${DOC_ROOT} ci-drupal "$@" || true
   fi
 }
 
 _dkexec_apache() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
     docker exec -it -w ${DOC_ROOT} -u www-data ci-drupal "$@" || true
   fi
 }
 
 _dkexec_background() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
     docker exec -d -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
   fi
 }
 
 _dkexec_bash() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_DEBUG)); then printf " :::: [DEBUG] %s called by %s\\n" "$FUNCNAME" "${FUNCNAME[1]}"; echo "$@"; fi
+    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
     docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
   fi
 }
@@ -615,8 +696,6 @@ _install_drupal() {
   printf "\\n%s[INFO]%s Install Drupal\\n\\n" "${_blu}" "${_end}"
 
   _build
-  # _tests_prepare
-
   _prepare_folders
 
   _install_drupal_robo ${1:'minimal'}
@@ -635,8 +714,6 @@ _set_dev_mode() {
   printf "\\n%s[INFO]%s Set dev mode\\n\\n" "${_blu}" "${_end}"
 
   _build
-  # _tests_prepare
-
   _prepare_folders
 
   _dkexec_apache composer require drupal/console drupal/devel drupal/devel_php
@@ -645,8 +722,8 @@ _set_dev_mode() {
 }
 
 _init_variables() {
-  __yaml="./.gitlab-ci.yml"
-  __yaml_variables="./.gitlab-ci/.gitlab-ci-variables.yml"
+  __yaml="$_DIR/../.gitlab-ci.yml"
+  __yaml_variables="$_DIR/../.gitlab-ci/.gitlab-ci-variables.yml"
 
   VERBOSE=$(yq r $__yaml_variables variables.VERBOSE)
   CI_TYPE=$(yq r $__yaml_variables variables.CI_TYPE)
@@ -661,6 +738,7 @@ _init_variables() {
   NIGHTWATCH_TESTS=$(yq r $__yaml_variables variables.NIGHTWATCH_TESTS)
   JS_CODE=$(yq r $__yaml_variables variables.JS_CODE)
   CSS_FILES=$(yq r $__yaml_variables variables.CSS_FILES)
+  CI_NIGHTWATCH_ENV=$(yq r $__yaml_variables variables.CI_NIGHTWATCH_ENV)
 
   DRUPAL_SETUP_FROM_CONFIG=$(yq r $__yaml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
   APACHE_RUN_USER=$(yq r $__yaml [.test_variables].APACHE_RUN_USER)
@@ -669,22 +747,27 @@ _init_variables() {
   BROWSERTEST_OUTPUT_DIRECTORY=$(echo $BROWSERTEST_OUTPUT_DIRECTORY | sed "s#\${WEB_ROOT}#${WEB_ROOT}#g")
   DRUPAL_INSTALL_PROFILE="standard"
 
-  if [ -f "local/.env" ]; then
-    head -n 9 local/.env > local/.env.tmp
-    source local/.env.tmp
-    rm -f local/.env.tmp
-  fi
-
-  # Overriden variables (simulate Gitlab-CI UI)
-  if [ -f "local/.local.env" ]; then
-    source local/.local.env
-  else
-    touch local/.local.env
+  if [ -f "$_DIR/.env" ]; then
+    head -n 9 $_DIR/.env > $_DIR/.env.tmp
+    source $_DIR/.env.tmp
+    rm -f $_DIR/.env.tmp
   fi
 }
 
 _init() {
   _init_variables
+}
+
+_init_stack() {
+  if [ ! "$(docker ps -q -f name=ci-drupal)" ]; then
+      if [ "$(docker ps -aq -f status=exited -f name=ci-drupal)" ]; then
+        # cleanup
+        _down
+      fi
+      _up
+      # Wait for Mariadb to be ready.
+      sleep 20s
+  fi
 }
 
 _generate_env_from_yaml() {
@@ -695,19 +778,19 @@ _generate_env_from_yaml() {
     curl -fsSL https://github.com/mikefarah/yq/releases/download/2.4.0/yq_linux_amd64 -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
   fi
 
-  if ! [ -f "./.gitlab-ci.yml" ]; then
+  if ! [ -f "$_DIR/../.gitlab-ci.yml" ]; then
     printf "%s[ERROR]%s Missing .gitlab-ci.yml file.\\n" "${_red}" "${_end}"
     exit 1
   fi
 
-  if ! [ -f "./.gitlab-ci/.gitlab-ci-variables.yml" ]; then
+  if ! [ -f "$_DIR/../.gitlab-ci/.gitlab-ci-variables.yml" ]; then
     printf "%s[ERROR]%s Missing .gitlab-ci-variables.yml file.\\n" "${_red}" "${_end}"
     exit 1
   fi
 
-  __yaml="./.gitlab-ci.yml"
-  __yaml_variables="./.gitlab-ci/.gitlab-ci-variables.yml"
-  __env="./local/.env"
+  __yaml="$_DIR/../.gitlab-ci.yml"
+  __yaml_variables="$_DIR/../.gitlab-ci/.gitlab-ci-variables.yml"
+  __env="$_DIR/.env"
 
   if [ -f $__env ]; then
     rm -f $__env
@@ -738,8 +821,8 @@ _generate_env_from_yaml() {
   # Treat 1 / 0 options without double quotes.
   sed -i 's#"1"#1#g' $__env
   sed -i 's#"0"#0#g' $__env
-  # Remove quotes on DRUPAL_VERSION.
-  sed -i 's#DRUPAL_VERSION="8\(.*\)"#DRUPAL_VERSION=8\1#g' $__env
+  # Remove quotes on CI_DRUPAL_VERSION.
+  sed -i 's#CI_DRUPAL_VERSION="8\(.*\)"#CI_DRUPAL_VERSION=8\1#g' $__env
 
   # Remove single quotes
   sed -i "s#'##g" $__env
@@ -792,34 +875,26 @@ _nuke() {
 }
 
 _up() {
-  if ! [ -f "./local/.env" ]; then
-    printf "[NOTICE] Generate .env file for %s-%s\\n"  "${DRUPAL_VERSION}" "${CI_IMAGE_VARIANT}"
+  if ! [ -f "$_DIR/.env" ]; then
+    printf "[NOTICE] Generate .env file for %s-%s\\n"  "${CI_DRUPAL_VERSION}" "${CI_IMAGE_VARIANT}"
     _generate_env_from_yaml
   fi
 
-  if [ -f "./local/docker-compose.yml" ]; then
-    docker-compose --project-directory local -f local/docker-compose.yml up -d
+  if [ -f "$_DIR/docker-compose.yml" ]; then
+    docker-compose --project-directory $_DIR -f $_DIR/docker-compose.yml up -d
   else
-    if [ -f "docker-compose.yml" ]; then
-      docker-compose up -d
-    else
-      printf "%s[ERROR]%s Missing docker-compose.yml file.\\n" "${_red}" "${_end}"
-      exit 1
-    fi
+    printf "%s[ERROR]%s Missing $_DIR/docker-compose.yml file.\\n" "${_red}" "${_end}"
+    exit 1
   fi
   printf "[NOTICE] Please wait ~20s for DB to be initialized...\\n"
 }
 
 _down() {
-  if [ -f "local/docker-compose.yml" ]; then
-    docker-compose --project-directory local -f local/docker-compose.yml down
+  if [ -f "$_DIR/docker-compose.yml" ]; then
+    docker-compose --project-directory $_DIR -f $_DIR/docker-compose.yml down
   else
-    if [ -f "docker-compose.yml" ]; then
-      docker-compose down
-    else
-      printf "%s[ERROR]%s Missing docker-compose.yml file.\\n" "${_red}" "${_end}"
-      exit 1
-    fi
+    printf "%s[ERROR]%s Missing $_DIR/docker-compose.yml file.\\n" "${_red}" "${_end}"
+    exit 1
   fi
 }
 
@@ -945,6 +1020,7 @@ _main() {
   __call="_${_CMD}"
   if [ "$(type -t "${__call}")" == 'function' ]; then
     _init_variables
+    _init_stack
     $__call
   else
     printf "%s[ERROR]%s Unknown command: %s\\nRun --help for usage.\\n" "${_red}" "${_end}" "${_CMD}"
