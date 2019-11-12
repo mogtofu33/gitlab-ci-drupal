@@ -1,7 +1,12 @@
 # Gitlab CI with Drupal 8
 
-[![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
-[![pipeline status testing](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing)
+Drupal 8.7: [![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
+
+Drupal 8.7 testing: [![pipeline status 8.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/8.x-dev)
+
+Drupal 8.8.0-beta1: [![pipeline status 8.8.0-beta1](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.8)
+
+Drupal 8.9.x-dev: [![pipeline status 8.9.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.9)
 
 <img src="https://www.drupal.org/sites/all/themes/drupalorg_themes/blueprint/images/logo-d8.svg"  width="120" height="120"> +
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png"  width="120" height="120">
@@ -78,7 +83,7 @@ SKIP_LINT_JS            1
 
 ![gitlab-variables](https://gitlab.com/mog33/gitlab-ci-drupal/uploads/3676704eb083be3edf9035aaadebe10c/gitlab-ci-drupal-variables.jpg)
 
-- Create a branch **testing** and push to Gitlab.
+- Create a branch **8.x-dev** and push to Gitlab.
 
 Check your project pipeline or
 [Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines)
@@ -103,7 +108,7 @@ template](https://github.com/drupal-composer/drupal-project).
 - Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
 project (same level as `composer.json` file).
 - Put your code in the `web/modules/custom` and `web/themes/custom` folders of your project.
-- Create a branch **testing** and push to Gitlab.
+- Create a branch **8.x-dev** and push to Gitlab.
 
 Check your project pipeline or
 [Run a pipeline from Gitlab UI](https://docs.gitlab.com/ee/ci/pipelines.html#manually-executing-pipelines)
@@ -195,9 +200,10 @@ skip variables are:
 
 If you want to choose when to run the tests, you can adapt rules in
 `.gitlab-ci.yml`, see
-[Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
+[Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-basic)
 
-Tests (and Build) are by default on a branch `testing` and on all `tags`
+Tests (and Build) are by default on a branches `8.x-dev, 8.x-1.x, testing` and
+on all `tags`
 
 ```yaml
 .test_except_only: &test_except_only
@@ -215,41 +221,18 @@ Tests (and Build) are by default on a branch `testing` and on all `tags`
 ```
 
 QA and Lint is run by default on all `branches`, you can adapt on each jobs
+by editing `only: except:`
 
-```yaml
-  except:
-    variables:
-      - $SKIP_QA == "1"
-#...
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-```
+Metrics jobs are by default on each push on `master` and all `tags`.
 
-Metrics jobs are by default on each push on `master` and all `tags`
-
-```yaml
-  except:
-    variables:
-      - $SKIP_METRICS == "1"
-```
-
-Deploy jobs are disabled by default, you have to set in Gitlab UI a variable:
+Deploy jobs are disabled by default, you have to set in **Gitlab UI** a variable:
 
 ```bash
 SKIP_DEPLOY 0
 ```
 
 Then deploy jobs run by default on each push on `master` and `tag`. And they are
-all set manual by default (must be manually started on the pipeline)
-
-```yaml
-  except:
-    variables:
-      - $SKIP_DEPLOY == "1"
-#...
-  when: manual
-```
+all set manual by default (must be manually started on the pipeline).
 
 ## Workflow proposed
 
@@ -260,10 +243,10 @@ security, qa, lint, manual deploy to test.
 A branch _master_ trigger qa, lint, manual deploy
 
 You can adapt _only_ and _except_ for your own workflow, see
-[Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified)
+[Gitlab documentation](https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-basic)
 and section [Triggering pipeline](#triggering-pipeline)
 
-Deploy jobs are disabled by default, you have to set in Gitlab UI a variable:
+Deploy jobs are disabled by default, you have to set in **Gitlab UI** a variable:
 
 ```bash
 SKIP_DEPLOY 0
@@ -354,7 +337,7 @@ for demo and test purpose.
 Code coverage job support [Codecov.io](https://codecov.io/).
 
 After creating an account on [Codecov.io](https://codecov.io/), create from the
-Gitlab UI _> Settings > CI / CD > Variables_ a variable `CODECOV_TOKEN` with
+**Gitlab UI** _> Settings > CI / CD > Variables_ a variable `CODECOV_TOKEN` with
 your token value.
 
 ### Rules for linting / Code standards / QA
@@ -487,8 +470,6 @@ quality and analysis tools:
 ## Issues
 
 - Behat tests only works on Drupal 8.7, not for 8.8+
-
-- Code coverage seems broken.
 
 ## Future plan
 

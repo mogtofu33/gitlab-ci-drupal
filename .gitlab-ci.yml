@@ -43,7 +43,10 @@ stages:
   # Skipped if variable SKIP_TEST is set in .gitlab-ci-variables.yml or as
   # variable on Gitlab UI.
   # For more options see
-  #   https://docs.gitlab.com/ee/ci/yaml/#only-and-except-simplified
+  #   https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
+  # Rule here is:
+  # Run on all tags, branches 8.x-1.x, 8.x-dev, testing, NOT on master OR if
+  # variable SKIP_TESTS is set to 1
   except:
     refs:
       - master
@@ -54,6 +57,9 @@ stages:
       - 8.x-1.x
       - 8.x-dev
       - testing
+      # Demo branch testing against next Drupal versions.
+      - testing-8.8
+      - testing-8.9
       - tags
 
 # Reports produced and visible in job report.
@@ -513,8 +519,6 @@ Sass lint:
 .metrics_template:
   only:
     refs:
-      - 8.x-1.x
-      - 8.x-dev
       - master
       - tags
   except:
