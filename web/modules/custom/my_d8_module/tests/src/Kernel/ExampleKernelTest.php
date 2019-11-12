@@ -4,6 +4,7 @@ namespace Drupal\Tests\my_d8_module\Kernel;
 
 use Drupal\block\Entity\Block;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\my_d8_module\DemoModuleExampleService;
 
 /**
  * Test Kernel.
@@ -13,45 +14,36 @@ use Drupal\KernelTests\KernelTestBase;
 class ExampleKernelTest extends KernelTestBase {
 
   /**
-   * {@inheritdoc}
+   * The service under test.
+   *
+   * @var \Drupal\my_d8_module\DemoModuleExampleService
    */
-  public static $modules = ['block', 'system', 'user'];
+  protected $myService;
+
+  /**
+   * The modules to load to run the test.
+   *
+   * @var array
+   */
+  public static $modules = [
+    'my_d8_module',
+  ];
 
   /**
    * {@inheritdoc}
    */
   protected function setUp() {
     parent::setUp();
-    $this->container
-      ->get('entity_type.manager')
-      ->getStorage('block')
-      ->create([
-        'id' => 'test_block',
-        'theme' => 'stark',
-        'plugin' => 'system_powered_by_block',
-      ])
-      ->save();
+
+    $this->installConfig(['my_d8_module']);
+
+    $this->myService = new DemoModuleExampleService(TRUE);
   }
 
   /**
-   * Test callback.
+   * @covers Drupal\my_d8_module\DemoModuleExampleService::isDummy
    */
-  public function testBlockRendering() {
-    $entity = Block::load('test_block');
-
-    $build = \Drupal::entityTypeManager()
-      ->getViewBuilder($entity->getEntityTypeId())
-      ->view($entity);
-
-    $content = $this
-      ->container
-      ->get('renderer')
-      ->renderRoot($build);
-
-    $this->assertTrue(
-      strpos(strip_tags($content), 'Powered by Drupal') !== FALSE,
-      'Valid block content was found.'
-    );
+  public function testIsDummy() {
+    $this->assertEquals($this->myService->isDummy(), TRUE);
   }
-
 }

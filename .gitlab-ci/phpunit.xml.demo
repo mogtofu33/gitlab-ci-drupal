@@ -14,18 +14,43 @@
     <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
   </php>
   <testsuites>
+    <testsuite name="unit">
+      <file>./tests/TestSuites/UnitTestSuite.php</file>
+    </testsuite>
+    <testsuite name="kernel">
+      <file>./tests/TestSuites/KernelTestSuite.php</file>
+    </testsuite>
+    <testsuite name="functional">
+      <file>./tests/TestSuites/FunctionalTestSuite.php</file>
+    </testsuite>
+    <testsuite name="functional-javascript">
+      <file>./tests/TestSuites/FunctionalJavascriptTestSuite.php</file>
+    </testsuite>
+    <!-- Prefix with custom for only custom folders -->
+    <testsuite name="customunit">
+      <directory>../**/custom/**/tests/src/Unit</directory>
+    </testsuite>
+    <testsuite name="customkernel">
+      <directory>../**/custom/**/tests/src/Kernel</directory>
+    </testsuite>
+    <testsuite name="customfunctional">
+      <directory>../**/custom/**/tests/src/Functional</directory>
+    </testsuite>
+    <testsuite name="customfunctional-javascript">
+      <directory>../**/custom/**/tests/src/FunctionalJavascript</directory>
+    </testsuite>
     <!-- Demo only purpose, run one core module tests -->
     <testsuite name="demounit">
-      <directory>./modules/action/tests/src/Unit</directory>
+      <directory>../**/custom/**/tests/src/Unit</directory>
     </testsuite>
     <testsuite name="demokernel">
-      <directory>./modules/action/tests/src/Kernel</directory>
+      <directory>../**/custom/**/tests/src/Kernel</directory>
     </testsuite>
     <testsuite name="demofunctional">
-      <directory>./modules/action/tests/src/Functional</directory>
+      <directory>../**/custom/**/tests/src/Functional</directory>
     </testsuite>
     <testsuite name="demofunctional-javascript">
-      <directory>./modules/action/tests/src/FunctionalJavascript</directory>
+      <directory>../**/custom/**/tests/src/FunctionalJavascript</directory>
     </testsuite>
   </testsuites>
   <listeners>
@@ -38,7 +63,7 @@
   <!-- Filter for coverage reports. -->
   <filter>
     <whitelist processUncoveredFilesFromWhitelist="true">
-      <directory>./modules/action</directory>
+      <directory>../modules/custom</directory>
       <exclude>
         <directory suffix="Test.php">./</directory>
         <directory suffix="TestBase.php">./</directory>

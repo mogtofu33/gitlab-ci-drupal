@@ -284,7 +284,8 @@ _tests_prepare() {
     # docker exec -d ci-drupal bash -c "apache2-foreground"
 
     # Prepare needed folders, reproduce .test_template
-    _dkexec cp -u ${CI_PROJECT_DIR}/local/phpunit.local.xml ${WEB_ROOT}/core/phpunit.xml
+    # _dkexec cp -f ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${WEB_ROOT}/core/phpunit.xml
+    _dkexec cp -u ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.demo ${WEB_ROOT}/core/phpunit.xml
 
     # RoboFile.php is already at root.
     _dkexec_docroot robo $__simulate ensure:tests-folders
@@ -935,7 +936,7 @@ _clean_browser_output() {
 }
 
 _clean_config() {
-  rm -f .env.nightwatch .eslintignore .phpmd.xml .phpqa.yml .sass-lint.yml phpunit.local.xml phpunit.xml RoboFile.php
+  rm -f .env.nightwatch .eslintignore .phpmd.xml .phpqa.yml .sass-lint.yml phpunit.xml.demo phpunit.xml RoboFile.php
 }
 
 ###############################################################################
