@@ -52,8 +52,8 @@ article[role="main"] {
 .error,
 .warning {
   padding: 10px;
-  border: 1px solid #ccc;
   color: #333;
+  border: 1px solid #ccc;
 }
 
 .success {
