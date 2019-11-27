@@ -434,15 +434,24 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) The profile to install, default to minimal.
    */
   public function installDrupal($profile = null) {
+    // Ensure permissions.
+    $dir = $this->webRoot . '/sites/default/files';
+    $this->taskFilesystemStack()
+      ->mkdir($dir)
+      ->chown($dir, $this->apacheUser, true)
+      ->chgrp($dir, $this->apacheGroup, true)
+      ->chmod($dir, 0777, 0000, true)
+      ->run();
 
     if (!$profile) {
       $profile = $this->setupProfile;
     }
     $this->say("Installing Drupal with $profile...");
 
-    if (file_exists($this->dbDump . '/dump-' . $profile . '.sql')) {
-      $this->say("Import dump $this->dbDump/dump-$profile.sql");
-      $this->_exec('mysql -hmariadb -uroot drupal < ' . $this->dbDump . '/dump-' . $profile . '.sql;');
+    $filename = $this->dbDump . '/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql';
+    if (file_exists($filename)) {
+      $this->say("Import dump $filename");
+      $this->_exec('mysql -hmariadb -uroot drupal < ' . $filename . ';');
 
       // When install from dump we need to be sure settings.php is correct.
       $settings = file_get_contents($this->ciDrupalSettings);
@@ -462,6 +471,7 @@ class RoboFile extends \Robo\Tasks {
       $this->setupDrupal($profile);
       $this->dumpDrupal($profile);
     }
+
     $this->checkDrupal();
   }
 
@@ -524,7 +534,7 @@ class RoboFile extends \Robo\Tasks {
     }
     $this->drush()
       ->args('sql:dump')
-      ->option('result-file', $this->dbDump . '/dump-' . $profile . '.sql', '=')
+      ->option('result-file', $this->dbDump . '/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql', '=')
       ->run();
   }
 
@@ -1141,6 +1151,7 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Flag to force the drupal setup.
    */
   public function projectBuild($dir = null, $forceInstall = false) {
+    $this->say("Drupal: $this->ciDrupalVersion");
     $this->say("Build for type: $this->ciType");
 
     if (!$dir) {
