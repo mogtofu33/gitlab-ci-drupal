@@ -6,14 +6,14 @@ ol {
 }
 
 body {
-  font-family: Helvetica, Arial, Verdana, Tahoma, sans-serif;
   color: #333;
+  font-family: Helvetica, Arial, Verdana, Tahoma, sans-serif;
 }
 
 body > #container {
-  text-align: left;
-  margin: 0 auto;
   width: 500px;
+  margin: 0 auto;
+  text-align: left;
 }
 
 nav {
@@ -51,8 +51,8 @@ article[role="main"] {
 .success,
 .error,
 .warning {
-  border: 1px solid #ccc;
   padding: 10px;
+  border: 1px solid #ccc;
   color: #333;
 }
 
