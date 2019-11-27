@@ -215,6 +215,7 @@ Functional:
     # For functional tests the user need to be the Apache user.
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
   after_script:
+    - mkdir -p ${REPORT_DIR}/functional/
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/ || true
 
 Functional Js:
@@ -231,6 +232,7 @@ Functional Js:
     - curl -s http://localhost:9515/status | jq '.' || true
     - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
   after_script:
+    - mkdir -p ${REPORT_DIR}/functional-javascript/
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ || true
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.png ${REPORT_DIR}/functional-javascript/ || true
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.jpg ${REPORT_DIR}/functional-javascript/ || true
