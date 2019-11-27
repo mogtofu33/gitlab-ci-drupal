@@ -699,7 +699,7 @@ _install_drupal() {
   _build
   _prepare_folders
 
-  _install_drupal_robo ${1:'minimal'}
+  _install_drupal_robo ${_ARGS:-'minimal'}
 }
 
 _install_drupal_robo() {
