@@ -1,10 +1,6 @@
 # Gitlab CI with Drupal 8
 
-Drupal 8.7: [![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
-
-Drupal 8.7 testing: [![pipeline status 8.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/8.x-dev)
-
-Drupal 8.8.0-beta1: [![pipeline status 8.8.0-beta1](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.8)
+Drupal 8.8: [![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
 
 Drupal 8.9.x-dev: [![pipeline status 8.9.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.9)
 
@@ -60,8 +56,8 @@ accounts.
 
 ```bash
 CI_IMAGE_VARIANT        drupal
-# 8.7, 8.8 to test 8.8.0-beta1 or 8.9 for 8.9.x-dev
-CI_DRUPAL_VERSION       8.7
+# 8.7, 8.8 or 8.9 for 8.9.x-dev
+CI_DRUPAL_VERSION       8.8
 CI_TYPE                 module
 WEB_ROOT                /var/www/html
 PHP_CODE_QA             /var/www/html/modules/custom
