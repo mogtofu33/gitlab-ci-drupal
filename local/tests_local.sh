@@ -254,12 +254,12 @@ _status() {
   _dkexec_bash /scripts/run-tests.sh
   sleep 2s
 
-  docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.sh"
+  # docker exec -d ci-drupal bash -c "/scripts/start-selenium-standalone.sh"
   docker exec -d ci-drupal bash -c "/scripts/start-chrome.sh"
   sleep 2s
 
-  printf "Selenium running? (If nothing, no!)\\n"
-  _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
+  # printf "Selenium running? (If nothing, no!)\\n"
+  # _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
 
   printf "Chrome running? (If nothing, no!)\\n"
   _dkexec_bash "curl -s http://localhost:9222/json/version | jq '.'"

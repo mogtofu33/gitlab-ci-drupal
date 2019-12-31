@@ -154,7 +154,7 @@ class RoboFile extends \Robo\Tasks {
    *   The drupal version used, look at env values for This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
-  protected $ciDrupalVersion = "8.7";
+  protected $ciDrupalVersion = "8.8";
 
   /**
    * CI_DRUPAL_SETTINGS context.
@@ -627,7 +627,14 @@ class RoboFile extends \Robo\Tasks {
    */
   private function phpUnit($module = null, $testsuite = null) {
 
-    $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
+    if (file_exists($this->docRoot . '/vendor/bin/phpunit')) {
+      $phpunitBin = $this->docRoot . '/vendor/bin/phpunit';
+    }
+    elseif (file_exists($this->composerHome . '/vendor/bin/phpunit')) {
+      $phpunitBin = $this->composerHome . '/vendor/bin/phpunit';
+    }
+
+    $task = $this->taskPhpUnit($phpunitBin)
       ->configFile($this->webRoot . '/core');
 
     if ($this->verbose) {
@@ -652,22 +659,25 @@ class RoboFile extends \Robo\Tasks {
    * @return array
    */
   public function installPhpunit() {
-    if (!file_exists($this->docRoot . '/vendor/bin/phpunit')) {
+
+    if (!file_exists('/usr/local/bin/phpunit')) {
       $install = [
         'phpunit' => [
-          "phpunit/phpunit" => "^6.5",
+          "mikey179/vfsstream" => "^1.6.8",
+          "phpunit/phpunit" => "^6.5 || ^7",
           "symfony/phpunit-bridge" => "^3.4.3",
           "phpspec/prophecy" => "^1.7",
           "symfony/css-selector" => "^3.4.0",
           "symfony/debug" => "^3.4.0",
           "justinrainbow/json-schema" => "^5.2",
+          "symfony/filesystem" => "~3.4.0",
+          "symfony/finder" => "~3.4.0",
+          "symfony/lock" => "~3.4.0",
+          "symfony/browser-kit" => "^3.4.0"
         ],
       ];
       $this->installWithComposer($install, 'drupal');
-    }
-
-    // Add bin globally.
-    if (!file_exists('/usr/local/bin/phpunit') && file_exists($this->docRoot . '/vendor/bin/phpunit')) {
+      // Add bin globally.
       $this->symlink($this->docRoot . '/vendor/bin/phpunit', '/usr/local/bin/phpunit');
     }
   }
