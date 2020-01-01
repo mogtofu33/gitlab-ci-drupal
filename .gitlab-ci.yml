@@ -141,8 +141,8 @@ Build:
     - robo project:build
     # After Drupal install we install core/package.json.
     - robo yarn:install
-    # Ensure we have Phpunit for next tests.
-    - robo install:phpunit
+    # Ensure we have Dev code for next tests.
+    - robo install:drupal-dev
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
   variables:
     <<: *test_variables

@@ -663,6 +663,9 @@ class RoboFile extends \Robo\Tasks {
     if (!file_exists('/usr/local/bin/phpunit')) {
       $install = [
         'phpunit' => [
+          "behat/mink" => "1.7.x-dev",
+          "behat/mink-goutte-driver" => "^1.2",
+          "behat/mink-selenium2-driver" => "1.3.x-dev",
           "mikey179/vfsstream" => "^1.6.8",
           "phpunit/phpunit" => "^6.5 || ^7",
           "symfony/phpunit-bridge" => "^3.4.3",
@@ -680,6 +683,28 @@ class RoboFile extends \Robo\Tasks {
       // Add bin globally.
       $this->symlink($this->docRoot . '/vendor/bin/phpunit', '/usr/local/bin/phpunit');
     }
+  }
+  /**
+   * Install Drupal Dev, shortcut for installPhpunit().
+   *
+   * @return array
+   */
+  public function installDrupalDev() {
+    $task = $this->taskComposerRequire()
+      ->workingDir($this->composerHome)
+      ->noInteraction()
+      ->dev()
+      ->dependency("drupal/core-dev", "^$this->ciDrupalVersion");
+    if ($this->verbose) {
+      $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--quiet');
+    }
+    if ($this->noAnsi) {
+      $task->noAnsi();
+    }
+    $task->run();
   }
 
   /**
