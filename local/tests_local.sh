@@ -309,7 +309,7 @@ _build() {
 
     _dkexec_docroot robo $__simulate yarn:install
 
-    _dkexec_docroot robo $__simulate install:phpunit
+    _dkexec_docroot robo $__simulate install:drupal-dev
 
     _create_artifacts
   fi
