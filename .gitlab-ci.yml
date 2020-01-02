@@ -258,6 +258,8 @@ Nightwatch Js:
       fi
     # Install from core/package.json
     - robo yarn:install
+    # Ensure we have Drupal Dev third party for next tests.
+    - robo install:drupal-dev
     # This is the main script, 'yarn install' and 'test:nightwatch' from core folder.
     - robo test:nightwatch
   artifacts:
