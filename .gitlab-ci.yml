@@ -252,9 +252,9 @@ Nightwatch Js:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
     # [TEMPORARY] Patch to allow install profile, see https://drupal.org/node/3017176
     - if [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
-        robo patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-12.patch;
+        robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch;
       else
-        robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-16.patch;
+        robo patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch;
       fi
     # Install from core/package.json
     - robo yarn:install
