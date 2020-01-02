@@ -109,6 +109,8 @@ stages:
     # Symlink Drupal codebase or the module/theme to the web root of the ci
     # image.
     - robo prepare:folders
+    # Ensure we have Drupal Dev third party for next tests.
+    - robo install:drupal-dev
     # Start Apache.
     - apache2-foreground&
     # Copy files and prepare test folder with permissions.
@@ -139,10 +141,6 @@ Build:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # Check Drupal codebase and run 'composer install' for a project.
     - robo project:build
-    # After Drupal install we install core/package.json.
-    - robo yarn:install
-    # Ensure we have Phpunit for next tests.
-    - robo install:phpunit
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
   variables:
     <<: *test_variables
@@ -251,10 +249,10 @@ Nightwatch Js:
     - sleep 2s
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
     # [TEMPORARY] Patch to allow install profile, see https://drupal.org/node/3017176
-    - if [ ${CI_DRUPAL_VERSION} == "8.9" ]; then
-        robo patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch;
-      else
+    - if [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
         robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch;
+      else
+        robo patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch;
       fi
     # Install from core/package.json
     - robo yarn:install
@@ -390,6 +388,7 @@ Code quality:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
+    - robo install:coder
   script:
     - phpqa --tools ${TOOLS}
         --buildDir ${REPORT_DIR}
@@ -411,6 +410,7 @@ Best practices:
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
+    - robo install:coder
   script:
     - phpqa --tools ${BEST_PRACTICES}
         --buildDir ${REPORT_DIR}
