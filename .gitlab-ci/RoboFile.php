@@ -627,14 +627,11 @@ class RoboFile extends \Robo\Tasks {
    */
   private function phpUnit($module = null, $testsuite = null) {
 
-    if (file_exists($this->docRoot . '/vendor/bin/phpunit')) {
-      $phpunitBin = $this->docRoot . '/vendor/bin/phpunit';
-    }
-    elseif (file_exists($this->composerHome . '/vendor/bin/phpunit')) {
-      $phpunitBin = $this->composerHome . '/vendor/bin/phpunit';
+    if (!file_exists($this->docRoot . '/vendor/bin/phpunit')) {
+      $this->installDrupalDev();
     }
 
-    $task = $this->taskPhpUnit($phpunitBin)
+    $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
       ->configFile($this->webRoot . '/core');
 
     if ($this->verbose) {
@@ -660,7 +657,7 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installPhpunit() {
 
-    if (!file_exists('/usr/local/bin/phpunit')) {
+    if (!file_exists($this->docRoot . '/vendor/bin/phpunit')) {
       $install = [
         'phpunit' => [
           "behat/mink" => "1.7.x-dev",
@@ -691,7 +688,7 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installDrupalDev() {
     $task = $this->taskComposerRequire()
-      ->workingDir($this->composerHome)
+      ->workingDir($this->docRoot)
       ->noInteraction()
       ->dev()
       ->dependency("drupal/core-dev", "^$this->ciDrupalVersion");
@@ -705,6 +702,8 @@ class RoboFile extends \Robo\Tasks {
       $task->noAnsi();
     }
     $task->run();
+    // Add bin globally.
+    $this->symlink($this->docRoot . '/vendor/bin/phpunit', '/usr/local/bin/phpunit');
   }
 
   /**
@@ -1270,6 +1269,9 @@ class RoboFile extends \Robo\Tasks {
   public function ensureTestsFolders() {
     $dirs = [
       $this->webRoot . '/sites',
+      $this->webRoot . '/modules',
+      $this->webRoot . '/themes',
+      $this->webRoot . '/profiles',
       $this->browsertestOutput,
       $this->browsertestOutput . '/browser_output',
       $this->reportDir,

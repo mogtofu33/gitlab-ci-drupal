@@ -399,8 +399,8 @@ _functional() {
 
   # Specific to run a local test as apache.
   # _dkexec touch "/var/www/${REPORT_DIR}/phpunit.html"
-  # _dkexec mkdir -p "/var/www/${REPORT_DIR}/functional"
-  # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} "/var/www/${REPORT_DIR}"
+  _dkexec mkdir -p "/var/www/${REPORT_DIR}/functional"
+  _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} "/var/www/${REPORT_DIR}"
 
   _dkexec_apache robo $__simulate test:suite ${PHPUNIT_TESTS}functional "null" "/var/www/${REPORT_DIR}"
 
