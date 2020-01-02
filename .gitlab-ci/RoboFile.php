@@ -989,12 +989,19 @@ class RoboFile extends \Robo\Tasks {
   public function installPrestissimo() {
     // First check if we have prestissimo.
     if (!file_exists($this->composerHome . '/vendor/hirak/prestissimo/composer.json')) {
-      $this->taskComposerRequire()
+      $task = $this->taskComposerRequire()
         ->noInteraction()
-        ->dependency('hirak/prestissimo', '^0.3.8')
-        ->arg('--quiet')
-        ->noAnsi()
-        ->run();
+        ->dependency('hirak/prestissimo', '^0.3.8');
+      if ($this->verbose) {
+        $task->arg('--verbose');
+      }
+      else {
+        $task->arg('--quiet');
+      }
+      if ($this->noAnsi) {
+        $task->noAnsi();
+      }
+      $task->run();
     }
     elseif ($this->verbose) {
       $this->say("Prestissimo already installed!");
@@ -1007,9 +1014,18 @@ class RoboFile extends \Robo\Tasks {
   public function installCoder() {
     $hasDependency = false;
     $task = $this->taskComposerRequire()
-      ->noInteraction()
-      ->arg('--quiet')
-      ->noAnsi();
+      ->workingDir($this->composerHome)
+      ->noInteraction();
+    if ($this->verbose) {
+      $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--quiet');
+    }
+    if ($this->noAnsi) {
+      $task->noAnsi();
+    }
+
     // First check if we have coder.
     if (!file_exists($this->composerHome . '/vendor/drupal/coder/composer.json')) {
       $hasDependency = true;

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metrics generated="2020-01-02T13:49:59" pdepend="@package_version@" ahh="0.66666666666667" andc="0" calls="29" ccn="21" ccn2="23" cloc="82" clsa="0" clsc="3" eloc="113" fanout="9" leafs="2" lloc="72" loc="232" maxDIT="2" ncloc="150" noc="3" nof="3" noi="0" nom="6" nop="4" roots="1">
+  <files>
+    <file name="/builds/my-username/my-project/web/modules/custom/my_d8_module/my_d8_module.module" loc="33" cloc="11" eloc="16" lloc="12" ncloc="22"/>
+    <file name="/builds/my-username/my-project/web/themes/custom/my_d8_theme/my_d8_theme.theme" loc="24" cloc="11" eloc="10" lloc="6" ncloc="13"/>
+    <file name="/builds/my-username/my-project/drush/Commands/PolicyCommands.php" loc="39" cloc="18" eloc="15" lloc="8" ncloc="21"/>
+    <file name="/builds/my-username/my-project/scripts/composer/ScriptHandler.php" loc="101" cloc="25" eloc="61" lloc="40" ncloc="76"/>
+    <file name="/builds/my-username/my-project/web/modules/custom/my_d8_module/src/DemoModuleExampleService.php" loc="35" cloc="17" eloc="11" lloc="6" ncloc="18"/>
+  </files>
+  <package name="+global" noc="0" noi="0" nom="0" nof="3">
+    <function name="my_d8_module_help" start="14" end="25" ccn="2" ccn2="2" loc="12" cloc="1" eloc="10" lloc="7" ncloc="11" npath="2" hnt="21" hnd="35" hv="107.71494335584" hd="6.6666666666667" hl="0.15" he="718.0996223723" ht="39.894423465128" hb="0.026730179644328" hi="16.157241503377" mi="63.687007138495">
+      <file name="/builds/my-username/my-project/web/modules/custom/my_d8_module/my_d8_module.module"/>
+    </function>
+    <function name="my_d8_module_form_simple_testing_form_alter" start="30" end="32" ccn="1" ccn2="1" loc="3" cloc="0" eloc="3" lloc="1" ncloc="3" npath="1" hnt="10" hnd="11" hv="34.594316186373" hd="3" hl="0.33333333333333" he="103.78294855912" ht="5.7657193643955" hb="0.007361439526411" hi="11.531438728791" mi="78.681459685251">
+      <file name="/builds/my-username/my-project/web/modules/custom/my_d8_module/my_d8_module.module"/>
+    </function>
+    <function name="my_d8_theme_preprocess" start="15" end="23" ccn="3" ccn2="3" loc="9" cloc="0" eloc="9" lloc="5" ncloc="9" npath="3" hnt="17" hnd="47" hv="94.42801047852" hd="5.8947368421053" hl="0.16964285714286" he="556.62827229443" ht="30.923792905246" hb="0.022555662422186" hi="16.019037491892" mi="64.950997395056">
+      <file name="/builds/my-username/my-project/web/themes/custom/my_d8_theme/my_d8_theme.theme"/>
+    </function>
+  </package>
+  <package name="Drush\Commands" noc="1" noi="0" nom="2" nof="0" cr="0.15" rcr="0.15">
+    <class name="PolicyCommands" fqname="Drush\Commands\PolicyCommands" start="10" end="38" loc="29" cloc="15" eloc="10" lloc="4" ncloc="14" dit="2" noam="2" nocc="0" noom="0" nom="2" cr="0.15" rcr="0.2775" ca="0" cbo="2" ce="2" impl="0" cis="2" csz="2" npm="2" vars="0" varsi="0" varsnp="0" wmc="4" wmci="4" wmcnp="4">
+      <file name="/builds/my-username/my-project/drush/Commands/PolicyCommands.php"/>
+      <method name="sqlSyncValidate" start="20" end="24" ccn="2" ccn2="2" loc="5" cloc="0" eloc="5" lloc="2" ncloc="5" npath="2" hnt="19" hnd="23" hv="85.947677165083" hd="13.714285714286" hl="0.072916666666667" he="1178.7110011211" ht="65.48394450673" hb="0.037194920650461" hi="6.2670181266207" mi="70.940154705933"/>
+      <method name="rsyncValidate" start="33" end="37" ccn="2" ccn2="2" loc="5" cloc="0" eloc="5" lloc="2" ncloc="5" npath="2" hnt="19" hnd="25" hv="88.23326760572" hd="11.6875" hl="0.085561497326203" he="1031.2263151418" ht="57.290350841214" hb="0.034023689256162" hi="7.549370490329" mi="70.860344225301"/>
+    </class>
+  </package>
+  <package name="DrupalProject\composer" noc="1" noi="0" nom="2" nof="0" cr="0.15" rcr="0.15">
+    <class name="ScriptHandler" fqname="DrupalProject\composer\ScriptHandler" start="16" end="100" loc="85" cloc="21" eloc="52" lloc="32" ncloc="64" dit="0" noam="0" nocc="0" noom="0" nom="2" cr="0.15" rcr="0.15" ca="0" cbo="5" ce="5" impl="0" cis="2" csz="2" npm="2" vars="0" varsi="0" varsnp="0" wmc="11" wmci="11" wmcnp="11">
+      <file name="/builds/my-username/my-project/scripts/composer/ScriptHandler.php"/>
+      <method name="createRequiredFiles" start="18" end="61" ccn="5" ccn2="6" loc="44" cloc="3" eloc="37" lloc="22" ncloc="41" npath="18" hnt="60" hnd="178" hv="448.54400585798" hd="11.407894736842" hl="0.087658592848904" he="5116.9428036694" ht="284.27460020385" hb="0.098981140503428" hi="39.318736384322" mi="46.416312563481"/>
+      <method name="checkComposerVersion" start="77" end="98" ccn="4" ccn2="5" loc="22" cloc="4" eloc="15" lloc="10" ncloc="18" npath="8" hnt="29" hnd="57" hv="169.15381041078" hd="8.8695652173913" hl="0.11274509803922" he="1500.3207532086" ht="83.351152956035" hb="0.043685249764632" hi="19.07126293847" mi="58.069814589968"/>
+    </class>
+  </package>
+  <package name="Drupal\my_d8_module" noc="1" noi="0" nom="2" nof="0" cr="0.15" rcr="0.15">
+    <class name="DemoModuleExampleService" fqname="Drupal\my_d8_module\DemoModuleExampleService" start="8" end="34" loc="27" cloc="14" eloc="6" lloc="2" ncloc="13" dit="0" noam="0" nocc="0" noom="0" nom="2" cr="0.15" rcr="0.15" ca="0" cbo="0" ce="0" impl="0" cis="2" csz="3" npm="2" vars="1" varsi="1" varsnp="0" wmc="2" wmci="2" wmcnp="2">
+      <file name="/builds/my-username/my-project/web/modules/custom/my_d8_module/src/DemoModuleExampleService.php"/>
+      <method name="__construct" start="20" end="22" ccn="1" ccn2="1" loc="3" cloc="0" eloc="3" lloc="1" ncloc="3" npath="1" hnt="6" hnd="6" hv="15.509775004327" hd="4" hl="0.25" he="62.039100017308" ht="3.4466166676282" hb="0.0052238304343202" hi="3.8774437510817" mi="81.120955834208"/>
+      <method name="isDummy" start="30" end="32" ccn="1" ccn2="1" loc="3" cloc="0" eloc="3" lloc="1" ncloc="3" npath="1" hnt="5" hnd="5" hv="11.609640474437" hd="8" hl="0.125" he="92.877123795494" ht="5.1598402108608" hb="0.0068362496969366" hi="1.4512050593046" mi="82.001716149821"/>
+    </class>
+  </package>
+</metrics>

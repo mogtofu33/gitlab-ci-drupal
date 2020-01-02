@@ -319,6 +319,7 @@ _prepare_folders() {
   if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
     printf ">>> [SKIP] prepare_folders\\n"
   else
+    _copy_robofile
     _dkexec_docroot robo $__simulate prepare:folders
   fi
 }
@@ -511,6 +512,7 @@ _cp_qa_lint_metrics() {
   # Place config files in a proper directory.
   printf ">>> [NOTICE] cp config\\n"
   _dkexec cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}
+  _dkexec chmod 755 ${CI_PROJECT_DIR}
 }
 
 _clean_qa_lint_metrics() {
@@ -521,9 +523,11 @@ _clean_qa_lint_metrics() {
 _code_quality() {
   printf "\\n%s[INFO]%s Perform job 'Code quality' (code_quality)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
-  _prepare_folders
 
-  _dkexec phpqa --buildDir ${REPORT_DIR}/code_quality --tools ${TOOLS} --analyzedDirs ${PHP_CODE_QA}
+  _prepare_folders
+  _dkexec_docroot robo $__simulate install:coder
+
+  _dkexec phpqa --buildDir ${CI_PROJECT_DIR}/${REPORT_DIR}/code_quality --tools ${TOOLS} --analyzedDirs ${PHP_CODE_QA}
 
   _clean_qa_lint_metrics
 }
@@ -531,8 +535,11 @@ _code_quality() {
 _best_practices() {
   printf "\\n%s[INFO]%s Perform job 'Best practices' (best_practices)\\n\\n" "${_blu}" "${_end}"
   _cp_qa_lint_metrics
+
   sed -i 's/Drupal/DrupalPractice/g' .phpqa.yml
+
   _prepare_folders
+  _dkexec_docroot robo $__simulate install:coder
 
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/best_practices \

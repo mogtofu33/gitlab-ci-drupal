@@ -1,0 +1,577 @@
+<html>
+<head>
+    <title>phpqa report - v1.23.3</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <style type="text/css">
+        html, body {
+            height: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100% !important;
+            border: 0;
+        }
+        .dropdown a.dropdown-toggle {
+            padding-left: 0px !important;
+            padding-right: 0px !important;
+        }
+        .collapse.in .dropdown {
+            display: none;
+        }
+        tr.disabled {
+            opacity: 0.6;
+        }
+        #phpmetrics2 {
+            margin-top: -20px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar">
+            <ul class="nav navbar-nav" role="tablist">
+                <li class="active"><a href="#phpqa"><strong class="text-primary">PHPQA</strong></a></li>
+                                                <li><a href="#phpmetrics">phpmetrics</a></li>
+                                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        &nbsp;<span class="caret"></span>&nbsp;
+                    </a>
+                    <ul class="dropdown-menu">
+                                                                        <li><a href="#phpmetrics" data-iframe-tab="index.html">Overview</a></li>
+                                                                                                <li><a href="#phpmetrics" data-iframe-tab="violations.html">Violations</a></li>
+                                                                                                <li><a href="#phpmetrics" data-iframe-tab="loc.html">Size &amp; volume</a></li>
+                                                                                                <li><a href="#phpmetrics" data-iframe-tab="complexity.html">Complexity &amp; defects</a></li>
+                                                                                                <li><a href="#phpmetrics" data-iframe-tab="oop.html">Object oriented metrics</a></li>
+                                                                                                <li><a href="#phpmetrics" data-iframe-tab="relations.html">Object relations</a></li>
+                                                                                            </ul>
+                </li>
+                                                                                <li><a href="#phploc">phploc</a></li>
+                                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        &nbsp;<span class="caret"></span>&nbsp;
+                    </a>
+                    <ul class="dropdown-menu">
+                                                                        <li><a href="#phploc" data-iframe-tab="overview">Overview</a></li>
+                                                                                                <li><a href="#phploc" data-iframe-tab="ccn">Cyclomatic Complexity</a></li>
+                                                                                                <li><a href="#phploc" data-iframe-tab="dependencies">Dependencies</a></li>
+                                                                                            </ul>
+                </li>
+                                                                                <li><a href="#phpcs">phpcs</a></li>
+                                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        &nbsp;<span class="caret"></span>&nbsp;
+                    </a>
+                    <ul class="dropdown-menu">
+                                                                        <li><a href="#phpcs" data-iframe-tab="overview">Overview</a></li>
+                                                                                                <li><a href="#phpcs" data-iframe-tab="errors">Errors</a></li>
+                                                                                            </ul>
+                </li>
+                                                                                <li><a href="#phpmd">phpmd</a></li>
+                                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        &nbsp;<span class="caret"></span>&nbsp;
+                    </a>
+                    <ul class="dropdown-menu">
+                                                                        <li><a href="#phpmd" data-iframe-tab="overview">Overview</a></li>
+                                                                                                <li><a href="#phpmd" data-iframe-tab="errors">Errors</a></li>
+                                                                                                <li><a href="#phpmd" data-iframe-tab="parsing">Parsing Errors</a></li>
+                                                                                            </ul>
+                </li>
+                                                                                <li><a href="#pdepend">pdepend</a></li>
+                                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        &nbsp;<span class="caret"></span>&nbsp;
+                    </a>
+                    <ul class="dropdown-menu">
+                                                                        <li><a href="#pdepend" data-iframe-tab="overview">Overview</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="packages">Packages</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="dependencies">Dependencies</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="complexity">Complexity</a></li>
+                                                                                                <li role="separator" class="divider"></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="metrics-file">File metrics</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="metrics-package">Package metrics</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="metrics-trait">Trait metrics</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="metrics-class">Class metrics</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="metrics-method">Method metrics</a></li>
+                                                                                                <li><a href="#pdepend" data-iframe-tab="metrics-function">Function metrics</a></li>
+                                                                                            </ul>
+                </li>
+                                                                                <li><a href="#phpcpd">phpcpd</a></li>
+                                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        &nbsp;<span class="caret"></span>&nbsp;
+                    </a>
+                    <ul class="dropdown-menu">
+                                                                        <li><a href="#phpcpd" data-iframe-tab="overview">Overview</a></li>
+                                                                                                <li><a href="#phpcpd" data-iframe-tab="errors">Errors</a></li>
+                                                                                            </ul>
+                </li>
+                                                                                <li><a href="#security-checker">security-checker</a></li>
+                                                                                <li><a href="#parallel-lint">parallel-lint</a></li>
+                                                                                            </ul>
+            <ul class="nav navbar-right visible-md-block visible-lg-block">
+                <p class="navbar-text">
+                    <a target="_blank" href="https://github.com/EdgedesignCZ/phpqa" class="text-muted">v1.23.3</a>
+                </p>
+            </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="phpqa">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-10">
+                        <h2>Summary <span class="badge">2020-01-02 13:49</span></h2>
+                        <table class="table table-striped text-center">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Tool</th>
+                                    <th class="text-center">Allowed errors</th>
+                                    <th width="2"></th>
+                                    <th class="text-center">Errors count</th>
+                                    <th class="text-center"><a href="https://github.com/EdgedesignCZ/phpqa#exit-code">Is OK?</a></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#phpmetrics" data-tool-link class="">phpmetrics</a>
+                                        <a href="https://packagist.org/packages/phpmetrics/phpmetrics#v2.5.0" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Jean-François Lépine">
+                                                v2.5.0
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td></td>
+                                                                        <td data-toggle="tooltip" data-placement="left" title="Analyzing errors count is not supported">
+                                        <span class="label label-info">–</a>
+                                    </td>
+                                                                    </tr>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#phploc" data-tool-link class="">phploc</a>
+                                        <a href="https://packagist.org/packages/phploc/phploc#4.0.1" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Sebastian Bergmann">
+                                                4.0.1
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td></td>
+                                                                        <td data-toggle="tooltip" data-placement="left" title="Analyzing errors count is not supported">
+                                        <span class="label label-info">–</a>
+                                    </td>
+                                                                    </tr>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#phpcs" data-tool-link class="">phpcs</a>
+                                        <a href="https://packagist.org/packages/squizlabs/php_codesniffer#3.5.3" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Greg Sherwood">
+                                                3.5.3
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td>0</td>
+                                                                                                                    <td data-toggle="tooltip" data-placement="left" title="Allowed errors are not specified. Use &#039;phpcs:0&#039; for passing the build and analyzing errors">
+                                            <span class="label label-info">✓</span>
+                                        </td>
+                                                                                                            </tr>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#phpmd" data-tool-link class="">phpmd</a>
+                                        <a href="https://packagist.org/packages/phpmd/phpmd#2.8.1" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Manuel Pichler,Marc Würth,Other contributors">
+                                                2.8.1
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td>3</td>
+                                                                                                                    <td data-toggle="tooltip" data-placement="left" title="Allowed errors are not specified. Use &#039;phpmd:3&#039; for passing the build and analyzing errors">
+                                            <span class="label label-info">✓</span>
+                                        </td>
+                                                                                                            </tr>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#pdepend" data-tool-link class="">pdepend</a>
+                                        <a href="https://packagist.org/packages/pdepend/pdepend#2.6.1" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="">
+                                                2.6.1
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td></td>
+                                                                        <td data-toggle="tooltip" data-placement="left" title="Analyzing errors count is not supported">
+                                        <span class="label label-info">–</a>
+                                    </td>
+                                                                    </tr>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#phpcpd" data-tool-link class="">phpcpd</a>
+                                        <a href="https://packagist.org/packages/sebastian/phpcpd#4.1.0" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Sebastian Bergmann">
+                                                4.1.0
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td>0</td>
+                                                                                                                    <td data-toggle="tooltip" data-placement="left" title="Allowed errors are not specified. Use &#039;phpcpd:0&#039; for passing the build and analyzing errors">
+                                            <span class="label label-info">✓</span>
+                                        </td>
+                                                                                                            </tr>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#security-checker" data-tool-link class="">security-checker</a>
+                                        <a href="https://packagist.org/packages/sensiolabs/security-checker#v6.0.3" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Fabien Potencier">
+                                                v6.0.3
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td>1</td>
+                                                                                                                    <td data-toggle="tooltip" data-placement="left" title="Allowed errors are not specified. Use &#039;security-checker:1&#039; for passing the build and analyzing errors">
+                                            <span class="label label-info">✓</span>
+                                        </td>
+                                                                                                            </tr>
+                                                                                                                                <tr class="">
+                                    <th class="text-left">
+                                        <a href="#parallel-lint" data-tool-link class="">parallel-lint</a>
+                                        <a href="https://packagist.org/packages/jakub-onderka/php-parallel-lint#v1.0.0" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Jakub Onderka">
+                                                v1.0.0
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td>0</td>
+                                                                                                                    <td data-toggle="tooltip" data-placement="left" title="Allowed errors are not specified. Use &#039;parallel-lint:0&#039; for passing the build and analyzing errors">
+                                            <span class="label label-info">✓</span>
+                                        </td>
+                                                                                                            </tr>
+                                                                                                                                                                <tr class="disabled">
+                                    <td class="text-left text-muted">php-cs-fixer</td>
+                                    <td colspan="3">
+                                        <code>composer require friendsofphp/php-cs-fixer</code>
+                                    </td>
+                                    <td data-toggle="tooltip" data-placement="left" title="php-cs-fixer is not installed">
+                                        <span class="label label-default">?</a>
+                                    </td>
+                                </tr>
+                                                                <tr class="disabled">
+                                    <td class="text-left text-muted">phpstan</td>
+                                    <td colspan="3">
+                                        <code>composer require phpstan/phpstan</code>
+                                    </td>
+                                    <td data-toggle="tooltip" data-placement="left" title="phpstan is not installed">
+                                        <span class="label label-default">?</a>
+                                    </td>
+                                </tr>
+                                                                <tr class="disabled">
+                                    <td class="text-left text-muted">phpunit</td>
+                                    <td colspan="3">
+                                        <code>composer require phpunit/phpunit</code>
+                                    </td>
+                                    <td data-toggle="tooltip" data-placement="left" title="phpunit is not installed">
+                                        <span class="label label-default">?</a>
+                                    </td>
+                                </tr>
+                                                                <tr class="disabled">
+                                    <td class="text-left text-muted">psalm</td>
+                                    <td colspan="3">
+                                        <code>composer require vimeo/psalm</code>
+                                    </td>
+                                    <td data-toggle="tooltip" data-placement="left" title="psalm is not installed">
+                                        <span class="label label-default">?</a>
+                                    </td>
+                                </tr>
+                                                                                                <tr class="danger">
+                                    <th class="text-left">
+                                        <a href="#phpqa" data-tool-link class="text-danger">phpqa</a>
+                                        <a href="https://packagist.org/packages/edgedesign/phpqa#1.23.3" target="_blank">
+                                            <span class="badge" data-toggle="tooltip" data-placement="right" title="Zdeněk Drahoš">
+                                                1.23.3
+                                            </span>
+                                        </a>
+                                    </th>
+                                    <td></td>
+                                    <td>
+                                                                            </td>
+                                    <td>4</td>
+                                                                                                                                                                    <td data-toggle="tooltip" data-placement="left" title="">
+                                                <span class="label label-danger">x</a>
+                                            </td>
+                                                                                                                                                        </tr>
+                                                            </tbody>
+                        </table>
+                        <h4>Would you like to run phpqa again?</h4>
+                        <pre><code>cd &quot;/builds/my-username/my-project&quot; &amp;&amp; \
+/usr/local/bin/phpqa</code></pre>
+                    </div>
+                    <div class="col-sm-2">
+                        <div class="well">
+                            <h3>Files</h3>
+                            <ul class="list-unstyled">
+                                                                <li><a href="./parallel-lint.html" target="_blank">/parallel-lint.html</a></li>
+                                                                <li><a href="./pdepend-dependencies.xml" target="_blank">/pdepend-dependencies.xml</a></li>
+                                                                <li><a href="./pdepend-jdepend.svg" target="_blank">/pdepend-jdepend.svg</a></li>
+                                                                <li><a href="./pdepend-jdepend.xml" target="_blank">/pdepend-jdepend.xml</a></li>
+                                                                <li><a href="./pdepend-pyramid.svg" target="_blank">/pdepend-pyramid.svg</a></li>
+                                                                <li><a href="./pdepend-summary.xml" target="_blank">/pdepend-summary.xml</a></li>
+                                                                <li><a href="./pdepend.html" target="_blank">/pdepend.html</a></li>
+                                                                <li><a href="./phpcpd.html" target="_blank">/phpcpd.html</a></li>
+                                                                <li><a href="./phpcpd.xml" target="_blank">/phpcpd.xml</a></li>
+                                                                <li><a href="./phpcs.html" target="_blank">/phpcs.html</a></li>
+                                                                <li><a href="./phploc.html" target="_blank">/phploc.html</a></li>
+                                                                <li><a href="./phploc.xml" target="_blank">/phploc.xml</a></li>
+                                                                <li><a href="./phpmd.html" target="_blank">/phpmd.html</a></li>
+                                                                <li><a href="./phpmd.xml" target="_blank">/phpmd.xml</a></li>
+                                                                <li><a href="./phpmetrics" target="_blank">/phpmetrics</a></li>
+                                                                <li><a href="./phpmetrics.xml" target="_blank">/phpmetrics.xml</a></li>
+                                                                <li><a href="./security-checker.html" target="_blank">/security-checker.html</a></li>
+                                                            </ul>
+                            <pre><code>ls -lA &quot;/builds/my-username/my-project/build&quot;</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                        <div role="tabpanel" class="tab-pane" id="phpmetrics">
+            <iframe data-tool id="iframe-phpmetrics" data-src="phpmetrics/index.html"></iframe>
+        </div>
+                                        <div role="tabpanel" class="tab-pane" id="phploc">
+            <iframe data-tool id="iframe-phploc" data-src="phploc.html"></iframe>
+        </div>
+                                        <div role="tabpanel" class="tab-pane" id="phpcs">
+            <iframe data-tool id="iframe-phpcs" data-src="phpcs.html"></iframe>
+        </div>
+                                        <div role="tabpanel" class="tab-pane" id="phpmd">
+            <iframe data-tool id="iframe-phpmd" data-src="phpmd.html"></iframe>
+        </div>
+                                        <div role="tabpanel" class="tab-pane" id="pdepend">
+            <iframe data-tool id="iframe-pdepend" data-src="pdepend.html"></iframe>
+        </div>
+                                        <div role="tabpanel" class="tab-pane" id="phpcpd">
+            <iframe data-tool id="iframe-phpcpd" data-src="phpcpd.html"></iframe>
+        </div>
+                                        <div role="tabpanel" class="tab-pane" id="security-checker">
+            <iframe data-tool id="iframe-security-checker" data-src="security-checker.html"></iframe>
+        </div>
+                                        <div role="tabpanel" class="tab-pane" id="parallel-lint">
+            <iframe data-tool id="iframe-parallel-lint" data-src="parallel-lint.html"></iframe>
+        </div>
+                                            </div>
+
+    <div class="modal fade" id="file-modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+            <div class="modal-body">
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script>
+    (function () {
+        var tabsInIframe = {
+            '#pdepend': openBootstrap,
+            '#phpcs': openBootstrap,
+            '#phpmd': openBootstrap,
+            '#phpcpd': openBootstrap,
+            '#phploc': openBootstrap,
+            '#phpmetrics': function(window, tab, iframe) {
+                                var url = $('#iframe-phpmetrics').attr('data-src').replace('index.html', tab);
+                iframe.src = url;
+                            },
+            '#psalm': openBootstrap,
+        };
+        var loadedIframes = [];
+        listenOnTabChange();
+        activateTooltips();
+        listenOnFileModal();
+        loadFromHash();
+
+        function openBootstrap(iframe, tab) {
+            iframe.$("nav [aria-controls=" + tab + "]").tab('show');
+        }
+
+        function loadFromHash() {
+          var hash = location.hash ? location.hash : '#phpqa';
+          var activeTab = $('.navbar-nav [href="' + hash + '"]').first();
+          if (activeTab.length) {
+            activeTab.click();
+          }
+        }
+
+        function listenOnTabChange() {
+            onNavLink();
+            onExternalLink();
+            onHashChange();
+
+            function onNavLink() {
+                $('.navbar-nav a').click(function (e) {
+                    e.preventDefault();
+
+                    var navLink = $(this);
+                    var href = navLink.attr('href');
+
+                    if (href === '#') {
+                        return;
+                    } else if (href === '#phpqa') {
+                        return showTab(navLink);
+                    }
+
+                    var iframe = $('div' + href + ' iframe').first();
+                    if (!iframe.length) {
+                        return;
+                    }
+
+                    if (loadedIframes.indexOf(href) === -1) {
+                        loadedIframes.push(href);
+                        loadReport({
+                            src: iframe.data('src'),
+                            loadCode: function (html) {
+                                iframe.replaceWith(html);
+                            },
+                            loadIframe: function (src) {
+                                iframe.attr('src', src);
+                                iframe.on('load', function () {
+                                    hideFirstHeading(iframe[0]);
+                                    openTabInIframe(navLink, iframe[0]);
+                                });
+                            },
+                        });
+                    } else {
+                        openTabInIframe(navLink, iframe[0]);
+                    }
+                    showTab(navLink);
+                });
+
+                function showTab(navLink) {
+                    navLink.tab('show');
+                    updateBrowserHistory(navLink);
+                }
+
+                function updateBrowserHistory(link) {
+                    if (window.history && window.history.pushState) {
+                        history.pushState(null, null, link.attr('href'));
+                    }
+                }
+
+                function openTabInIframe(navLink, iframe) {
+                    var target = navLink.data('iframe-tab');
+                    if (target) {
+                        var tabOpener = tabsInIframe[navLink.attr('href')];
+                        tabOpener(iframe.contentWindow, target, iframe);
+                    }
+                }
+
+                function hideFirstHeading(iframe) {
+                    var h1 = iframe.contentDocument.getElementsByTagName("h1")[0];
+                    if (h1) {
+                        h1.style.display = 'none';
+                    }
+                }
+            }
+
+            function onExternalLink() {
+                $('[data-tool-link]').click(function (e) {
+                    e.preventDefault();
+                    $('.navbar-nav a[href="' + $(this).attr('href') + '"]').first().click();
+                });
+            }
+
+            function onHashChange() {
+                window.addEventListener("popstate", function(e) {
+                    loadFromHash();
+                });
+            }
+        }
+
+        function activateTooltips() {
+            $('[data-toggle="tooltip"]').tooltip()
+        }
+
+        function listenOnFileModal() {
+            var modal = $('#file-modal');
+            var modalBody = modal.find('.modal-body');
+            $('.well a').click(function (e) {
+                e.preventDefault();
+                loadReport({
+                    src: $(this).attr('href'),
+                    loadCode: function (html) {
+                        modalBody.html(html);
+                    },
+                    loadIframe: function (src) {
+                        modalBody.html('<iframe src="' + src + '"></iframe>');
+                    },
+                });
+                modal.modal({
+                    show: true,
+                });
+            });
+        }
+
+        function loadReport(settings) {
+            var isXml = settings.src.indexOf('.xml') != -1;
+            if (isXml) {
+                $.get({
+                    url: settings.src,
+                    dataType: 'text',
+                }).then(function (data) {
+                    settings.loadCode('<pre><code>' + escapeHtml(data) + '</pre></code>');
+                })
+            } else {
+                settings.loadIframe(settings.src);
+            }
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    }());
+    </script>
+</body>
+</html>

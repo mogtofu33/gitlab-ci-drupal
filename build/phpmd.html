@@ -1,0 +1,68 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>PHPMD report</title><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"><style>
+                    .file {
+                        background: #f9f9f9
+                    }
+                    .fixed-navbar {
+                        list-style-type: none;
+                        position: fixed;
+                        top: 0;
+                        right: 1em;
+                    }
+                    .priority-1 {background: #d9534f;}
+                    .priority-2 {background: #f0ad4e;}
+                    .priority-3 {background: #f0ad4e;}
+                    .priority-4 {background: #5bc0de;}
+                    .priority-5 {background: #5bc0de;}
+                </style><script>
+                var onDocumentReady = [
+                    function () {
+                        $('[data-file]').each(function () {
+                            var pathWithoutRoot = $(this).text().replace('/builds/my-username/my-project/', '');
+                            $(this).text(pathWithoutRoot);
+                        });
+                    }
+                ];
+                </script></head><body><div class="container-fluid"><h1>phpmd report</h1><nav><ul class="nav nav-pills" role="tablist"><li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li><li role="presentation"><a href="#errors" aria-controls="errors" role="tab" data-toggle="tab">Errors</a></li><li role="presentation"><a href="#parsing" aria-controls="parsing" role="tab" data-toggle="tab">Parsing Errors</a></li></ul></nav><div class="tab-content"><div role="tabpanel" class="tab-pane active" id="overview"><table class="table table-striped"><thead><tr><th>Rule</th><th>Errors</th><th>Files</th></tr></thead><tr><td>ShortVariable</td><td>2</td><td>1</td><td></td></tr><tr><td>ExitExpression</td><td>1</td><td>1</td><td></td></tr><tfoot><tr><td></td><th><span class="label label-danger">3</span></th><th><span class="label label-info">1</span></th></tr></tfoot></table></div><div role="tabpanel" class="tab-pane" id="errors"><div class="fixed-navbar"><div class="input-group" style="width: 20em"><span class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></span><input data-search="errors" type="text" class="form-control" placeholder="unused..."></div></div><script>
+                        onDocumentReady.push(function () {
+                            var groups = $('[data-filterable] tbody tr[data-permanent]');
+                            var rows = $('[data-filterable] tbody tr:not([data-permanent])');
+
+                            $("[data-search]").keyup(function () {
+                                var term = $(this).val().toLowerCase();
+
+                                rows.hide();
+                                groups.show();
+                                matchElements(rows).show();
+                                matchEmptyGroups().hide();
+
+                                function matchElements(elements) {
+                                    return elements.filter(function () {
+                                        var rowContent = $(this).text().toLowerCase();
+                                        return rowContent.indexOf(term) !== -1
+                                    });
+                                }
+
+                                function matchEmptyGroups() {
+                                    return groups.filter(function () {
+                                        var group = $(this).data('permanent');
+                                        return rows
+                                            .filter(function () {
+                                                return $(this).data('group') == group && $(this).is(':visible');
+                                            })
+                                            .length == 0;
+                                    });
+                                }
+                            });
+                        });
+                        </script><table class="table" data-filterable="errors"><thead><tr><th colspan="2">Rule</th><th>Error</th><th>Lines</th></tr></thead><tr data-permanent="/builds/my-username/my-project/scripts/composer/ScriptHandler.php"><td colspan="5" class="file"><strong data-file="">/builds/my-username/my-project/scripts/composer/ScriptHandler.php</strong></td></tr><tr data-group="/builds/my-username/my-project/scripts/composer/ScriptHandler.php"><td><span class="
+                                                label priority-3">3</span></td><td><a href="https://phpmd.org/rules/naming.html#shortvariable">ShortVariable</a><br><span class="text-muted">Naming Rules</span></td><td>
+      Avoid variables with short names like $fs. Configured minimum length is 3.
+    <br><small class="text-muted"></small></td><td>19-19</td></tr><tr data-group="/builds/my-username/my-project/scripts/composer/ScriptHandler.php"><td><span class="
+                                                label priority-3">3</span></td><td><a href="https://phpmd.org/rules/naming.html#shortvariable">ShortVariable</a><br><span class="text-muted">Naming Rules</span></td><td>
+      Avoid variables with short names like $io. Configured minimum length is 3.
+    <br><small class="text-muted"></small></td><td>79-79</td></tr><tr data-group="/builds/my-username/my-project/scripts/composer/ScriptHandler.php"><td><span class="
+                                                label priority-1">1</span></td><td><a href="https://phpmd.org/rules/design.html#exitexpression">ExitExpression</a><br><span class="text-muted">Design Rules</span></td><td>
+      The method checkComposerVersion() contains an exit expression.
+    <br><small class="text-muted"></small></td><td>96-96</td></tr></table></div><div role="tabpanel" class="tab-pane" id="parsing"><table class="table table-striped"><thead><tr><th>File</th><th>Error</th></tr></thead></table></div></div></div><script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script><script>
+                $(document).ready(onDocumentReady);
+            </script></body></html>

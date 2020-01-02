@@ -390,6 +390,7 @@ Code quality:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
+    - robo install:coder
   script:
     - phpqa --tools ${TOOLS}
         --buildDir ${REPORT_DIR}
@@ -411,6 +412,7 @@ Best practices:
     - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     - robo prepare:folders
+    - robo install:coder
   script:
     - phpqa --tools ${BEST_PRACTICES}
         --buildDir ${REPORT_DIR}
