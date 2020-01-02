@@ -56,7 +56,7 @@ class RoboFile extends \Robo\Tasks {
    *   The webroot folder of Drupal. This can be overridden by specifying a
    *   $WEB_ROOT environment variable.
    */
-  protected $webRoot = '/var/www/html';
+  protected $webRoot = '/var/www/html/web';
 
   /**
    * Drupal setup profile.
@@ -677,10 +677,9 @@ class RoboFile extends \Robo\Tasks {
         ],
       ];
       $this->installWithComposer($install, 'drupal');
-      // Add bin globally.
-      $this->symlink($this->docRoot . '/vendor/bin/phpunit', '/usr/local/bin/phpunit');
     }
   }
+
   /**
    * Install Drupal Dev, shortcut for installPhpunit().
    *
@@ -702,8 +701,6 @@ class RoboFile extends \Robo\Tasks {
       $task->noAnsi();
     }
     $task->run();
-    // Add bin globally.
-    $this->symlink($this->docRoot . '/vendor/bin/phpunit', '/usr/local/bin/phpunit');
   }
 
   /**
