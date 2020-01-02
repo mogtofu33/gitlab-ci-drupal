@@ -710,10 +710,7 @@ class RoboFile extends \Robo\Tasks {
    *   (optional) Report root dir for this task.
    */
   public function testBehat($reportRootDir = null) {
-    if ($this->ciDrupalVersion != "8.7") {
-      $this->io()->warning("Drupal > 8.7 not yet supported for Behat tests, skipping");
-      exit();
-    }
+
     if (!$reportRootDir) {
       $reportRootDir = $this->reportDir;
     }
@@ -745,21 +742,18 @@ class RoboFile extends \Robo\Tasks {
    * @return array
    */
   public function installBehat() {
-    $bin = 'behat';
 
-    if ($this->ciDrupalVersion == "8.7") {
-      $install = [
-        $bin => [
-          'behat/mink' => '1.7.x-dev',
-          'behat/mink-goutte-driver' => '^1.2',
-          'dmore/behat-chrome-extension' => '^1.3.0',
-          'bex/behat-screenshot' => '^1.2',
-          'emuse/behat-html-formatter' => '0.1.*',
-          'drupal/drupal-extension' => '^4.0',
-        ],
-      ];
-      $this->installWithComposer($install, 'drupal');
-    }
+    $install = [
+      'behat' => [
+        'behat/mink' => '1.7.x-dev',
+        'behat/mink-goutte-driver' => '^1.2',
+        'dmore/behat-chrome-extension' => '^1.3.0',
+        'bex/behat-screenshot' => '^1.2',
+        'emuse/behat-html-formatter' => '0.1.*',
+        'drupal/drupal-extension' => '^4.0',
+      ],
+    ];
+    $this->installWithComposer($install, 'drupal');
 
     // Add bin to use taskBehat().
     if (!file_exists('/usr/local/bin/behat')) {
