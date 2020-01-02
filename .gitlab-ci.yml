@@ -109,6 +109,8 @@ stages:
     # Symlink Drupal codebase or the module/theme to the web root of the ci
     # image.
     - robo prepare:folders
+    # Ensure we have Drupal Dev third party for next tests.
+    - robo install:drupal-dev
     # Start Apache.
     - apache2-foreground&
     # Copy files and prepare test folder with permissions.
@@ -139,10 +141,6 @@ Build:
     - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # Check Drupal codebase and run 'composer install' for a project.
     - robo project:build
-    # After Drupal install we install core/package.json.
-    - robo yarn:install
-    # Ensure we have Drupal Dev third party for next tests.
-    - robo install:drupal-dev
     # Add here any custom build step, composer run-script, grunt, webpack, yarn...
   variables:
     <<: *test_variables
@@ -258,8 +256,6 @@ Nightwatch Js:
       fi
     # Install from core/package.json
     - robo yarn:install
-    # Ensure we have Drupal Dev third party for next tests.
-    - robo install:drupal-dev
     # This is the main script, 'yarn install' and 'test:nightwatch' from core folder.
     - robo test:nightwatch
   artifacts:
