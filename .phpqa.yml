@@ -1,0 +1,38 @@
+# Default common config for Phpqa.
+# For more options see:
+#   https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml
+phpcs:
+    standard: Drupal
+    ignoreWarnings: true
+    # https://github.com/squizlabs/PHP_CodeSniffer/wiki/Reporting
+    reports:
+        cli:
+            - full
+        file:
+            # checkstyle is always included and overriden
+            checkstyle: checkstyle.xml
+
+phpmd:
+    standard: .phpmd.xml
+
+# pdepend:
+    # coverageReport: build/coverage-clover.xml
+
+phpcpd:
+    minLines: 5
+    minTokens: 70
+
+# Php file extensions to parse.
+phpqa:
+    ignoredDirs: "vendor,bootstrap,tests,.gitlab-ci"
+    ignoredFiles: "Readme.md,style.css,print.css,*Test.php,RoboFile.php"
+    report: true
+    execution: parallel
+    extensions:
+        - php
+        - inc
+        - module
+        - install
+        - test
+        - profile
+        - theme

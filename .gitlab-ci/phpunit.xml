@@ -4,7 +4,6 @@
          beStrictAboutTestsThatDoNotTestAnything="true"
          beStrictAboutOutputDuringTests="true"
          beStrictAboutChangesToGlobalState="true"
-         checkForUnintentionallyCoveredCode="false"
          printerClass="\Drupal\Tests\Listeners\HtmlOutputPrinter">
   <php>
     <!-- Set error reporting to E_ALL. -->
@@ -50,17 +49,16 @@
   </listeners>
   <!-- Filter for coverage reports. -->
   <filter>
-    <whitelist processUncoveredFilesFromWhitelist="true">
-      <!-- <directory>./includes</directory> -->
-      <!-- <directory>./lib</directory> -->
-      <!-- <directory>./modules</directory> -->
+    <whitelist>
       <directory>../modules/custom</directory>
-      <directory>../themes/custom</directory>
-      <!-- <directory>../sites</directory> -->
-      <!-- By definition test classes have no tests. -->
       <exclude>
-        <directory suffix="Test.php">./</directory>
-        <directory suffix="TestBase.php">./</directory>
+        <directory>../modules/custom/*/src/Tests</directory>
+        <directory>../modules/custom/*/tests</directory>
+      </exclude>
+      <directory>../themes/custom</directory>
+      <exclude>
+        <directory>../themes/custom/*/src/Tests</directory>
+        <directory>../themes/custom/*/tests</directory>
       </exclude>
     </whitelist>
   </filter>
