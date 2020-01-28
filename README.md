@@ -54,7 +54,7 @@ accounts.
 - Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
 - Go to Gitlab **Settings > CI/ CD > Variables** and add variables:
 
-```bash
+```shell
 CI_IMAGE_VARIANT        drupal
 # 8.7, 8.8 or 8.9 for 8.9.x-dev
 CI_DRUPAL_VERSION       8.8
@@ -62,8 +62,11 @@ CI_TYPE                 module
 WEB_ROOT                /var/www/html
 PHP_CODE_QA             /var/www/html/modules/custom
 PHP_CODE_METRICS        /var/www/html/modules/custom
+# Security is for a Drupal project with third party.
 SKIP_TEST_SECURITY      1
+# Only needed if you have Behat tests.
 SKIP_TEST_BEHAT         1
+# Accessibility tests, more for a Drupal project.
 SKIP_TEST_PA11Y         1
 # If Nightwatch.js tests, add your tag:
 NIGHTWATCH_TESTS        --tag my_module
@@ -113,7 +116,7 @@ Check your project pipeline or
 
 To test against Drupal 8.8.0-beta1 version, go to Gitlab **Settings > CI/ CD > Variables** and add variables:
 
-```bash
+```shell
 CI_DRUPAL_VERSION          8.8
 ```
 
@@ -147,7 +150,7 @@ You can set variables values on Gitlab CI UI under _Settings > CI / CD > Variabl
 With variables you can disable some tests without editing any file, available
 skip variables are:
 
-```yaml
+```yml
   # Skip all tests jobs (next list).
   SKIP_TESTS: 0
   # Skip single jobs in tests. for tests information see
@@ -201,7 +204,7 @@ If you want to choose when to run the tests, you can adapt rules in
 Tests (and Build) are by default on a branches `8.x-dev, 8.x-1.x, testing` and
 on all `tags`
 
-```yaml
+```yml
 .test_except_only: &test_except_only
   except:
     refs:
@@ -223,7 +226,7 @@ Metrics jobs are by default on each push on `master` and all `tags`.
 
 Deploy jobs are disabled by default, you have to set in **Gitlab UI** a variable:
 
-```bash
+```shell
 SKIP_DEPLOY 0
 ```
 
@@ -244,7 +247,7 @@ and section [Triggering pipeline](#triggering-pipeline)
 
 Deploy jobs are disabled by default, you have to set in **Gitlab UI** a variable:
 
-```bash
+```shell
 SKIP_DEPLOY 0
 ```
 
@@ -278,7 +281,7 @@ The CI tests here include a patch to be able to install Drupal from a profile:
 There is a variable in this project that you can set in Gitlab to select the
 tests Nightwatch will run:
 
-```bash
+```shell
   # Only my module tests if set a @tag
   NIGHTWATCH_TESTS    --tag my_module
   # All tests except core
@@ -317,7 +320,7 @@ There is 2 set of tests location:
 
 There is a Gitlab variable to select the tests:
 
-```bash
+```shell
 PHPUNIT_TESTS     custom
 ```
 
@@ -359,7 +362,7 @@ Stylelint is based on the official
 
 A variable define the code to be tested, relative to the web root of the image, for a project the root is `/var/www/html/web`, for a module included Drupal is on `/var/www/html`:
 
-```bash
+```shell
 PHP_CODE_QA /var/www/html/web/modules/custom
 # For a module, code is relative to the included Drupal:
 PHP_CODE_QA /var/www/html/modules/custom
@@ -371,7 +374,7 @@ Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org), [Phploc](https:
 
 A variable define the code to be tested, relative to the web root of the image, for a project the root is `/var/www/html/web`, for a module included Drupal is on `/var/www/html`:
 
-```bash
+```shell
 PHP_CODE_METRICS /var/www/html/web/modules/custom
 # For a module, code is relative to the included Drupal:
 PHP_CODE_METRICS /var/www/html/modules/custom
@@ -399,7 +402,7 @@ When a test failed, a screen capture is recorded in the reports.
 
 Available stages on the pipelines are:
 
-```bash
+```shell
 - build
 - tests
 # On each push.
