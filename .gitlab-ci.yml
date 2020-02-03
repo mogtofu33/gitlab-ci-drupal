@@ -306,7 +306,8 @@ Behat tests:
     - robo install:drupal
     # Starting Chrome, we are not using Chromedriver.
     - /scripts/start-chrome.sh&
-    - sleep 3s && curl -s http://localhost:9222/json/version | jq '.'
+    - sleep 3s
+    - curl -s http://localhost:9222/json/version | jq '.' || true
     - robo install:behat
     - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
   variables:
