@@ -20,7 +20,6 @@ use Symfony\Component\Process\Process;
 class RoboFile extends \Robo\Tasks {
 
   protected $verbose = false;
-  protected $noAnsi = false;
 
   /**
    * Database connection information.
@@ -175,9 +174,6 @@ class RoboFile extends \Robo\Tasks {
     if (getenv('VERBOSE')) {
       $this->verbose = getenv('VERBOSE');
     }
-    if (getenv('NO_ANSI')) {
-      $this->noAnsi = getenv('NO_ANSI');
-    }
 
     // Pull CI variables from the environment, if it exists.
     if (getenv('CI_TYPE')) {
@@ -275,6 +271,7 @@ class RoboFile extends \Robo\Tasks {
       ->workingDir($dir)
       ->optimizeAutoloader()
       ->noInteraction()
+      ->noAnsi()
       ->ignorePlatformRequirements()
       ->option('no-suggest');
     if ($this->verbose) {
@@ -282,9 +279,6 @@ class RoboFile extends \Robo\Tasks {
     }
     else {
       $task->arg('--quiet');
-    }
-    if ($this->noAnsi) {
-      $task->noAnsi();
     }
     $task->run();
   }
@@ -380,15 +374,13 @@ class RoboFile extends \Robo\Tasks {
       ->target($tmp_destination)
       ->preferDist()
       ->noInteraction()
+      ->noAnsi()
       ->ignorePlatformRequirements();
     if ($this->verbose) {
       $task->arg('--verbose');
     }
     else {
       $task->arg('--quiet');
-    }
-    if ($this->noAnsi) {
-      $task->noAnsi();
     }
     $task->run();
 
@@ -413,6 +405,7 @@ class RoboFile extends \Robo\Tasks {
       ->workingDir($dir)
       ->preferDist()
       ->noInteraction()
+      ->noAnsi()
       ->ignorePlatformRequirements()
       ->option('no-suggest');
     if ($this->verbose) {
@@ -420,9 +413,6 @@ class RoboFile extends \Robo\Tasks {
     }
     else {
       $task->arg('--quiet');
-    }
-    if ($this->noAnsi) {
-      $task->noAnsi();
     }
     $task->run();
   }
@@ -449,6 +439,7 @@ class RoboFile extends \Robo\Tasks {
     $this->say("Installing Drupal with $profile...");
 
     $filename = $this->dbDump . '/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql';
+
     if (file_exists($filename)) {
       $this->say("Import dump $filename");
       $this->_exec('mysql -hmariadb -uroot drupal < ' . $filename . ';');
@@ -468,6 +459,7 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
     else {
+      $this->say("No dump found $filename, installing Drupal with Drush.");
       $this->setupDrupal($profile);
       $this->dumpDrupal($profile);
     }
@@ -686,21 +678,10 @@ class RoboFile extends \Robo\Tasks {
    * @return array
    */
   public function installDrupalDev() {
-    $task = $this->taskComposerRequire()
-      ->workingDir($this->docRoot)
-      ->noInteraction()
+    $task = $this->composerRequire($this->docRoot)
       ->dev()
-      ->dependency("drupal/core-dev", "^$this->ciDrupalVersion");
-    if ($this->verbose) {
-      $task->arg('--verbose');
-    }
-    else {
-      $task->arg('--quiet');
-    }
-    if ($this->noAnsi) {
-      $task->noAnsi();
-    }
-    $task->run();
+      ->dependency("drupal/core-dev", "^$this->ciDrupalVersion")
+      ->run();
   }
 
   /**
@@ -722,16 +703,14 @@ class RoboFile extends \Robo\Tasks {
       ->run();
 
     $task = $this->taskBehat()
-      ->dir($this->docRoot)
-      ->config('tests/behat.yml')
+      ->dir($this->webRoot)
+      ->config($this->docRoot . '/tests/behat.yml')
       ->noInteraction()
+      ->noColors()
       ->option('format', 'html', '=')
       ->option('out', $reportRootDir, '=');
     if ($this->verbose) {
       $task->verbose('v');
-    }
-    if ($this->noAnsi) {
-      $task->noColors();
     }
     $task->run();
   }
@@ -937,12 +916,8 @@ class RoboFile extends \Robo\Tasks {
     }
 
     // Base task.
-    $task = $this->taskComposerRequire()
-      ->workingDir($dir)
-      ->noInteraction();
-    if ($dev) {
-      $task->dev();
-    }
+    $task = $this->composerRequire($dir)
+      ->dev();
 
     $hasDependency = false;
     foreach ($bins_dependencies as $bin => $dependencies) {
@@ -960,15 +935,6 @@ class RoboFile extends \Robo\Tasks {
     }
 
     if ($hasDependency) {
-      if ($this->verbose) {
-        $task->arg('--verbose');
-      }
-      else {
-        $task->arg('--quiet');
-      }
-      if ($this->noAnsi) {
-        $task->noAnsi();
-      }
       $task->run();
     }
     elseif ($this->verbose) {
@@ -983,19 +949,9 @@ class RoboFile extends \Robo\Tasks {
   public function installPrestissimo() {
     // First check if we have prestissimo.
     if (!file_exists($this->composerHome . '/vendor/hirak/prestissimo/composer.json')) {
-      $task = $this->taskComposerRequire()
-        ->noInteraction()
-        ->dependency('hirak/prestissimo', '^0.3.8');
-      if ($this->verbose) {
-        $task->arg('--verbose');
-      }
-      else {
-        $task->arg('--quiet');
-      }
-      if ($this->noAnsi) {
-        $task->noAnsi();
-      }
-      $task->run();
+      $task = $this->composerRequire()
+        ->dependency('hirak/prestissimo', '^0.3.8')
+        ->run();
     }
     elseif ($this->verbose) {
       $this->say("Prestissimo already installed!");
@@ -1007,18 +963,7 @@ class RoboFile extends \Robo\Tasks {
    */
   public function installCoder() {
     $hasDependency = false;
-    $task = $this->taskComposerRequire()
-      ->workingDir($this->composerHome)
-      ->noInteraction();
-    if ($this->verbose) {
-      $task->arg('--verbose');
-    }
-    else {
-      $task->arg('--quiet');
-    }
-    if ($this->noAnsi) {
-      $task->noAnsi();
-    }
+    $task = $this->composerRequire($this->composerHome);
 
     // First check if we have coder.
     if (!file_exists($this->composerHome . '/vendor/drupal/coder/composer.json')) {
@@ -1035,6 +980,30 @@ class RoboFile extends \Robo\Tasks {
     elseif ($this->verbose) {
       $this->say("Coder already installed!");
     }
+  }
+
+  /**
+   * Helper for preparing a composer require task.
+   *
+   * @param string|null $dir
+   *   (optional) WorkingDir for composer.
+   *
+   * @return \Robo\Task\Composer\RequireDependency
+   */
+  private function composerRequire($dir = null) {
+    $task = $this->taskComposerRequire()
+      ->noInteraction()
+      ->noAnsi();
+    if ($dir) {
+      $task->workingDir($dir);
+    }
+    if ($this->verbose) {
+      $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--quiet');
+    }
+    return $task;
   }
 
   /**
@@ -1204,13 +1173,11 @@ class RoboFile extends \Robo\Tasks {
         $task = $this->taskComposerValidate()
           ->workingDir($dir)
           ->noInteraction()
+          ->noAnsi()
           ->noCheckAll()
           ->noCheckPublish();
         if ($this->verbose) {
           $task->arg('--verbose');
-        }
-        if ($this->noAnsi) {
-          $task->noAnsi();
         }
         $task->run();
 
