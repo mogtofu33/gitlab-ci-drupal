@@ -60,8 +60,8 @@ CI_IMAGE_VARIANT        drupal
 CI_DRUPAL_VERSION       8.8
 CI_TYPE                 module
 WEB_ROOT                /var/www/html
-PHP_CODE_QA             /var/www/html/modules/custom
-PHP_CODE_METRICS        /var/www/html/modules/custom
+PHP_CODE_QA             /var/www/html/web/modules/custom
+PHP_CODE_METRICS        /var/www/html/web/modules/custom
 # Security is for a Drupal project with third party.
 SKIP_TEST_SECURITY      1
 # Only needed if you have Behat tests.
@@ -302,8 +302,6 @@ For Behat, Selenium is not needed thanks to the
 Html output of the Behat report is done thanks to
 [Behat Html formatter plugin](https://github.com/dutchiexl/BehatHtmlFormatterPlugin).
 
-**NOTE** Currently Behat tests works only for Drupal 8.7
-
 ### PHPunit tests for Drupal 8
 
 The pipeline in this project support Unit, Kernel, Functional,
@@ -360,24 +358,20 @@ Stylelint is based on the official
 [Sass-lint](.gitlab-ci/.sass-lint.yml) is based on
 [Wolox](https://github.com/Wolox/frontend-bootstrap/blob/master/.sass-lint.yml)
 
-A variable define the code to be tested, relative to the web root of the image, for a project the root is `/var/www/html/web`, for a module included Drupal is on `/var/www/html`:
+A variable define the code to be tested, relative to the web root of the image, the root is `/var/www/html/web`:
 
 ```shell
 PHP_CODE_QA /var/www/html/web/modules/custom
-# For a module, code is relative to the included Drupal:
-PHP_CODE_QA /var/www/html/modules/custom
 ```
 
 ### Metrics jobs
 
 Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org), [Phploc](https://github.com/sebastianbergmann/phploc) and [Pdepend](https://pdepend.org/).
 
-A variable define the code to be tested, relative to the web root of the image, for a project the root is `/var/www/html/web`, for a module included Drupal is on `/var/www/html`:
+A variable define the code to be tested, relative to the web root of the image, the root is `/var/www/html/web`:
 
 ```shell
 PHP_CODE_METRICS /var/www/html/web/modules/custom
-# For a module, code is relative to the included Drupal:
-PHP_CODE_METRICS /var/www/html/modules/custom
 ```
 
 ### Accessibility with Pa11y
@@ -418,25 +412,25 @@ Available stages on the pipelines are:
 
 Available jobs
 
-| Name | Detail | Report  |
-|---|---|:---:|
-| Build | If a project : `composer install`, can be used to add build steps (composer run-script, grunt, webpack, yarn...) | No |
-| Unit and kernel | Phpunit unit and kernel tests | xml and html |
-| Code coverage | Phpunit unit and kernel tests generating coverage, Codecov.io support see [Codecov.io support](#codecovio-support) | xml and html |
-| Functional | Phpunit functional test (Browser based tests) | xml and html |
-| Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | xml and html |
-| Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8](#nightwatchjs-for-drupal-8) | text and html |
-| Security report | Symfony security-checker, look at versions in composer.lock | text |
-| Behat tests | Support Behat tests from `tests` folder, see [Behat tests for Drupal 8](#behat-tests-for-drupal-8) | html |
-| Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](.gitlab-ci/pa11y-ci.json) | text |
-| Code quality | Code sniffer with _Drupal standards_ | html |
-| Best practices | Code sniffer with _Drupal Best practices standard_ | html |
-| Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | html |
-| Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules) | text |
-| Sass lint | Sass check with sass-lint | html |
-| Php metrics | Code metrics in a nice html report with phpmetrics | html |
-| Php stats | Code stats with phploc, pdepend | html |
-| Deploy to ... | Sample of deploy jobs with ssh to a host | No |
+| Name | Detail | Drupal install | Report  |
+|---|---|---|:---:|
+| Build | If a project : `composer install`, can be used to add build steps (composer run-script, grunt, webpack, yarn...) | No | No |
+| Unit and kernel | Phpunit unit and kernel tests | No | xml and html |
+| Code coverage | Phpunit unit and kernel tests generating coverage, Codecov.io support see [Codecov.io support](#codecovio-support) | No | xml and html |
+| Functional | Phpunit functional test (Browser based tests) | No | xml and html |
+| Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | Yes (included) | xml and html |
+| Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8](#nightwatchjs-for-drupal-8) | Yes (included) | text and html |
+| Security report | Symfony security-checker, look at versions in composer.lock | No | text |
+| Behat tests | Support Behat tests from `tests` folder, see [Behat tests for Drupal 8](#behat-tests-for-drupal-8) | Yes | html |
+| Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](.gitlab-ci/pa11y-ci.json) | Yes | text |
+| Code quality | Code sniffer with _Drupal standards_ | No | html |
+| Best practices | Code sniffer with _Drupal Best practices standard_ | No | html |
+| Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | No | html |
+| Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules) | No | text |
+| Sass lint | Sass check with sass-lint | No | html |
+| Php metrics | Code metrics in a nice html report with phpmetrics | No | html |
+| Php stats | Code stats with phploc, pdepend | No | html |
+| Deploy to... | Sample of deploy jobs with ssh to a host | No | No |
 
 ## CI image including tools
 
@@ -468,7 +462,7 @@ quality and analysis tools:
 
 ## Issues
 
-- Behat tests only works on Drupal 8.7, not for 8.8+
+- None currently!
 
 ## Future plan
 
@@ -483,6 +477,8 @@ databases when [Gitlab-Ci support it](https://gitlab.com/gitlab-org/gitlab/issue
 
 - Test if all of this is working with some distributions like Lightning or
 Varbase...
+
+- Have a better and nice local tests solution (WIP).
 
 ## Credits
 
