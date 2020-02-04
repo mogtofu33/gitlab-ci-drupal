@@ -259,7 +259,7 @@ _status() {
   sleep 2s
 
   # printf "Selenium running? (If nothing, no!)\\n"
-  # _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
+  _dkexec_bash "curl -s http://localhost:4444/wd/hub/status | jq '.'"
 
   printf "Chrome running? (If nothing, no!)\\n"
   _dkexec_bash "curl -s http://localhost:9222/json/version | jq '.'"
@@ -301,10 +301,6 @@ _build() {
   else
     printf ">>> [NOTICE] build\\n"
 
-    # Extra local step, ensure composer permissions.
-    # _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/.composer /var/www/${REPORT_DIR}
-    # _dkexec chmod -R 777 /var/www/.composer /var/www/${REPORT_DIR}
-
     _dkexec_docroot robo $__simulate project:build
 
     _dkexec_docroot robo $__simulate yarn:install
@@ -321,6 +317,9 @@ _prepare_folders() {
   else
     _copy_robofile
     _dkexec_docroot robo $__simulate prepare:folders
+    # Extra local step, ensure composer permissions.
+    _dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/.composer /var/www/${REPORT_DIR}
+    _dkexec chmod -R 777 /var/www/.composer /var/www/${REPORT_DIR}
   fi
 }
 
@@ -333,7 +332,7 @@ _create_artifacts() {
       mkdir -p ./tmp
       _dkexec mkdir -p /tmp
       _dkexec tar -czf /tmp/artifacts.tgz \
-        --exclude="${WEB_ROOT}/modules/custom" \
+        --exclude="${WEB_ROOT}/modules/custom" \_dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/.composer /var/www/${REPORT_DIR}
         --exclude="${WEB_ROOT}/themes/custom" \
         ${DOC_ROOT}/vendor ${DOC_ROOT}/web ${WEB_ROOT}/core/node_modules \
         ${DOC_ROOT}/drush ${DOC_ROOT}/scripts ${DOC_ROOT}/composer.json \
@@ -485,7 +484,7 @@ _behat() {
 
   _dkexec_docroot robo $__simulate install:behat
 
-  _dkexec_docroot robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
+  _dkexec_docroot robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}/behat"
 }
 
 _pa11y() {
@@ -502,7 +501,8 @@ _pa11y() {
   _dkexec_docroot robo $__simulate install:pa11y
   _dkexec_docroot robo $__simulate test:pa11y
 
-  _dkexec_bash "cp -f ${CI_PROJECT_DIR}/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/"
+  _dkexec_bash "mkdir -p ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y"
+  _dkexec_bash "cp -f ${CI_PROJECT_DIR}/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/pa11y"
 }
 
 ####### QA jobs
@@ -562,6 +562,8 @@ _eslint() {
 
   _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${CI_DRUPAL_VERSION}.x/core/.eslintrc.passing.json -o ${WEB_ROOT}/core/.eslintrc.passing.json
 
+  _dkexec_docroot robo $__simulate yarn:install
+
   _dkexec_bash "${WEB_ROOT}/core/node_modules/.bin/eslint \
     --config ${WEB_ROOT}/core/.eslintrc.passing.json \
     --format html \
@@ -582,6 +584,8 @@ _stylelint() {
 
   _dkexec mkdir -p ${DOC_ROOT}/core
   _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${CI_DRUPAL_VERSION}.x/core/.stylelintrc.json -o ${WEB_ROOT}/core/.stylelintrc.json
+
+  _dkexec_docroot robo $__simulate yarn:install
 
   # printf ">>> [NOTICE] Install Stylelint-formatter-pretty\\n"
   # _dkexec_docroot robo $__simulate install:stylelint-formatter-pretty
@@ -631,7 +635,7 @@ _phpmetrics() {
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/phpmetrics \
     --tools phpmetrics \
-    --analyzedDirs ${PHP_CODE_METRICS}
+    --analyzedDirs '${PHP_CODE_METRICS}'
 
   _clean_qa_lint_metrics
 }
@@ -644,7 +648,7 @@ _phpstats() {
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/phpstats \
     --tools phploc,pdepend \
-    --analyzedDirs ${PHP_CODE_METRICS}
+    --analyzedDirs '${PHP_CODE_METRICS}'
 
   _clean_qa_lint_metrics
 }
@@ -730,52 +734,16 @@ _set_dev_mode() {
 }
 
 _init_variables() {
-  _check_yq
-  __yaml="$_DIR/../.gitlab-ci.yml"
-  __yaml_variables="$_DIR/../.gitlab-ci/.gitlab-ci-variables.yml"
-  __yaml_local="$_DIR/.local.yml"
-  __env_tmp="$_DIR/.env.tmp"
+  _generate_env_from_yaml
 
-  # VERBOSE=$(yq r $__yaml_variables variables.VERBOSE)
-  CI_TYPE=$(yq r $__yaml_variables variables.CI_TYPE)
-  CI_IMAGE_VARIANT=$(yq r $__yaml_variables variables.CI_IMAGE_VARIANT)
-  WEB_ROOT=$(yq r $__yaml_variables variables.WEB_ROOT)
-  DOC_ROOT=$(yq r $__yaml_variables variables.DOC_ROOT)
-  REPORT_DIR=$(yq r $__yaml_variables variables.REPORT_DIR)
-  PHPUNIT_TESTS=$(yq r $__yaml_variables variables.PHPUNIT_TESTS)
-  PHP_CODE=$(yq r $__yaml_variables variables.PHP_CODE)
-  TOOLS=$(yq r $__yaml_variables variables.TOOLS)
-  BEST_PRACTICES=$(yq r $__yaml_variables variables.BEST_PRACTICES)
-  NIGHTWATCH_TESTS=$(yq r $__yaml_variables variables.NIGHTWATCH_TESTS)
-  JS_CODE=$(yq r $__yaml_variables variables.JS_CODE)
-  CSS_FILES=$(yq r $__yaml_variables variables.CSS_FILES)
-  CI_NIGHTWATCH_ENV=$(yq r $__yaml_variables variables.CI_NIGHTWATCH_ENV)
+  source $__env
 
-  # DRUPAL_SETUP_FROM_CONFIG=$(yq r $__yaml [.test_variables].DRUPAL_SETUP_FROM_CONFIG)
-  APACHE_RUN_USER=$(yq r $__yaml [.test_variables].APACHE_RUN_USER)
-  APACHE_RUN_GROUP=$(yq r $__yaml [.test_variables].APACHE_RUN_GROUP)
-  BROWSERTEST_OUTPUT_DIRECTORY=$(yq r $__yaml [.test_variables].BROWSERTEST_OUTPUT_DIRECTORY)
-  BROWSERTEST_OUTPUT_DIRECTORY=$(echo $BROWSERTEST_OUTPUT_DIRECTORY | sed "s#\${WEB_ROOT}#${WEB_ROOT}#g")
-  # DRUPAL_INSTALL_PROFILE="standard"
+  # CHROME_OPTS needs no quotes so cannot be sourced.
+  CHROME_OPTS=$(yq r $__yaml "[Behat tests].variables.CHROME_OPTS")
+  echo "CHROME_OPTS=${CHROME_OPTS}" >> $__env
 
-  if [ -f "$_DIR/.env" ]; then
-    head -n 9 $_DIR/.env > $_DIR/.env.tmp2
-    source $_DIR/.env.tmp2
-    rm -f $_DIR/.env.tmp2
-  fi
-
-  if [ -f $__yaml_local ]; then
-    rm -f "$__env_tmp"
-    yq r $__yaml_local >> "$__env_tmp"
-    _yml_to_env "$__env_tmp"
-    source "$__env_tmp"
-    rm -f "$__env_tmp"
-  fi
-
-}
-
-_init() {
-  _init_variables
+  # Remove quotes on NIGHTWATCH_TESTS.
+  sed -i 's#NIGHTWATCH_TESTS="\(.*\)"#NIGHTWATCH_TESTS=\1#g' $__env
 }
 
 _init_stack() {
@@ -791,26 +759,15 @@ _init_stack() {
 }
 
 _generate_env_from_yaml() {
-  _check_yq
 
   __yaml="$_DIR/../.gitlab-ci.yml"
   __yaml_variables="$_DIR/../.gitlab-ci/.gitlab-ci-variables.yml"
   __yaml_local="$_DIR/.local.yml"
   __env="$_DIR/.env"
 
-  printf "[NOTICE] Generate .env file..."
+  _check_yq
 
-  if ! [ -f "$__yaml" ]; then
-    printf "%s[ERROR]%s Missing .gitlab-ci.yml file.\\n" "${_red}" "${_end}"
-    exit 1
-  fi
-
-  if ! [ -f "$__yaml_variables" ]; then
-    printf "%s[ERROR]%s Missing .gitlab-ci-variables.yml file.\\n" "${_red}" "${_end}"
-    exit 1
-  fi
-
-  _init_variables
+  _debug "[NOTICE] Generate .env file..."
 
   if [ -f $__env ]; then
     rm -f $__env
@@ -818,20 +775,27 @@ _generate_env_from_yaml() {
 
   touch $__env
 
+  echo '# This file is auto generated, do not edit.' >> $__env
+
   echo 'CI_PROJECT_NAME: my-project' >> $__env
   echo "CI_PROJECT_DIR: /builds" >> $__env
-  # echo "CI_PROJECT_DIR: ${CI_PROJECT_DIR}" >> $__env
 
   yq r $__yaml_variables variables >> $__env
   yq r $__yaml "[.test_variables]" >> $__env
 
-  CHROME_OPTS=$(yq r $__yaml "[Behat tests].variables.CHROME_OPTS")
-  echo 'CHROME_OPTS='"${CHROME_OPTS}"'' >> $__env
   # Fix BEHAT_PARAMS, remove spaces and escape \.
   BEHAT_PARAMS=$(yq r $__yaml "[Behat tests].variables.BEHAT_PARAMS")
   BEHAT_PARAMS="$(echo -e "${BEHAT_PARAMS}" | tr -d '[:space:]')"
   BEHAT_PARAMS=$(sed 's#\\#\\\\#g' <<< $BEHAT_PARAMS)
   echo 'BEHAT_PARAMS='${BEHAT_PARAMS} >> $__env
+
+  # Fix MINK_DRIVER_ARGS_WEBDRIVER, remove spaces and escape \.
+  sed -i '/MINK_DRIVER_ARGS_WEBDRIVER/d' $__env
+  sed -i '/^ /d' $__env
+  MINK_DRIVER_ARGS_WEBDRIVER=$(yq r $__yaml "[.test_variables].MINK_DRIVER_ARGS_WEBDRIVER")
+  MINK_DRIVER_ARGS_WEBDRIVER="$(echo -e "${MINK_DRIVER_ARGS_WEBDRIVER}" | tr -d '[:space:]')"
+  MINK_DRIVER_ARGS_WEBDRIVER=$(sed 's#\\#\\\\#g' <<< $MINK_DRIVER_ARGS_WEBDRIVER)
+  echo 'MINK_DRIVER_ARGS_WEBDRIVER='${MINK_DRIVER_ARGS_WEBDRIVER} >> $__env
 
   sed -i "s#\${REPORT_DIR}#${REPORT_DIR}#g" $__env
   sed -i "s#\${PHP_CODE}#${PHP_CODE}#g" $__env
@@ -840,14 +804,33 @@ _generate_env_from_yaml() {
     yq r $__yaml_local >> $__env
   fi
 
-  # Fix env file.
+  # Fix env file format.
   _yml_to_env $__env
-
-  printf ">>> %s ... Done!\\n" $__env
 }
 
 _env() {
   _generate_env_from_yaml
+}
+
+_yml_to_env() {
+  __env_file="${1}"
+  # Replace : by =.
+  sed -i 's#: #=#g' $__env_file
+  # Treat 1 / 0 options without double quotes.
+  sed -i 's#"1"#1#g' $__env_file
+  sed -i 's#"0"#0#g' $__env_file
+  # Remove quotes on CI_DRUPAL_VERSION.
+  sed -i 's#CI_DRUPAL_VERSION="8\(.*\)"#CI_DRUPAL_VERSION=8\1#g' $__env_file
+  # Add quotes on Nightwatch tests and Chrome opts.
+  sed -i 's#NIGHTWATCH_TESTS=\(.*\)#NIGHTWATCH_TESTS="\1"#g' $__env_file
+
+  # Fix selenium local access
+  sed -i 's#http://localhost:4444#http://ci-chromedriver:4444#g' $__env_file
+
+  # Replace WEB_ROOT and CI_PROJECT_DIR variables by their values.
+  WEB_ROOT=$(yq r $__yaml_variables "variables.WEB_ROOT")
+  sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env_file
+  sed -i "s#\${CI_PROJECT_DIR}#/builds#g" $__env_file
 }
 
 _ensure_chrome() {
@@ -952,31 +935,6 @@ _check_yq() {
   fi
 }
 
-_yml_to_env() {
-  __env_file="${1}"
-  # Replace : by =.
-  sed -i 's#: #=#g' $__env_file
-  # Remove empty values.
-  sed -i 's#""##g' $__env_file
-  # Treat 1 / 0 options without double quotes.
-  sed -i 's#"1"#1#g' $__env_file
-  sed -i 's#"0"#0#g' $__env_file
-  # Remove quotes on CI_DRUPAL_VERSION.
-  sed -i 's#CI_DRUPAL_VERSION="8\(.*\)"#CI_DRUPAL_VERSION=8\1#g' $__env_file
-  # Add quotes on Nightwatch tests.
-  sed -i 's#NIGHTWATCH_TESTS=\(.*\)#NIGHTWATCH_TESTS="\1"#g' $__env_file
-
-  # Remove single quotes
-  sed -i "s#'##g" $__env_file
-  # Fix selenium local access
-  sed -i 's#http://localhost:4444#http://ci-chromedriver:4444#g' $__env_file
-
-  # Replace WEB_ROOT variable by it's value.
-  sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env_file
-  # Replace CI_PROJECT_DIR variable with value.
-  sed -i "s#\${CI_PROJECT_DIR}#${CI_PROJECT_DIR}#g" $__env_file
-}
-
 ###############################################################################
 # Commands to reference group of commands.
 ###############################################################################
@@ -1046,9 +1004,6 @@ _main() {
   if ((_PRINT_HELP))
   then
     _help
-    exit 0
-  elif [ "${_CMD}" == "init_variables" ] || [ "${_CMD}" == "init" ]; then
-    _init_variables
     exit 0
   elif [ "${_CMD}" == "generate_env_from_yaml" ] || [ "${_CMD}" == "env" ]; then
     _generate_env_from_yaml
