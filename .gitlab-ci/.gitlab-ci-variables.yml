@@ -13,8 +13,6 @@ variables:
   #
   # Verbose scripts, mostly composer and phpunit. 1|0.
   VERBOSE: "0"
-  # No ansi flag for composer.
-  NO_ANSI: "1"
 
   # Minor Drupal version to work with, limited to tags on
   # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
@@ -44,7 +42,7 @@ variables:
   # [CI_TYPE] If using a Drupal project with a composer.json file.
   WEB_ROOT: "/var/www/html/web"
   #
-  # If using the image with Drupal < 8.7 for a module or a theme.
+  # [DEPRECATED] If using the image with Drupal < 8.7 for a module or a theme.
   # WEB_ROOT: "/var/www/html"
 
   # Phpunit tests to run, only custom code or empty for all (included Drupal)

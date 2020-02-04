@@ -88,7 +88,23 @@ stages:
   SIMPLETEST_DB: "mysql://root@mariadb/drupal"
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
   # No spaces.
-  MINK_DRIVER_ARGS_WEBDRIVER: '["chrome",{"browserName":"chrome","chromeOptions":{"w3c":false,"args":["--whitelisted-ips","--disable-gpu","--headless","--no-sandbox"]}},"http://localhost:9515"]'
+  MINK_DRIVER_ARGS_WEBDRIVER: >
+    [
+      "chrome",
+      {
+        "browserName":"chrome",
+        "chromeOptions":{
+          "w3c":false,
+          "args":[
+            "--whitelisted-ips",
+            "--disable-gpu",
+            "--headless",
+            "--no-sandbox"
+          ]
+        }
+      },
+      "http://localhost:9515"
+    ]
   CHROMEDRIVER_OPTS: ''
   APACHE_RUN_USER: "www-data"
   APACHE_RUN_GROUP: "www-data"
