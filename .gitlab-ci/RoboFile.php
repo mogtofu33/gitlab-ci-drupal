@@ -284,72 +284,6 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Download Drupal 8 project with Composer and install.
-   *
-   * This is basically the same as create-project. But because this command
-   * need a new folder we use this one to install Drupal in an existing folder.
-   *
-   * @param string|null $destination
-   *   (optional) Where is copied the downloaded Drupal.
-   */
-  public function downloadDrupalProject($destination = null) {
-
-    $tempnam = tempnam(sys_get_temp_dir(), 'drupal.');
-    $archive = $tempnam . '.zip';
-
-    if (!$destination) {
-      $destination = $this->ciProjectDir;
-    }
-    $tmp_destination = 'tmp_drupal';
-
-    $remote = 'https://github.com/drupal-composer/drupal-project/archive/8.x.zip';
-
-    // Get and save file
-    $this->say('Downloading Drupal 8 project...');
-    file_put_contents($archive, file_get_contents($remote));
-
-    if (!file_exists($archive)) {
-      $this->io()->warning('Failed to download Drupal project!');
-      exit();
-    }
-
-    if (file_exists($tmp_destination)) {
-      $this->taskFilesystemStack()
-        ->remove($tmp_destination)
-        ->run();
-    }
-
-    $this->taskExtract($archive)
-      ->to($tmp_destination)
-      ->run();
-
-    // Remove unused files.
-    $files = [
-      $tmp_destination . '/README.md',
-      $tmp_destination . '/LICENSE',
-      $tmp_destination . '/.gitignore',
-      $tmp_destination . '/.travis.yml',
-      $tmp_destination . '/phpunit.xml.demo',
-    ];
-    $this->taskFilesystemStack()
-      ->remove($files)
-      ->run();
-
-    $this->mirror($tmp_destination, $destination);
-    $this->taskFilesystemStack()
-      ->remove($tmp_destination)
-      ->run();
-
-    if (!file_exists($destination . '/web/index.php')) {
-      $this->composerInstall($destination);
-    }
-    else {
-      $this->say("Drupal already installed!");
-      $this->updateDependencies($destination);
-    }
-  }
-
-  /**
    * Install Vanilla Drupal 8 project with Composer.
    *
    * @param string|null $destination
@@ -370,7 +304,7 @@ class RoboFile extends \Robo\Tasks {
     $this->installPrestissimo();
 
     $task = $this->taskComposerCreateProject()
-      ->source('drupal-composer/drupal-project:8.x-dev')
+      ->source('drupal/core-recommended:^' . $this->CI_DRUPAL_VERSION)
       ->target($tmp_destination)
       ->preferDist()
       ->noInteraction()
@@ -620,7 +554,7 @@ class RoboFile extends \Robo\Tasks {
   private function phpUnit($module = null, $testsuite = null) {
 
     if (!file_exists($this->docRoot . '/vendor/bin/phpunit')) {
-      $this->installDrupalDev();
+      $this->requireDrupalDev();
     }
 
     $task = $this->taskPhpUnit($this->docRoot . '/vendor/bin/phpunit')
@@ -643,41 +577,11 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Install or locate Phpunit.
+   * Install Drupal Core Dev.
    *
    * @return array
    */
-  public function installPhpunit() {
-
-    if (!file_exists($this->docRoot . '/vendor/bin/phpunit')) {
-      $install = [
-        'phpunit' => [
-          "behat/mink" => "1.7.x-dev",
-          "behat/mink-goutte-driver" => "^1.2",
-          "behat/mink-selenium2-driver" => "1.3.x-dev",
-          "mikey179/vfsstream" => "^1.6.8",
-          "phpunit/phpunit" => "^6.5 || ^7",
-          "symfony/phpunit-bridge" => "^3.4.3",
-          "phpspec/prophecy" => "^1.7",
-          "symfony/css-selector" => "^3.4.0",
-          "symfony/debug" => "^3.4.0",
-          "justinrainbow/json-schema" => "^5.2",
-          "symfony/filesystem" => "~3.4.0",
-          "symfony/finder" => "~3.4.0",
-          "symfony/lock" => "~3.4.0",
-          "symfony/browser-kit" => "^3.4.0"
-        ],
-      ];
-      $this->installWithComposer($install, 'drupal');
-    }
-  }
-
-  /**
-   * Install Drupal Dev, shortcut for installPhpunit().
-   *
-   * @return array
-   */
-  public function installDrupalDev() {
+  public function requireDrupalDev() {
     $task = $this->composerRequire($this->docRoot)
       ->dev()
       ->dependency("drupal/core-dev", "^$this->ciDrupalVersion")
@@ -724,20 +628,24 @@ class RoboFile extends \Robo\Tasks {
 
     $install = [
       'behat' => [
-        'behat/mink' => '1.7.x-dev',
-        'behat/mink-goutte-driver' => '^1.2',
-        'dmore/behat-chrome-extension' => '^1.3.0',
         'bex/behat-screenshot' => '^1.2',
+        'drupal/drupal-extension' => '~4.0',
+        'dmore/behat-chrome-extension' => '^1.3.0',
         'emuse/behat-html-formatter' => '0.1.*',
-        'drupal/drupal-extension' => '^4.0',
       ],
     ];
     $this->installWithComposer($install, 'drupal');
 
     // Add bin to use taskBehat().
-    if (!file_exists('/usr/local/bin/behat')) {
-      $this->symlink($this->docRoot . '/vendor/bin/behat', '/usr/local/bin/behat');
+    if (file_exists('/usr/local/bin/behat')) {
+      $this->taskFilesystemStack()
+        ->remove('/usr/local/bin/behat')
+        ->run();
     }
+
+    $this->taskFilesystemStack()
+      ->symlink($this->docRoot . '/vendor/behat/behat/bin/behat', '/usr/local/bin/behat')
+      ->run();
   }
 
   /**
@@ -903,13 +811,7 @@ class RoboFile extends \Robo\Tasks {
     $this->installCoder();
 
     if ($target == 'drupal') {
-      if ($this->ciType == "project") {
-        $dir = $this->ciProjectDir;
-      }
-      # For a module, use included Drupal.
-      else {
-        $dir = $this->docRoot;
-      }
+      $dir = $this->docRoot;
     }
     else {
       $dir = $this->composerHome;
@@ -1055,12 +957,7 @@ class RoboFile extends \Robo\Tasks {
    */
   public function yarnInstall($dir = null) {
     if (!$dir) {
-      if ($this->ciType == "project") {
-        $dir = $this->ciProjectDir . '/web/core';
-      }
-      else {
-        $dir = $this->webRoot . '/core';
-      }
+      $dir = $this->webRoot . '/core';
     }
 
     if (!file_exists($dir . '/package.json')) {
@@ -1071,6 +968,9 @@ class RoboFile extends \Robo\Tasks {
       // Check one of the program to decide if an install is needed.
       if (!file_exists($dir . '/node_modules/.bin/stylelint')) {
         $this->yarn('install', null, $dir);
+      }
+      elseif ($this->verbose) {
+        $this->say("[SKIP] yarn install not needed.");
       }
 
       $this->checkChromedriver($dir);

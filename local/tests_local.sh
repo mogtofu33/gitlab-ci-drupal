@@ -75,7 +75,7 @@ Options
   -sp|--skip-prepare              Skip prepare step (copy files, set folders).
   -sb|--skip-build                Skip build step (cache, perform build).
   -si|--skip-install              Skip Drupal install step (behat).
-  -sa|-spb|--skip-prepare-build   Skip bith previous.
+  -sa|-skip-all                   Skip build, prepare and install.
   -sim|--simulate                 Robo simulate action.
   --clean                         Delete previous reports.
   --debug                         Debug this script.
@@ -332,7 +332,7 @@ _create_artifacts() {
       mkdir -p ./tmp
       _dkexec mkdir -p /tmp
       _dkexec tar -czf /tmp/artifacts.tgz \
-        --exclude="${WEB_ROOT}/modules/custom" \_dkexec chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/.composer /var/www/${REPORT_DIR}
+        --exclude="${WEB_ROOT}/modules/custom" \
         --exclude="${WEB_ROOT}/themes/custom" \
         ${DOC_ROOT}/vendor ${DOC_ROOT}/web ${WEB_ROOT}/core/node_modules \
         ${DOC_ROOT}/drush ${DOC_ROOT}/scripts ${DOC_ROOT}/composer.json \
@@ -470,8 +470,7 @@ _behat() {
 
   _prepare_folders
 
-  _PROFILE=$(yq r $_DIR/../.gitlab-ci.yml "[Behat tests].variables.DRUPAL_INSTALL_PROFILE")
-  _install_drupal_robo $_PROFILE
+  _install_drupal_robo ${DRUPAL_INSTALL_PROFILE}
 
   # Starting Chrome.
   _ensure_chrome
@@ -495,8 +494,7 @@ _pa11y() {
 
   _prepare_folders
 
-  _PROFILE=$(yq r $_DIR/../.gitlab-ci.yml "[Pa11y].variables.DRUPAL_INSTALL_PROFILE")
-  _install_drupal_robo $_PROFILE
+  _install_drupal_robo ${DRUPAL_INSTALL_PROFILE}
 
   _dkexec_docroot robo $__simulate install:pa11y
   _dkexec_docroot robo $__simulate test:pa11y
