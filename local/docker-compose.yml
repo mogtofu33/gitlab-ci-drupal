@@ -17,15 +17,15 @@ services:
     # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
     ports:
       - "88:80"
-      - "4444:4444"
+      # Chromedriver port for Functional js.
       - "9515:9515"
-      # - "9222:9222"
+      # Behat Chrome remote debugging port.
+      - "9222:9222"
     links:
       - mariadb
     volumes:
-      # Mount current module, theme or project, mimic Gitlab-ci.
+      # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../:${CI_PROJECT_DIR}
-      # - ../:/var/www/html
       # Reports folder for results.
       - ../reports:/var/www/html/reports
       # [OPTIONAL] composer cache folder to speed up the process.
