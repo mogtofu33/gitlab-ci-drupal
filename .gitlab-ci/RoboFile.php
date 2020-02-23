@@ -355,7 +355,7 @@ class RoboFile extends \Robo\Tasks {
    * Setup Drupal or import a db dump if available.
    *
    * @param string $profile
-   *   (optional) The profile to install, default to minimal.
+   *   (optional) The profile to install, default to minimal or DRUPAL_INSTALL_PROFILE.
    */
   public function installDrupal($profile = null) {
     // Ensure permissions.
@@ -373,6 +373,11 @@ class RoboFile extends \Robo\Tasks {
     $this->say("Installing Drupal with $profile...");
 
     $filename = $this->dbDump . '/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql';
+
+    if (file_exists($filename . '.gz')) {
+      $this->say("Extract dump $filename.gz");
+      $this->_exec('zcat ' . $filename . '.gz > ' . $filename . ';');
+    }
 
     if (file_exists($filename)) {
       $this->say("Import dump $filename");
@@ -405,7 +410,7 @@ class RoboFile extends \Robo\Tasks {
    * Install Drupal from profile or config with config_installer.
    *
    * @param string $profile
-   *   The profile to install, default to minimal.
+   *   The profile to install, default to minimal or env DRUPAL_INSTALL_PROFILE.
    */
   public function setupDrupal($profile) {
     $this->say("Setup Drupal with $profile...");
@@ -450,7 +455,7 @@ class RoboFile extends \Robo\Tasks {
    * Dump Drupal DB with Drush.
    *
    * @param string $profile
-   *   The profile to install, default to minimal.
+   *   The profile to install, default to minimal or env DRUPAL_INSTALL_PROFILE..
    */
   public function dumpDrupal($profile) {
     if (!file_exists($this->dbDump)) {
@@ -461,6 +466,7 @@ class RoboFile extends \Robo\Tasks {
     $this->drush()
       ->args('sql:dump')
       ->option('result-file', $this->dbDump . '/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql', '=')
+      ->option('gzip')
       ->run();
   }
 
