@@ -104,7 +104,8 @@ template](https://github.com/drupal-composer/drupal-project).
 
 **Note**: should work with other Drupal distributions or project but this is not tested yet.
 
-- Copy `.gitlab-ci.yml` file and `.gitlab-ci` folder in the root of your Drupal
+- Copy `.gitlab-ci.yml` file, `.gitlab-ci` and if you are using _Behat_ the `tests` folders in
+the root of your Drupal.
 project (same level as `composer.json` file).
 - Put your code in the `web/modules/custom` and `web/themes/custom` folders of your project.
 - Create a branch **8.x-dev** and push to Gitlab.
