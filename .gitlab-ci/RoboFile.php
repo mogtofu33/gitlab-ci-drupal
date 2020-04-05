@@ -636,7 +636,7 @@ class RoboFile extends \Robo\Tasks {
       'behat' => [
         'bex/behat-screenshot' => '^1.2',
         'drupal/drupal-extension' => '~4.0',
-        'dmore/behat-chrome-extension' => '^1.3.0',
+        'dmore/behat-chrome-extension' => '^1.3',
         'emuse/behat-html-formatter' => '0.1.*',
       ],
     ];
@@ -649,9 +649,7 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
 
-    $this->taskFilesystemStack()
-      ->symlink($this->docRoot . '/vendor/behat/behat/bin/behat', '/usr/local/bin/behat')
-      ->run();
+    $this->symlink($this->docRoot . '/vendor/behat/behat/bin/behat', '/usr/local/bin/behat');
   }
 
   /**
@@ -763,23 +761,6 @@ class RoboFile extends \Robo\Tasks {
   }
 
   /**
-   * Install or locate Phpqa.
-   *
-   * @return array
-   */
-  public function installPhpqa() {
-    $install = [
-      'phpqa' => [
-        'edgedesign/phpqa' => '^1.21',
-        'jakub-onderka/php-parallel-lint' => '^1.0',
-        'jakub-onderka/php-console-highlighter' => '^0.4.0',
-        'twig/twig' => '^1',
-      ],
-    ];
-    $this->installWithComposer($install, 'user');
-  }
-
-  /**
    * Install or locate Drush.
    *
    * @return array
@@ -787,14 +768,17 @@ class RoboFile extends \Robo\Tasks {
   public function installDrush() {
     $install = [
       'drush' => [
-        'drush/drush' => '^9',
+        'drush/drush' => '^10',
       ],
     ];
-    $this->installWithComposer($install, 'user');
+    $this->installWithComposer($install, 'drupal');
 
-    if (!file_exists('/usr/local/bin/drush')) {
-      $this->symlink($this->composerHome . '/vendor/bin/drush', '/usr/local/bin/drush');
+    if (file_exists('/usr/local/bin/drush')) {
+      $this->taskFilesystemStack()
+        ->remove('/usr/local/bin/drush')
+        ->run();
     }
+    $this->symlink($this->docRoot . '/vendor/bin/drush', '/usr/local/bin/drush');
   }
 
   /**
@@ -880,7 +864,7 @@ class RoboFile extends \Robo\Tasks {
     }
     if (!file_exists($this->composerHome . '/vendor/dealerdirect/phpcodesniffer-composer-installer/composer.json')) {
       $hasDependency = true;
-      $task->dependency('dealerdirect/phpcodesniffer-composer-installer', '^0.5.0');
+      $task->dependency('dealerdirect/phpcodesniffer-composer-installer', '^0.6');
     }
     if ($hasDependency) {
       $task->run();
@@ -970,7 +954,6 @@ class RoboFile extends \Robo\Tasks {
       $this->io()->warning("Missing $dir/package.json file.");
     }
     else {
-
       // Check one of the program to decide if an install is needed.
       if (!file_exists($dir . '/node_modules/.bin/stylelint')) {
         $this->yarn('install', null, $dir);
@@ -1189,7 +1172,7 @@ class RoboFile extends \Robo\Tasks {
         ->run();
     }
     elseif ($this->verbose) {
-      $this->say("[SKIP] Folder do not exist: $src");
+      $this->say("[SKIP] Source do not exist: $src");
     }
   }
 
@@ -1237,7 +1220,7 @@ class RoboFile extends \Robo\Tasks {
     $this->installDrush();
 
     // Drush needs an absolute path to the webroot.
-    $task = $this->taskExec($this->composerHome . '/vendor/bin/drush')
+    $task = $this->taskExec($this->docRoot . '/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {
