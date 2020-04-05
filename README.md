@@ -1,8 +1,14 @@
 # Gitlab CI with Drupal 8
 
-Drupal 8.8: [![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
+For any **issue**, please use the [Gitlab-CI project page](https://gitlab.com/mog33/gitlab-ci-drupal/-/issues)
 
-Drupal 8.9.x-dev: [![pipeline status 8.9.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.9)
+Drupal 8.8 QA: [![pipeline status master](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master)
+
+Drupal 8.8 Tests: [![pipeline status 8.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/8.x-dev)
+
+Drupal 8.9 Tests: [![pipeline status 8.9](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.9)
+
+(WIP) Drupal 9.0 Tests: [![pipeline status 9.0](https://gitlab.com/mog33/gitlab-ci-drupal/badges/master/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-9.0)
 
 <img src="https://www.drupal.org/sites/all/themes/drupalorg_themes/blueprint/images/logo-d8.svg"  width="120" height="120"> +
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png"  width="120" height="120">
@@ -57,7 +63,7 @@ accounts.
 
 ```shell
 CI_IMAGE_VARIANT        drupal
-# 8.7, 8.8 or 8.9 for 8.9.x-dev
+# 8.7, 8.8, 8.9 or 9.0
 CI_DRUPAL_VERSION       8.8
 CI_TYPE                 module
 WEB_ROOT                /var/www/html
@@ -122,7 +128,9 @@ To test against Drupal 8.8.0-beta1 version, go to Gitlab **Settings > CI/ CD > V
 CI_DRUPAL_VERSION          8.8
 ```
 
-Set `8.9` to test against Drupal 8.9.x-dev.
+Set `8.9` to test against last Drupal 8.9 tag.
+
+(WIP) Set `9.0` to test against last Drupal 9.0 tag.
 
 See [Skip jobs](#skip-jobs) to adapt the default jobs.
 
