@@ -17,6 +17,11 @@ class ExampleFunctionalJavascriptTest extends WebDriverTestBase {
   public static $modules = ['node'];
 
   /**
+   * {@inheritdoc}
+   */
+  protected $defaultTheme = 'stark';
+
+  /**
    * Tests the homepage, no specific js here.
    */
   public function testHomepage() {
