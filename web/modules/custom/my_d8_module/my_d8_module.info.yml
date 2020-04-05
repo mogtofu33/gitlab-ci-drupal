@@ -3,5 +3,6 @@ type: module
 description: 'Provides example code for testing Gitlab CI.'
 package: Example modules
 core: 8.x
+core_version_requirement: ^8 || ^9
 dependencies:
   - drupal:help
