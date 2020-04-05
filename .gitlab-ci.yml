@@ -634,8 +634,8 @@ Deploy to testing:
     name: testing
     url: http://${TESTING_HOST}
   # Add your deploy script.
-  # script:
-  #   - 
+  script:
+    - ssh -p22 $USER_NAME@TESTING_HOST "/some/remote/scripts.sh --env=testing;"
   variables:
     PRIVATE_KEY: "${TESTING_PRIVATE_KEY}"
 
@@ -646,8 +646,8 @@ Deploy to staging:
     name: staging
     url: http://${STAGING_HOST}
   # Add your deploy script.
-  # script:
-  #   - 
+  script:
+    - ssh -p22 $USER_NAME@TESTING_HOST "/some/remote/scripts.sh --env=testing;"
   variables:
     PRIVATE_KEY: "${STAGING_PRIVATE_KEY}"
 
@@ -658,8 +658,8 @@ Deploy to production:
     name: production
     url: http://${PRODUCTION_HOST}
   # Add your deploy script.
-  # script:
-  #   - 
+  script:
+    - ssh -p22 $USER_NAME@TESTING_HOST "/some/remote/scripts.sh --env=testing;"
   variables:
     PRIVATE_KEY: "${PRODUCTION_PRIVATE_KEY}"
 
