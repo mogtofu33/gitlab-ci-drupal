@@ -18,7 +18,7 @@
 stages:
   - build
   - tests
-  # [TESTING] Next part can be removed for testing only.
+  # [TESTING] Next lines can be removed for testing only.
   # On each push.
   - code quality
   - code lint
@@ -60,6 +60,7 @@ stages:
       # Demo branch testing against next Drupal versions.
       - testing-8.8
       - testing-8.9
+      - testing-9.0
       - tags
 
 # Reports produced and visible in job report.
@@ -282,10 +283,10 @@ Nightwatch Js:
 ################################################################################
 # Third party tools tests.
 #
-# [TESTING] Next part can be removed for testing only.
+# [TESTING] This section can be removed for testing only.
 ################################################################################
 
-# [CI_TYPE] [TESTING] Next part can be removed if no dependencies for a single
+# [CI_TYPE] [TESTING] This job can be removed if no dependencies for a single
 # module / theme.
 Security report:
   stage: tests
@@ -349,7 +350,7 @@ Behat tests:
 ################################################################################
 # Accessibility jobs for Drupal 8+
 #
-# [TESTING] Next part can be removed for testing only.
+# [TESTING] This section can be removed for testing only.
 ################################################################################
 
 Pa11y:
@@ -380,7 +381,7 @@ Pa11y:
 ################################################################################
 # Code quality jobs for Drupal 8+
 #
-# [TESTING] Next part can be removed for testing only.
+# [TESTING] This section can be removed for testing only.
 ################################################################################
 
 # Common definition for all qa jobs.
@@ -438,7 +439,7 @@ Best practices:
 ################################################################################
 # Code  lint jobs for Drupal 8+
 #
-# [TESTING] Next part can be removed for testing only.
+# [TESTING] This section can be removed for testing only.
 ################################################################################
 
 # Common definition for all lint jobs.
@@ -531,7 +532,7 @@ Sass lint:
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
 #
-# [TESTING] Next part can be removed for testing only.
+# [TESTING] This section can be removed for testing only.
 ################################################################################
 
 # Common definition for all metrics jobs.
@@ -581,16 +582,18 @@ Php stats:
 
 ################################################################################
 # [DEPLOY] Deploy jobs definition.
-# [CI_TYPE] Next part could be used only for a project with deploy.
-# [TESTING] Next part can be removed for testing only.
+# [CI_TYPE] This section could be used only for a project with deploy.
+# [TESTING] This section can be removed for testing only.
 #
 # This is a sample workflow, testing is run on master and testing branches
 # pushes or merge, other deploy are manual. Using a basic bash deploy, you must
 # adapt if you are using a specific deploy process.
+# @see docs: https://docs.gitlab.com/ee/ci/examples/README.html
 #
-# You need to be sure we can ssh to the machine, a deploy key must be manually
-# added on the target in  ~/.ssh/authorized_keys
-# Private key name and values must be set on Gitlab:
+# Most of the time, you need to be sure you can ssh to the machine.
+# This next sample assume a deploy key has been added on the target host
+# ~/.ssh/authorized_keys
+# Private key can be set on Gitlab as 'PRIVATE_KEY':
 #   Settings > CI / CD > Variables
 ################################################################################
 
@@ -605,6 +608,9 @@ Php stats:
   except:
     variables:
       - $SKIP_DEPLOY == "1"
+  # To use the result of the build job (composer install).
+  dependencies:
+    - Build
   before_script:
     - apk --no-cache add openssh-client
     - mkdir -p ~/.ssh
@@ -627,10 +633,9 @@ Deploy to testing:
   environment:
     name: testing
     url: http://${TESTING_HOST}
-  script:
-    # We can now ssh and run any deploy script.
-    - ssh -T $USER_NAME@$TESTING_HOST
-        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  # Add your deploy script.
+  # script:
+  #   - 
   variables:
     PRIVATE_KEY: "${TESTING_PRIVATE_KEY}"
 
@@ -640,10 +645,9 @@ Deploy to staging:
   environment:
     name: staging
     url: http://${STAGING_HOST}
-  script:
-    # We can now ssh and run any deploy script.
-    - ssh -T $USER_NAME@$TESTING_HOST
-        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  # Add your deploy script.
+  # script:
+  #   - 
   variables:
     PRIVATE_KEY: "${STAGING_PRIVATE_KEY}"
 
@@ -653,10 +657,9 @@ Deploy to production:
   environment:
     name: production
     url: http://${PRODUCTION_HOST}
-  script:
-    # We can now ssh and run any deploy script.
-    - ssh -T $USER_NAME@$TESTING_HOST
-        "${DRUPAL_FOLDER}/scripts/my_deploy_script.sh;"
+  # Add your deploy script.
+  # script:
+  #   - 
   variables:
     PRIVATE_KEY: "${PRODUCTION_PRIVATE_KEY}"
 

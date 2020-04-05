@@ -31,6 +31,7 @@ Include **Build**,
   - [Rules for linting / Code standards / QA](#rules-for-linting--code-standards--qa)
   - [Metrics jobs](#metrics-jobs)
   - [Accessibility with Pa11y](#accessibility-with-pa11y)
+  - [Deploy](#deploy)
 - [Jobs detail](#jobs-detail)
 - [CI image including tools](#ci-image-including-tools)
 - [Issues](#issues)
@@ -393,6 +394,19 @@ For setting your urls to test, adapt the urls section:
 
 When a test failed, a screen capture is recorded in the reports.
 
+### Deploy
+
+To deploy to an external server, you must implement your own solution.
+
+As per Drupal 8 good practices it is not meant to deploy any database,
+only the codebase.
+
+This project include a sample assuming you can ssh to a remote host.  
+From this starting point, you can include any script to match your deploy
+process.
+
+For some examples, see the documentation: [https://docs.gitlab.com/ee/ci/examples/README.html](https://docs.gitlab.com/ee/ci/examples/README.html)
+
 ## Jobs detail
 
 Available stages on the pipelines are:
@@ -400,14 +414,18 @@ Available stages on the pipelines are:
 ```shell
 - build
 - tests
+# [TESTING] Next lines can be removed for testing only.
 # On each push.
 - code quality
 - code lint
 # Only on tag, when released.
 - php code metrics
 # [DEPLOY] Skipped by default, see SKIP_DEPLOY in .gitlab-ci-variables.yml
+# [DEPLOY] Manual if branch testing or master or tag.
 - deploy to testing
+# [DEPLOY] Manual if branch master or tag.
 - deploy to staging
+# [DEPLOY] Manual if branch master or tag.
 - deploy to production
 ```
 
