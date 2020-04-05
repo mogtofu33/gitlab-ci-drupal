@@ -1,13 +1,13 @@
 <?php
 
-namespace Drupal\Tests\my_d8_module\Functional;
+namespace Drupal\Tests\my_module\Functional;
 
 use Drupal\Tests\BrowserTestBase;
 
 /**
  * Test Functional description.
  *
- * @group my_d8_module
+ * @group my_module
  */
 class ExampleFunctionalTest extends BrowserTestBase {
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\my_d8_module;
+namespace Drupal\my_module;
 
 /**
  * DemoModuleExampleService service.

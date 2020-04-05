@@ -1,13 +1,12 @@
 name: My theme
 type: theme
 description: This is a testing sub theme of Classy
-core: 8.x
 core_version_requirement: ^8 || ^9
 # Defines the base theme
 base theme: classy
 # Defines libraries group in which we can add css/js.
 libraries:
-  - my_d8_theme/global-styling
+  - my_theme/global-styling
 # Regions
 regions:
   header: Header

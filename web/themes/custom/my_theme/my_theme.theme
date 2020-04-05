@@ -12,7 +12,7 @@
  *
  * Add a global base path twig variables to all templates and scripts.
  */
-function my_d8_theme_preprocess(&$variables, $hook) {
+function my_theme_preprocess(&$variables, $hook) {
   $variables['base_path'] = base_path();
   if (isset($variables['directory'])) {
     $variables['theme_path'] = base_path() . $variables['directory'];

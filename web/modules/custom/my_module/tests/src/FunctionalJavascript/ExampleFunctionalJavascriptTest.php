@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\my_d8_module\FunctionalJavascript;
+namespace Drupal\Tests\my_module\FunctionalJavascript;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 

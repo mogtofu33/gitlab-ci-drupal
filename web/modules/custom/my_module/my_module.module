@@ -11,10 +11,10 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Implements hook_help().
  */
-function my_d8_module_help($route_name, RouteMatchInterface $route_match) {
+function my_module_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
-    // Main module help for the my_d8_module module.
-    case 'help.page.my_d8_module_help':
+    // Main module help for the my_module module.
+    case 'help.page.my_module_help':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('Help testing Gitlab CI for Drupal 8.') . '</p>';
@@ -27,6 +27,6 @@ function my_d8_module_help($route_name, RouteMatchInterface $route_match) {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function my_d8_module_form_simple_testing_form_alter(&$form, FormStateInterface $form_state) {
+function my_module_form_simple_testing_form_alter(&$form, FormStateInterface $form_state) {
   $form['text']['#description'] = t('Please do not fail.');
 }

@@ -1,15 +1,15 @@
 <?php
 
-namespace Drupal\Tests\my_d8_module\Unit;
+namespace Drupal\Tests\my_module\Unit;
 
 use Drupal\Tests\UnitTestCase;
-use Drupal\my_d8_module\DemoModuleExampleService;
+use Drupal\my_module\DemoModuleExampleService;
 
 /**
  * Tests Unit DemoModuleExampleService.
  *
- * @group my_d8_module
- * @coversDefaultClass \Drupal\my_d8_module\DemoModuleExampleService
+ * @group my_module
+ * @coversDefaultClass \Drupal\my_module\DemoModuleExampleService
  */
 class ExampleUnitTest extends UnitTestCase {
 
@@ -24,7 +24,7 @@ class ExampleUnitTest extends UnitTestCase {
   }
 
   /**
-   * @covers Drupal\my_d8_module\DemoModuleExampleService::isDummy
+   * @covers Drupal\my_module\DemoModuleExampleService::isDummy
    */
   public function testIsDummy() {
     // Dummy test.
