@@ -955,7 +955,7 @@ class RoboFile extends \Robo\Tasks {
     }
     else {
       // Check one of the program to decide if an install is needed.
-      if (!file_exists($dir . '/node_modules/.bin/stylelint')) {
+      if (!file_exists($dir . '/node_modules/.bin/stylelint') || !file_exists($dir . '/node_modules/.bin/eslint')) {
         $this->yarn('install', null, $dir);
       }
       elseif ($this->verbose) {
