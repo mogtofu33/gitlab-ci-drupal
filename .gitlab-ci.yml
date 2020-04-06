@@ -513,8 +513,7 @@ Sass lint:
       - ${REPORT_DIR}/sass-lint-report.html
   script:
     # Install sass-lint dev.
-    - robo --load-from ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php \
-      yarn add git://github.com/sasstools/sass-lint.git#develop
+    - robo --load-from ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php yarn add git://github.com/sasstools/sass-lint.git#develop
     # Html report.
     - ${WEB_ROOT}/core/node_modules/.bin/sass-lint --config ${SASS_CONFIG}
         --verbose

@@ -635,11 +635,15 @@ class RoboFile extends \Robo\Tasks {
     $install = [
       'behat' => [
         'bex/behat-screenshot' => '^1.2',
-        'drupal/drupal-extension' => '~4.0',
         'dmore/behat-chrome-extension' => '^1.3',
         'emuse/behat-html-formatter' => '0.1.*',
       ],
     ];
+  
+    if ($this->ciDrupalVersion[0] == "8") {
+      $install['behat']['drupal/drupal-extension'] = '~4.0';
+    }
+
     $this->installWithComposer($install, 'drupal');
 
     // Add bin to use taskBehat().
