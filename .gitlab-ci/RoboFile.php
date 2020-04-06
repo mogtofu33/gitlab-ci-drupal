@@ -602,6 +602,11 @@ class RoboFile extends \Robo\Tasks {
    */
   public function testBehat($reportRootDir = null) {
 
+    if ($this->ciDrupalVersion[0] == "9") {
+      $this->io()->warning("Drupal 9 not yet supported.");
+      return;
+    }
+
     if (!$reportRootDir) {
       $reportRootDir = $this->reportDir;
     }
@@ -642,6 +647,11 @@ class RoboFile extends \Robo\Tasks {
   
     if ($this->ciDrupalVersion[0] == "8") {
       $install['behat']['drupal/drupal-extension'] = '~4.0';
+    }
+    else {
+      // WIP
+      // https://patch-diff.githubusercontent.com/raw/jhedstrom/DrupalDriver/pull/224.patch
+      return;
     }
 
     $this->installWithComposer($install, 'drupal');
