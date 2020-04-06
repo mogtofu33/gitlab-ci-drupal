@@ -284,7 +284,7 @@ _test_template() {
     if [ $__skip_build = 1 ] || [ $__skip_all = 1 ]; then
       printf "%s[SKIP]%s build (require:drupal-dev) \\n" "${_dim_blu}" "${_end}"
     else
-      _dkexec_robo $__simulate require:drupal-dev
+      _dkexec_robo require:drupal-dev
     fi
 
     # Apache launch is entrypoint.
@@ -297,7 +297,7 @@ _test_template() {
     fi
 
     # RoboFile.php is already at root.
-    _dkexec_robo $__simulate ensure:tests-folders
+    _dkexec_robo ensure:tests-folders
   fi
 }
 
@@ -309,7 +309,7 @@ _build() {
   else
     printf "%s[NOTICE]%s replicate build\\n" "${_dim}" "${_end}"
 
-    _dkexec_robo $__simulate project:build
+    _dkexec_robo project:build
 
     _create_artifacts
   fi
@@ -320,7 +320,7 @@ _prepare_folders() {
   if [ $__skip_prepare = 1 ] || [ $__skip_all = 1 ]; then
     printf "%s[SKIP]%s prepare_folders\\n" "${_dim_blu}" "${_end}"
   else
-    _dkexec_robo $__simulate prepare:folders
+    _dkexec_robo prepare:folders
 
     # Extra local step, ensure composer permissions.
     _dkexec chown -R "${APACHE_RUN_USER}:${APACHE_RUN_GROUP}" /var/www/.composer "${CI_PROJECT_DIR}/${REPORT_DIR}" "${REPORT_DIR}"
@@ -383,7 +383,7 @@ _unit_kernel() {
   _build
   _test_template
 
-  _dkexec_robo $__simulate test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  _dkexec_robo test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
 }
 
 _code_coverage() {
@@ -392,7 +392,7 @@ _code_coverage() {
   _build
   _test_template
 
-  _dkexec_robo $__simulate test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+  _dkexec_robo test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
   # _dkexec cp -r ${WEB_ROOT}/${REPORT_DIR} ./
 
   # bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml -t ${CODECOV_TOKEN}
@@ -454,19 +454,19 @@ _nightwatch() {
     printf "%s[SKIP]%s patch_nightwatch\\n" "${_dim_blu}" "${_end}"
   else
     if [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
-      _dkexec_robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch;
+      _dkexec_robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch;
     else
-      _dkexec_robo $__simulate patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch;
+      _dkexec_robo  patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch;
     fi
   fi
 
   if [ $__skip_build = 1 ] || [ $__skip_all = 1 ]; then
     printf "%s[SKIP]%s build (yarn:install) \\n" "${_dim_blu}" "${_end}"
   else
-    _dkexec_robo $__simulate yarn:install
+    _dkexec_robo  yarn:install
   fi
 
-  _dkexec_robo $__simulate test:nightwatch
+  _dkexec_robo  test:nightwatch
 }
 
 _security_checker() {
@@ -502,9 +502,9 @@ _behat() {
     debug _dkexec_bash "curl -s http://localhost:9222/json/version | jq '.'"
   fi
 
-  _dkexec_robo $__simulate install:behat
+  _dkexec_robo  install:behat
 
-  _dkexec_robo $__simulate test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}/behat"
+  _dkexec_robo  test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}/behat"
 }
 
 _pa11y() {
@@ -517,8 +517,8 @@ _pa11y() {
 
   _install_drupal_robo ${DRUPAL_INSTALL_PROFILE}
 
-  _dkexec_robo $__simulate install:pa11y
-  _dkexec_robo $__simulate test:pa11y
+  _dkexec_robo  install:pa11y
+  _dkexec_robo  test:pa11y
 
   _dkexec_bash "mkdir -p ${REPORT_DIR}/pa11y"
   _dkexec_bash "cp -f ${CI_PROJECT_DIR}/pa11y*.png ${REPORT_DIR}/pa11y"
@@ -546,7 +546,7 @@ _code_quality() {
   _cp_qa_lint_metrics
 
   _prepare_folders
-  _dkexec_robo $__simulate install:coder
+  _dkexec_robo  install:coder
 
   _dkexec phpqa --buildDir ${REPORT_DIR}/code_quality --tools ${TOOLS} --analyzedDirs ${PHP_CODE_QA}
 
@@ -560,7 +560,7 @@ _best_practices() {
   sed -i 's/Drupal/DrupalPractice/g' .phpqa.yml
 
   _prepare_folders
-  _dkexec_robo $__simulate install:coder
+  _dkexec_robo  install:coder
 
   _dkexec phpqa \
     --buildDir ${REPORT_DIR}/best_practices \
@@ -582,7 +582,7 @@ _lint_template() {
     printf "%s[SKIP]%s build (yarn:install) \\n" "${_dim_blu}" "${_end}"
   else
     printf "%s[NOTICE]%s yarn:install\\n" "${_dim}" "${_end}"
-    _dkexec_robo $__simulate yarn:install
+    _dkexec_robo  yarn:install
     printf "...done!\\n"
   fi
 }
@@ -597,18 +597,11 @@ _eslint() {
 
   # _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${CI_DRUPAL_VERSION}.x/core/.eslintrc.passing.json -o ${WEB_ROOT}/core/.eslintrc.passing.json
 
-  # _dkexec_docroot_bash "${WEB_ROOT}/core/node_modules/.bin/eslint \
-  # docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "${WEB_ROOT}/core/node_modules/.bin/eslint \
-  #   --config ${WEB_ROOT}/core/.eslintrc.passing.json \
-  #   --format html \
-  #   --output-file ${REPORT_DIR}/js-lint-report.html \
-  #   ${JS_CODE}"
-    # _dkexec_bash "${WEB_ROOT}/core/node_modules/.bin/eslint \
-
-  #   --resolve-plugins-relative-to ${WEB_ROOT}/core \
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal bash -c "${WEB_ROOT}/core/node_modules/.bin/eslint \
-    --config ${WEB_ROOT}/core/.eslintrc.passing.json \
-    ${JS_CODE}"
+  _dkexec_core_bash "${WEB_ROOT}/core/node_modules/.bin/eslint \
+        --config ${WEB_ROOT}/core/.eslintrc.passing.json \
+        --format html \
+        --output-file ${REPORT_DIR}/js-lint-report.html \
+        ${JS_CODE}"
 
   _clean_qa_lint_metrics
 }
@@ -625,13 +618,14 @@ _lint_template
   # _dkexec curl -fsSL https://git.drupalcode.org/project/drupal/raw/${CI_DRUPAL_VERSION}.x/core/.stylelintrc.json -o ${WEB_ROOT}/core/.stylelintrc.json
 
   # printf "%s[NOTICE]%s Install Stylelint-formatter-pretty\\n" "${_dim}" "${_end}"
-  # _dkexec_robo $__simulate install:stylelint-formatter-pretty
+  # _dkexec_robo  install:stylelint-formatter-pretty
 
-  # _dkexec_docroot_bash "stylelint --config-basedir ${WEB_ROOT}/core/node_modules/ \
+  # _dkexec_core_bash "${WEB_ROOT}/core/node_modules/.bin/stylelint\
+  #   --config-basedir ${WEB_ROOT}/core/node_modules/ \
   #   --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-formatter-pretty \
   #   --config ${WEB_ROOT}/core/.stylelintrc.json \${CSS_FILES}"
 
-  _dkexec_docroot_bash "${WEB_ROOT}/core/node_modules/.bin/stylelint \
+  _dkexec_core_bash "${WEB_ROOT}/core/node_modules/.bin/stylelint \
       --config-basedir ${WEB_ROOT}/core/node_modules/ \
       --config ${WEB_ROOT}/core/.stylelintrc.json \
       --formatter verbose \
@@ -649,9 +643,13 @@ _sass_lint() {
   _lint_template
 
   printf "%s[NOTICE]%s Install Sass-lint\\n" "${_dim}" "${_end}"
-  _dkexec_robo $__simulate yarn add git://github.com/sasstools/sass-lint.git#develop
+  if [ $__skip_build = 1 ] || [ $__skip_all = 1 ]; then
+    printf "%s[SKIP]%s build (yarn add sass-lint.git) \\n" "${_dim_blu}" "${_end}"
+  else
+    _dkexec_robo  yarn add git://github.com/sasstools/sass-lint.git#develop
+  fi
 
-  _dkexec_docroot_bash "${WEB_ROOT}/core/node_modules/.bin/sass-lint \
+  _dkexec_core_bash "${WEB_ROOT}/core/node_modules/.bin/sass-lint \
     --config ${CI_PROJECT_DIR}/.gitlab-ci/.sass-lint.yml \
     --verbose \
     --no-exit \
@@ -714,7 +712,7 @@ _dkexec_robo() {
   _copy_robofile
   if ! [ -f "/.dockerenv" ]; then
     if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
-    docker exec -it -w ${DOC_ROOT} ci-drupal $__simulate robo "$@" || true
+    docker exec -it -w ${DOC_ROOT} ci-drupal robo $__simulate "$@" || true
   fi
 }
 
@@ -739,10 +737,10 @@ _dkexec_bash() {
   fi
 }
 
-_dkexec_docroot_bash() {
+_dkexec_core_bash() {
   if ! [ -f "/.dockerenv" ]; then
     if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
-    docker exec -it -w ${DOC_ROOT} ci-drupal bash -c "$@"
+    docker exec -it -w ${DOC_ROOT}/web/core ci-drupal bash -c "$@"
   fi
 }
 
@@ -772,7 +770,7 @@ _install_drupal_robo() {
     printf "%s[SKIP]%s install\\n" "${_dim_blu}" "${_end}"
   else
     printf "%s[NOTICE]%s install Drupal %s\\n"  "${_dim}" "${_end}" "${1}"
-    _dkexec_robo $__simulate install:drupal ${1}
+    _dkexec_robo install:drupal ${1}
   fi
 }
 
