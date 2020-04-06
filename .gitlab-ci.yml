@@ -450,6 +450,14 @@ Best practices:
   except:
     variables:
       - $SKIP_LINT == "1"
+  before_script:
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}/.eslintignore || true
+    - robo prepare:folders
+    # Install packages from core/package.json
+    - robo yarn:install
+    # Start from the core folder to access node_modules.
+    - cd ${WEB_ROOT}/core
   # Allow failure to produce report and warning, not a critical job.
   allow_failure: true
 
@@ -465,12 +473,6 @@ Js lint:
     <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/js-lint-report.html
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}/.eslintignore || true
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
-    # Install stylelint from core/package.json
-    - robo yarn:install
   script:
     # Run the eslint command to generate an html report.
     - ${WEB_ROOT}/core/node_modules/.bin/eslint
@@ -491,11 +493,6 @@ Css lint:
     # <<: *default_artifacts
     # paths:
       # - ${REPORT_DIR}/*.txt
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
-    # Install stylelint from core/package.json
-    - robo yarn:install
   script:
     # Css report, terminal only for now.
     - ${WEB_ROOT}/core/node_modules/.bin/stylelint
@@ -514,12 +511,9 @@ Sass lint:
     <<: *default_artifacts
     paths:
       - ${REPORT_DIR}/sass-lint-report.html
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
+  script:
     # Install sass-lint dev.
     - robo yarn add git://github.com/sasstools/sass-lint.git#develop
-  script:
     # Html report.
     - ${WEB_ROOT}/core/node_modules/.bin/sass-lint --config ${SASS_CONFIG}
         --verbose
