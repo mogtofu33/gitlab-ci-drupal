@@ -122,7 +122,7 @@ stages:
     <<: *test_variables
   before_script:
     # Copy RoboFile.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR}
+    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
     # Symlink Drupal codebase or the module/theme to the web root of the ci
     # image.
     - robo prepare:folders
@@ -513,7 +513,8 @@ Sass lint:
       - ${REPORT_DIR}/sass-lint-report.html
   script:
     # Install sass-lint dev.
-    - robo yarn add git://github.com/sasstools/sass-lint.git#develop
+    - robo --load-from ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php \
+      yarn add git://github.com/sasstools/sass-lint.git#develop
     # Html report.
     - ${WEB_ROOT}/core/node_modules/.bin/sass-lint --config ${SASS_CONFIG}
         --verbose
