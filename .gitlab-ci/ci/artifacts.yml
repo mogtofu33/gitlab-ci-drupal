@@ -1,0 +1,14 @@
+################################################################################
+# Reports produced and visible in UI and jobs report.
+################################################################################
+
+.artifacts_reports:
+  artifacts:
+    expire_in: 1 week
+    # Force artifacts even if the job fail.
+    when: always
+    paths:
+      - "report-${CI_JOB_NAME}"
+    # If we have a junit report, include it in the UI.
+    reports:
+      junit: "report-${CI_JOB_NAME}/*unit*.xml"

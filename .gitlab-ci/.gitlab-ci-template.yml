@@ -1,0 +1,406 @@
+###############################################################################
+# Gitlab CI integration for Drupal 8/9 project or module: unit tests,
+# code quality, linting, metrics and deploy samples.
+#
+# Project: https://gitlab.com/mog33/gitlab-ci-drupal
+# Documentation: https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/master/README.md
+# Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
+# Author: Jean Valverde contact@dev-drupal.com
+# License: GPL-3
+#
+# If you want to support this project, you can
+# - Buy me a coffee : https://bit.ly/34jPKcE
+# - Hire me as a freelance for any Drupal related work
+# - Promote me to any company looking for any Drupal related work
+# - Help me with testing / Documentation / Use cases
+#
+# For Gitlab CI help on this file see: https://docs.gitlab.com/ee/ci/yaml
+#
+# This template must be included from a .gitlab-ci.yml file, see documentation.
+#
+###############################################################################
+
+include:
+  - '/.gitlab-ci/ci/variables.yml'
+  - '/.gitlab-ci/ci/variables_test.yml'
+  - '/.gitlab-ci/ci/artifacts.yml'
+  - '/.gitlab-ci/ci/01_build.yml'
+  - '/.gitlab-ci/ci/02_test.yml'
+  - '/.gitlab-ci/ci/03_qa.yml'
+  - '/.gitlab-ci/ci/04_lint.yml'
+  - '/.gitlab-ci/ci/05_metrics.yml'
+  - '/.gitlab-ci/ci/06_deploy.yml'
+  # [WIP] Use Gitlab Pages to publish all reports in one page.
+  - '/.gitlab-ci/ci/06_publish_report.yml'
+  # [WIP] Release to Gitlab / Github / Drupal.org
+  - '/.gitlab-ci/ci/06_release.yml'
+
+# Variables must be used in your .gitlab-ci.yml:
+#
+# variables:
+#   extends: .default_variables
+
+################################################################################
+# Define your stages, this will be "pipelines" in gitlab.
+#   https://docs.gitlab.com/ee/ci/pipelines.html
+#   https://docs.gitlab.com/ee/ci/yaml/README.html#stages
+################################################################################
+
+stages:
+  - build
+  - tests
+  - metrics
+  # [WIP]
+  # - publish reports
+  # - release
+  # [DEPLOY] All deploy jobs can be set here.
+  # Sample of a deploy workflow:
+  # - deploy to testing
+  # - deploy to production
+
+################################################################################
+# Build job.
+################################################################################
+
+# For a project, this build part use composer install to get the Drupal code.
+# For a theme this can be used with a specific script to build something
+# (grunt, webpack, yarn...).
+build:
+  extends: .build_template
+  # Run on all tags, branches with word testing or dev NOT on master OR if
+  # variable SKIP_BUILD is set to 1
+  # https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
+  except:
+    variables:
+      - $SKIP_BUILD == "1"
+  script:
+    # Validate the composer.json file.
+    - if [ ${CI_TYPE} == "project" ]; then
+        composer validate --no-check-all --no-check-publish -n --no-ansi;
+      fi
+    # Install the project.
+    - if [ ${CI_TYPE} == "project" ]; then
+        composer install --no-ansi -n --prefer-dist;
+      fi
+    # Ensure we have Drupal Dev third party for next tests.
+    - if [ ! -f "./vendor/bin/phpunit" ]; then
+        composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
+      fi
+    - ./vendor/bin/phpunit --version
+    # Call any extra build script from ./.gitlab-ci/scripts/build.php
+    - robo ci:build
+
+################################################################################
+# Drupal tests.
+# https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
+################################################################################
+
+unit-kernel:
+  stage: tests
+  extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_UNITKERNEL == "1"
+  script:
+    # Prepare report folders for coverage.
+    - mkdir -p report-${CI_JOB_NAME}coverage-xml report-${CI_JOB_NAME}coverage-html
+    # Run PHPunit tests for unit, kernel, with coverage report.
+    - ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+        --configuration ${WEB_ROOT}/core
+        --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}coverage-xml
+        --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}coverage-html
+        --coverage-clover ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}coverage.xml
+        --coverage-text
+        --colors=never
+        --testdox-html report-${CI_JOB_NAME}phpunit.html
+        --log-junit report-${CI_JOB_NAME}junit-${CI_JOB_NAME}.xml
+        --verbose --debug
+  after_script:
+    # [CODECOV] integration, need to set up CI ENVIRONMENT VARIABLES 'CODECOV_TOKEN' to work.
+    # see https://codecov.io
+    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}junit-coverage.xml" ]; then
+        bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}junit-coverage.xml" || true;
+      fi
+  # https://docs.gitlab.com/ee/ci/yaml/#coverage
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+
+functional:
+  stage: tests
+  extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_FUNCTIONAL == "1"
+  script:
+    # For functional tests the user need to be the web server user.
+    - sudo -E -u www-data ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
+        --configuration ${WEB_ROOT}/core
+        --log-junit report-${CI_JOB_NAME}junit-${CI_JOB_NAME}.xml
+        --testdox-html report-${CI_JOB_NAME}phpunit.html
+        --verbose --debug
+  after_script:
+    - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}browser_output"
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}browser_output" || true
+
+functional-javascript:
+  stage: tests
+  extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_FUNCTIONALJS == "1"
+  script:
+    # Launch Chromedriver.
+    - /scripts/start-chromedriver.sh&
+    - sleep 2s
+    - curl -s http://localhost:9515/status | jq '.' || true
+    - ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
+        --configuration ${WEB_ROOT}/core
+        --log-junit report-${CI_JOB_NAME}junit-${CI_JOB_NAME}.xml
+        --testdox-html report-${CI_JOB_NAME}phpunit.html
+        --verbose --debug
+  after_script:
+    - mkdir -p report-${CI_JOB_NAME}browser_output
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}browser_output" || true
+
+# https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+nightwatch-js:
+  stage: tests
+  extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_NIGHTWATCH == "1"
+  script:
+    # @TODO: remove when Drupal 8.7/8.8 is deprecated.
+    - |
+      # Patch Drupal for Nightwatch profile support. https://drupal.org/node/3017176
+      touch 3017176.patch
+      if [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
+        curl -fsSL https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch -o 3017176.patch || true
+      elif [ ${CI_DRUPAL_VERSION} == "8.8" ]; then
+        curl -fsSL https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch -o 3017176.patch || true
+      fi
+      patch -d ${WEB_ROOT} -N -p1 < 3017176.patch || true
+    # Install packages from Drupal.
+    - yarn --cwd ${WEB_ROOT}/core install
+    # Update chromedriver if needed, the ci image include the lastest stable version of chrome.
+    - yarn --cwd ${WEB_ROOT}/core upgrade chromedriver@$(google-chrome --product-version | cut -d. -f1)
+    - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+    # Launch Nightwatch tests from core folder.
+    - yarn --cwd ${WEB_ROOT}/core test:nightwatch
+        --output_folder ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+        --detailed_output false
+  after_script:
+    # Html report, install plugin and run from the xml report.
+    - yarn --cwd ${WEB_ROOT}/core add nightwatch-html-reporter
+    - ${WEB_ROOT}/core/node_modules/.bin/nightwatch-html-reporter
+        --report-dir ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+        --output nightwatch.html
+        --browser false
+        --theme outlook
+
+################################################################################
+# Third party tools tests.
+################################################################################
+
+# Symfony security-checker report.
+security-checker:
+  stage: tests
+  extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_SECURITY == "1"
+  script:
+    - phpqa --tools security-checker:0
+        --config ${CI_PROJECT_DIR}/.gitlab-ci
+        --buildDir "report-${CI_JOB_NAME}"
+        --analyzedDirs "${CI_PROJECT_DIR}"
+  # Allow failure to produce report and warning when we have an error.
+  allow_failure: true
+
+# Behat tests from tests/ folder.
+behat:
+  stage: tests
+  extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_BEHAT == "1"
+  script:
+    # @TODO, update when drupal/drupal-extension support Drupal 9
+    - |
+      # Test if Drupal <9
+      if [ $(echo ${CI_DRUPAL_VERSION} | cut -d. -f1) == "9" ]; then
+        echo -e "\033[1;31mDrupal 9 not yet supported for Behat tests.\033[0;37m"
+        exit 1
+      fi
+    # Install Drupal with the standard profile.
+    - robo drupal:install standard
+    # Starting Chrome, we are not using Chromedriver.
+    - /scripts/start-chrome.sh&
+    - sleep 2s
+    # Test Chrome is running properly.
+    - curl -s http://localhost:9222/json/version | jq '.' || true
+    # Install behat and plugins with more memory.
+    - COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest
+        "bex/behat-screenshot:^1.2"
+        "dmore/behat-chrome-extension:^1.3"
+        "emuse/behat-html-formatter:0.1.*"
+        "drupal/drupal-extension:~4.0"
+    # Run the behat tests from the 'tests/' folder at the root of the project.
+    - ${WEB_ROOT}/../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+        --format progress
+        --out std
+        --format junit
+        --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+        --format html
+        --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+
+################################################################################
+# Accessibility jobs for Drupal 8+
+################################################################################
+
+# @TODO: xml / html or text report ?
+pa11y:
+  stage: tests
+  extends: .test_template
+  except:
+    variables:
+      - $SKIP_TESTS == "1"
+      - $SKIP_TEST_PA11Y == "1"
+  script:
+    # Install Drupal with the standard profile.
+    - robo drupal:install standard
+    # Install Pa11y-ci for tests with yarn.
+    - yarn --cwd ${WEB_ROOT}/core add pa11y-ci
+    # Run pa11y tests using ./gitlab-ci/pa11y-ci.json file definition.
+    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci --config ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json
+  after_script:
+    - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}" && cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
+
+################################################################################
+# Code quality jobs for Drupal 8+
+################################################################################
+
+# Automated quality check job when something is pushed/merged on master.
+# We have a limit on errors we accept on the tools, if failed we run a
+# report and stop.
+# See Phpqa available tools:
+#   https://github.com/EdgedesignCZ/phpqa#available-tools
+code-quality:
+  stage: tests
+  extends: .qa_template
+  except:
+    variables:
+      - $SKIP_QA == "1"
+      - $SKIP_QA_CODEQUALITY == "1"
+  script:
+    # No erros allowed for Code sniffer.
+    - phpqa --tools phpcs:0,phpmd,phpcpd,parallel-lint
+        --config ${CI_PROJECT_DIR}/.gitlab-ci
+        --buildDir "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
+        --analyzedDirs "${DIRS_QA}"
+
+# Drupal coding standard best practices report.
+best-practices:
+  stage: tests
+  extends: .qa_template
+  except:
+    variables:
+      - $SKIP_QA == "1"
+      - $SKIP_QA_BESTPRACTICES == "1"
+  script:
+    # Move from Drupal to DrupalPractice standard.
+    - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml
+    # Coding best practices errors limit, ~10 is reasonable.
+    - phpqa --tools phpcs:10
+        --config ${CI_PROJECT_DIR}/.gitlab-ci
+        --buildDir "report-${CI_JOB_NAME}"
+        --analyzedDirs "${DIRS_QA}"
+  # Allow failure to produce report and warning.
+  allow_failure: true
+
+################################################################################
+# Code lint jobs for Drupal 8+
+################################################################################
+
+# This is a eslint report based on Drupal 8.x standards.
+# @TODO: junit report.Deploy
+eslint:
+  stage: tests
+  extends: .lint_template
+  except:
+    variables:
+      - $SKIP_LINT == "1"
+      - $SKIP_LINT_JS == "1"
+  script:
+    # Start from the core folder to access node_modules.
+    - cd ${WEB_ROOT}/core
+    # Run the eslint command to generate an html report.
+    # --format junit --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}eslint-unit.xml"
+    - ${WEB_ROOT}/core/node_modules/.bin/eslint
+        --config ${WEB_ROOT}/core/.eslintrc.passing.json
+        --format html --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}eslint.html"
+        "${DIRS_JS}"
+
+# Drupal 8.x rules used here for stylelint to check css.
+# @TODO: stylelint html & junit report. + sass / scss support?
+# https://www.npmjs.com/package/stylelint-junit-formatter
+stylelint:
+  stage: tests
+  extends: .lint_template
+  except:
+    variables:
+      - $SKIP_LINT == "1"
+      - $SKIP_LINT_CSS == "1"
+  script:
+    # Start from the core folder to access node_modules.
+    - cd ${WEB_ROOT}/core
+    # Css report, terminal only for now.
+    - ${WEB_ROOT}/core/node_modules/.bin/stylelint
+        --config ${WEB_ROOT}/core/.stylelintrc.json
+        --formatter verbose
+        "${DIRS_CSS}"
+
+################################################################################
+# Code metrics, would probably make sense only for a tag release.
+################################################################################
+
+# Phpmetrics report, no pass or failure as it's just informative.
+# @TODO phpmetrics with junit report from code-coverage
+phpmetrics:
+  stage: metrics
+  extends: .metrics_template
+  except:
+    variables:
+      - $SKIP_METRICS == "1"
+      - $SKIP_METRICS_PHPMETRICS == "1"
+  script:
+    - phpqa --tools phpmetrics
+        --config ${CI_PROJECT_DIR}/.gitlab-ci
+        --buildDir "report-${CI_JOB_NAME}"
+        --analyzedDirs "${DIRS_PHP}"
+
+# Phploc, Pdepend report, no pass or failure as it's just informative.
+phpstats:
+  stage: metrics
+  extends: .metrics_template
+  except:
+    variables:
+      - $SKIP_METRICS == "1"
+      - $SKIP_METRICS_PHPSTATS == "1"
+  script:
+    - phpqa --tools phploc,pdepend
+        --config ${CI_PROJECT_DIR}/.gitlab-ci
+        --buildDir "report-${CI_JOB_NAME}"
+        --analyzedDirs "${DIRS_PHP}"
+
+################################################################################
+# Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
+################################################################################
+
+default:
+  image: mogtofu33/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}

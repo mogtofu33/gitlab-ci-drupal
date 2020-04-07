@@ -1,0 +1,42 @@
+################################################################################
+# [DEPLOY] Deploy jobs definition.
+#
+# This is a sample for a basic deploy template with SSH to a remote machine.
+# @see docs: https://docs.gitlab.com/ee/ci/examples/README.html
+#
+# See file .gitlab-ci.yml for a Deploy job sample using this template.
+#
+# You need to be sure you can ssh to the machine.
+# This next sample assume a deploy key has been added on the target host in
+# ~/.ssh/authorized_keys
+# Private key must be set on Gitlab as 'PRIVATE_KEY':
+#   Settings > CI/CD > Variables
+################################################################################
+
+# Basic docker image with ssh to be able to access a remote.
+# Each access must add a ssh key, see samples below.
+.deploy_ssh:
+  image: alpine:latest
+  # To use the result of the build job (composer install).
+  dependencies:
+    - build
+  # Deploy only for a release as a tag.
+  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
+  only:
+    refs:
+      - tags
+  # Add our ssh key to be able to use ssh/scp with the remote environment.
+  before_script:
+    - |
+      # Test if variable ENV_KEY is set.
+      if [ -z ${ENV_KEY} ]; then
+        echo -e "\033[1;31mMissing variable ENV_KEY for SSH deploy\033[0;37m"
+        exit 1
+      fi
+    - apk --no-cache add openssh-client
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    # Avoid warning on connection.
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    # Add our private key.
+    - echo -e "${ENV_KEY}" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa

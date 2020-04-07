@@ -8,3 +8,4 @@ profiles/**/libraries/**/*
 **/node_modules/**/*
 **/bootstrap/**/*.js
 **/tests/**/*.js
+**/custom/**/reports/**/*.js

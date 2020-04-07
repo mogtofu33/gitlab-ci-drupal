@@ -1,0 +1,154 @@
+################################################################################
+# Variables template used on this project, must be used in your .gitlab-ci.yml:
+#
+# variables:
+#   extends: .default_variables
+#
+# Gitlab-CI variables documentation:
+# https://docs.gitlab.com/ee/ci/variables
+################################################################################
+
+.default_variables:
+
+  # Make CI very (very!) verbose in case of problem.
+  # https://docs.gitlab.com/ee/ci/variables/#debug-logging
+  # CI_DEBUG_TRACE: 1
+
+  # Should be the same as 'include: ref:' from above. Default is last stable.
+  # Use a specific tag to keep your CI consistent.
+  CI_REMOTE_FILES_REF: "8.x-2-dev"
+
+  # Minor Drupal version to work with, limited to tags on
+  # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
+  # Current stable is 8.8.x, dev is 8.9-beta2 and 9.0-beta2, you can choose
+  # "8.8", "8.9" or "9.0". Default is "8.8"
+  CI_DRUPAL_VERSION: "8.8"
+
+  # Select what you are running CI on, options are:
+  #   project
+  #     A full Drupal project with a composer.json file at the root.
+  #   module
+  #     A single Drupal module or theme at the root.
+  CI_TYPE: "project"
+  # CI_TYPE: "module"
+
+  # Select the base image for all tests and actions, options are:
+  #   no-drupal
+  #     Default value, this repo must include composer.json file.
+  #   drupal
+  #     Base image include Drupal from the official Docker.
+  #     For a module, theme or profile.
+  CI_IMAGE_VARIANT: "no-drupal"
+  # CI_IMAGE_VARIANT: "drupal"
+
+  # Path to the Drupal web root.
+  # /var/www/html is the Apache docroot of the image used to run the jobs.
+  # For a project based on Drupal this is 'web'. Can be 'docroot' on some
+  # distributions.
+  WEB_ROOT: "/var/www/html/web"
+
+  # Phpunit tests to run, only custom code or empty for all (included Drupal)
+  # see .gitlab-ci/phpunit.xml for settings.
+  # To use your own phpunit.xml file, simply copy it on your project in
+  # .gitlab-ci/ folder. Then you can adpat this variable to run your tests.
+  # Default 'custom' matches dir **/modules/custom/** and **/themes/custom/**
+  PHPUNIT_TESTS: "custom"
+
+  # Nightwatch.js tests to run.
+  # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+  # Add --verbose for a full log from Nightwatch if it fail.
+  # Default is to run everything except core. For a module / theme, add your tag.
+  NIGHTWATCH_TESTS: "--skiptags core"
+  # NIGHTWATCH_TESTS: "--tag custom"
+
+  ##############################################################################
+  # List of DIRS_* variables to define dirs to analyse for specific jobs.
+  #
+  # Code quality dirs, must include your PHP code to check.
+  DIRS_QA: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+  #
+  # Eslint / Stylelint files to test.
+  #
+  # Space separated for multiple folders.
+  # Default is to check files under all custom folders.
+  DIRS_JS: "${WEB_ROOT}/**/custom/**/*.js"
+  DIRS_CSS: "${WEB_ROOT}/**/custom/**/css/*.css"
+  #
+  # phpmetrics / phpstats dirs to include.
+  #
+  # Default is to check all dirs.
+  DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+
+  ##############################################################################
+  # List of SKIP_* variables to skip some jobs.
+  # Default is 0, uncomment and set 1 to skip.
+  #
+  # Skip Build, if not running any tests or deploy.
+  SKIP_BUILD: 0
+  #
+  ##############################################################################
+  # Skip all tests jobs.
+  SKIP_TESTS: 0
+  #
+  # OR skip single jobs in tests.
+  # For tests information see
+  # https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8.
+  #
+  # Phpunit unit,kernel with code coverage and optional Codecove.io support
+  SKIP_TEST_UNITKERNEL: 0
+  # Phpunit functional tests (browser tests)
+  SKIP_TEST_FUNCTIONAL: 0
+  # Phpunit functional javascript tests (browser with javascript tests)
+  SKIP_TEST_FUNCTIONALJS: 0
+  # Nightwatch tests (browser with javascript tests), since Drupal 8.6
+  # Currently not fully ready for Drupal so skip by default.
+  SKIP_TEST_NIGHTWATCH: 1
+  #
+  # Third party tests.
+  # Symfony security check on composer.lock
+  SKIP_TEST_SECURITY: 0
+  # Behat tests from behat_tests folder.
+  SKIP_TEST_BEHAT: 1
+  # Accessibility test
+  SKIP_TEST_PA11Y: 1
+  #
+  ##############################################################################
+  # Skip QA jobs (Code sniffer with Drupal standards and Best practices)
+  SKIP_QA: 0
+  #
+  # OR skip single jobs in qa.
+  #
+  # Code quality (Code sniffer with Drupal standard)
+  SKIP_QA_CODEQUALITY: 0
+  # Best practices (Code sniffer with Drupal Best Practices standard)
+  SKIP_QA_BESTPRACTICES: 0
+  #
+  ##############################################################################
+  # Skip all lint jobs.
+  SKIP_LINT: 0
+  #
+  # OR skip single jobs in lint.
+  #
+  # CSS lint job with stylelint
+  SKIP_LINT_CSS: 0
+  # Javascript lint job with eslint
+  SKIP_LINT_JS: 0
+  #
+  ##############################################################################
+  # Skip all metrics jobs (phpmetrics, phploc, pdepend)
+  SKIP_METRICS: 0
+  #
+  # OR skip single metrics jobs.
+  #
+  # Only Phpmetrics job
+  SKIP_METRICS_PHPMETRICS: 0
+  # Only phploc, pdepend job
+  SKIP_METRICS_PHPSTATS: 0
+  #
+  #############################################################################
+
+  ##############################################################################
+  # Other variables for CI only that do not need editing.
+  #
+  # Config files location for inclusion if not present locally.
+  CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REMOTE_FILES_REF}/.gitlab-ci/"

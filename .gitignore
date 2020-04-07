@@ -36,12 +36,17 @@ composer.*
 load.*
 
 # Ignore reports, dump and config from this project.
-/reports/
+/report-*
+/public
 /dump/
 /local/.env
 /local/.local.yml
 
-# Ignore files created by this project when copying ./gitlab-ci/
-RoboFile.php
-
 /tmp*
+
+# Gitlab pages.
+/site
+node_modules
+yarn.lock
+package-lock.json
+package.json

@@ -1,0 +1,17 @@
+################################################################################
+# Common definition for all qa jobs.
+################################################################################
+
+.qa_template:
+  extends: .artifacts_reports
+  # Run on all branches.
+  # https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
+  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
+  only:
+    refs:
+      - branches
+  before_script:
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - robo ci:prepare
+    # Coder is needed for Drupal coding standards 'Drupal' and 'DrupalPractice'.
+    - composer require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6

@@ -18,30 +18,42 @@ services:
     ports:
       - "88:80"
       # Chromedriver port for Functional js.
-      - "9515:9515"
+      # - "9515:9515"
       # Behat Chrome remote debugging port.
-      - "9222:9222"
+      # - "9222:9222"
+    expose:
+      - "9515"
+      - "9222"
     links:
       - mariadb
     volumes:
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../:${CI_PROJECT_DIR}
-      # Reports folder for results.
-      - ../reports:/var/www/html/reports
       # [OPTIONAL] composer cache folder to speed up the process.
       - ${HOME}/.composer/cache:/var/www/.composer/cache
     working_dir: /builds
     container_name: ci-drupal
     env_file:
       - .env
+  node:
+    image: node:lts-alpine
+    container_name: ci-node
+    ports:
+      - 3000
+    volumes:
+      - ../:/home/node/app
+    command: tail -f /dev/null
+    working_dir: /home/node/app
+    user: "node"
+    env_file:
+      - .env
   mariadb:
     image: mariadb:latest
     expose:
-      - 3306
+      - "3306"
     volumes:
       # Add my.cnf for better performance.
       - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
     container_name: ci-mariadb
-    environment:
-      - MYSQL_DATABASE=drupal
-      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    env_file:
+      - .env

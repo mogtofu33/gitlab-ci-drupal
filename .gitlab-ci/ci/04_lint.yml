@@ -1,0 +1,20 @@
+################################################################################
+# Common definition for all lint jobs.
+################################################################################
+
+.lint_template:
+  extends: .artifacts_reports
+  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
+  only:
+    refs:
+      - branches
+  except:
+    variables:
+      - $SKIP_LINT == "1"
+  before_script:
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - robo ci:prepare
+    # Install packages from core/package.json
+    - yarn --cwd ${WEB_ROOT}/core install
+  # Allow failure to produce report and warning, not a critical job.
+  allow_failure: true

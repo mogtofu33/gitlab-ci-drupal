@@ -1,671 +1,217 @@
 ################################################################################
-# Gitlab CI samples for Drupal 8  project, code quality and deploy.
+# Gitlab CI integration for Drupal 8/9 project or module: tests, code quality,
+# linting, metrics and deploy samples.
 #
 # Project: https://gitlab.com/mog33/gitlab-ci-drupal
-# Documentation: https://gitlab.com/mog33/gitlab-ci-drupal
+# Documentation: https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-x/README.md
+# Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
 # Author: Jean Valverde contact@dev-drupal.com
 # License: GPL-3
 #
-# For Gitlab CI help on this file see: https://docs.gitlab.com/ee/ci/yaml
+# If you want to support this project, you can
+# - Buy me a coffee : https://bit.ly/34jPKcE
+# - Hire me as a freelance for any Drupal related work
+# - Promote me to any company looking for any Drupal related work
+# - Help me with testing / documentation / grammar fixes / use cases
 #
 ################################################################################
 
-################################################################################
-# Define your stages, this will be "pipelines" in gitlab.
-#   https://docs.gitlab.com/ee/ci/pipelines.html
-################################################################################
-
-stages:
-  - build
-  - tests
-  # [TESTING] Next lines can be removed for testing only.
-  # On each push.
-  - code quality
-  - code lint
-  # Only on tag, when released.
-  - php code metrics
-  # [DEPLOY] Skipped by default, see SKIP_DEPLOY in .gitlab-ci-variables.yml
-  # [DEPLOY] Manual if branch testing or master or tag.
-  - deploy to testing
-  # [DEPLOY] Manual if branch master or tag.
-  - deploy to staging
-  # [DEPLOY] Manual if branch master or tag.
-  - deploy to production
-
-################################################################################
-# Gitlab ci templates for common jobs to avoid repeat, see
-#   https://docs.gitlab.com/ee/ci/yaml/#extends
-################################################################################
-
-# When to run tests, on branch testing and tags.
-.test_except_only:
-  # Build and tests are only for branch testing or tags.
-  # Skipped if variable SKIP_TEST is set in .gitlab-ci-variables.yml or as
-  # variable on Gitlab UI.
-  # For more options see
-  #   https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
-  # Rule here is:
-  # Run on all tags, branches 8.x-1.x, 8.x-dev, testing, NOT on master OR if
-  # variable SKIP_TESTS is set to 1
-  except:
-    refs:
-      - master
-    variables:
-      - $SKIP_TESTS == "1"
-  only:
-    refs:
-      - 8.x-1.x
-      - 8.x-dev
-      - testing
-      # Demo branch testing against next Drupal versions.
-      - testing-8.8
-      - testing-8.9
-      - testing-9.0
-      - tags
-
-# Reports produced and visible in job report.
-.default_artifacts: &default_artifacts
-  paths:
-    - ${REPORT_DIR}/*.html
-    - ${REPORT_DIR}/*.svg
-    - ${REPORT_DIR}/*.png
-    - ${REPORT_DIR}/*.jpg
-  # Name will be based on job and branch.
-  name: "${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
-  # How long do we keep reports files?
-  expire_in: 2 day
-  # Force artifacts even if the job fail.
-  when: always
-
-# Global tests variables.
-.test_variables: &test_variables
-  MYSQL_DATABASE: "drupal"
-  MYSQL_ALLOW_EMPTY_PASSWORD: "1"
-  # When install Drupal is needed, choose a profile.
-  # To install Drupal from a config ../config/sync folder choose "config_installer"
-  DRUPAL_INSTALL_PROFILE: "minimal"
-  DB_DUMP: "${CI_PROJECT_DIR}/dump"
-  SIMPLETEST_BASE_URL: "http://localhost"
-  SIMPLETEST_DB: "mysql://root@mariadb/drupal"
-  BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
-  # No spaces.
-  MINK_DRIVER_ARGS_WEBDRIVER: >
-    [
-      "chrome",
-      {
-        "browserName":"chrome",
-        "chromeOptions":{
-          "w3c":false,
-          "args":[
-            "--whitelisted-ips",
-            "--disable-gpu",
-            "--headless",
-            "--no-sandbox"
-          ]
-        }
-      },
-      "http://localhost:9515"
-    ]
-  CHROMEDRIVER_OPTS: ''
-  APACHE_RUN_USER: "www-data"
-  APACHE_RUN_GROUP: "www-data"
-
-
-# Testing template for phpunit, this provide Apache / Php.
-.test_template:
-  dependencies:
-    - Build
-  services:
-    - mariadb:latest
-  extends: .test_except_only
-  variables:
-    <<: *test_variables
-  before_script:
-    # Copy RoboFile.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    # Symlink Drupal codebase or the module/theme to the web root of the ci
-    # image.
-    - robo prepare:folders
-    # Ensure we have Drupal Dev third party for next tests.
-    - robo require:drupal-dev
-    # Start Apache.
-    - apache2-foreground&
-    # Copy files and prepare test folder with permissions.
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml ${WEB_ROOT}/core
-    # Allow phpunit.xml override if a file for specific tests exist.
-    - if [ -f ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${PHPUNIT_TESTS} ]; then
-        cp ${CI_PROJECT_DIR}/.gitlab-ci/phpunit.xml.${PHPUNIT_TESTS} ${WEB_ROOT}/core/phpunit.xml;
-      fi
-    - robo ensure:tests-folders
-  artifacts:
-    <<: *default_artifacts
-    paths:
-      - ${REPORT_DIR}/*
-
-################################################################################
-# Build and tests jobs.
-################################################################################
-
-# Build job for all tests.
-# For a project, this build part use composer install to get the Drupal code.
-# For a theme this can be used with a specific script to build something
-# (grunt, webpack, yarn...). You must add your script and adapt the cache and
-# artifacts.
-Build:
-  stage: build
-  extends: .test_except_only
-  script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    # Check Drupal codebase and run 'composer install' for a project.
-    - robo project:build
-    # Add here any custom build step, composer run-script, grunt, webpack, yarn...
-  variables:
-    <<: *test_variables
-  # [CI_TYPE] When using included Drupal for a module or a theme, the
-  # cache and artifacts can be removed as we don't install the Drupal with
-  # composer.
-  #
-  # On build we cache the composer and web folders to speed up the tests.
-  cache:
-    key: drupal-$CI_BUILD_REF_NAME
-    paths:
-      - vendor
-      - web
-  artifacts:
-    paths:
-      # Build files for next steps and deploy/release.
-      - vendor
-      - web
-      - drush
-      - scripts
-      - composer.json
-      - composer.lock
-      - .env.example
-      - load.environment.php
-    expire_in: 1 day
-
-################################################################################
-# Drupal tests see
-# https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
-################################################################################
-
-Unit and kernel:
-  stage: tests
-  extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_UNITKERNEL == "1"
-  script:
-    - robo test:suite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
-
-Code coverage:
-  stage: tests
-  extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_CODECOVERAGE == "1"
-  script:
-    - robo test:coverage "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
-  after_script:
-    - cp -r ${WEB_ROOT}/${REPORT_DIR} ./
-    # [CODECOV] integration, see https://codecov.io
-    # Need to set up CI ENVIRONMENT VARIABLES 'CODECOV_TOKEN' to work,
-    # see https://codecov.io
-    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f ${REPORT_DIR}/coverage.xml ]; then
-        bash <(curl -s https://codecov.io/bash) -f ${REPORT_DIR}/coverage.xml || true;
-      fi
-  # https://docs.gitlab.com/ee/ci/yaml/#coverage
-  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
-
-Functional:
-  stage: tests
-  extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_FUNCTIONAL == "1"
-  script:
-    # For functional tests the user need to be the Apache user.
-    - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional"
-  after_script:
-    - mkdir -p ${REPORT_DIR}/functional/
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional/ || true
-
-Functional Js:
-  stage: tests
-  extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_FUNCTIONALJS == "1"
-  script:
-    # Launch Chromedriver.
-    - /scripts/start-chromedriver.sh&
-    - sleep 3s
-    - curl -s http://localhost:9515/status | jq '.' || true
-    - sudo -E -u ${APACHE_RUN_USER} robo test:suite "${PHPUNIT_TESTS}functional-javascript"
-  after_script:
-    - mkdir -p ${REPORT_DIR}/functional-javascript/
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.html ${REPORT_DIR}/functional-javascript/ || true
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.png ${REPORT_DIR}/functional-javascript/ || true
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/*.jpg ${REPORT_DIR}/functional-javascript/ || true
-
-# https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-Nightwatch Js:
-  stage: tests
-  extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_NIGHTWATCH == "1"
-  script:
-    # Nightwatch .env file for CI is a snippet on the project page.
-    - curl -f -N ${CI_NIGHTWATCH_ENV} -o ${WEB_ROOT}/core/.env
-    - sleep 2s
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/html-reporter.js ${WEB_ROOT}/core/html-reporter.js || true
-    # [TEMPORARY] Patch to allow install profile, see https://drupal.org/node/3017176
-    - if [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
-        robo patch:nightwatch https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch;
-      else
-        robo patch:nightwatch https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch;
-      fi
-    # Install from core/package.json
-    - robo yarn:install
-    # This is the main script, 'yarn install' and 'test:nightwatch' from core folder.
-    - robo test:nightwatch
-  artifacts:
-    <<: *default_artifacts
-    paths:
-      - ${REPORT_DIR}
-
-################################################################################
-# Third party tools tests.
-#
-# [TESTING] This section can be removed for testing only.
-################################################################################
-
-# [CI_TYPE] [TESTING] This job can be removed if no dependencies for a single
-# module / theme.
-Security report:
-  stage: tests
-  extends: .test_except_only
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_SECURITY == "1"
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
-    - robo prepare:folders
-  script:
-    - phpqa --tools security-checker:0
-        --buildDir ${REPORT_DIR}
-        --analyzedDirs ${DOC_ROOT}
-        --verbose
-  dependencies:
-    - Build
-  # Allow failure to produce report and warning when we have an error.
-  allow_failure: true
-
-# Behat tests from tests/ folder.
-Behat tests:
-  stage: tests
-  extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_BEHAT == "1"
-  script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
-    - robo prepare:folders
-    - robo install:drupal
-    # Starting Chrome, we are not using Chromedriver.
-    - /scripts/start-chrome.sh&
-    - sleep 3s
-    - curl -s http://localhost:9222/json/version | jq '.' || true
-    - COMPOSER_MEMORY_LIMIT=4G robo install:behat
-    - robo test:behat "${CI_PROJECT_DIR}/${REPORT_DIR}"
-  variables:
-    <<: *test_variables
-    DRUPAL_INSTALL_PROFILE: "standard"
-    CHROME_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
-    BEHAT_PARAMS: >
-      {
-        "extensions" : {
-          "Bex\\Behat\\ScreenshotExtension" : {
-            "image_drivers" : {
-              "local" : { "screenshot_directory" : "${CI_PROJECT_DIR}/${REPORT_DIR}/behat" }
-            }
-          },
-          "Drupal\\DrupalExtension" : {
-            "drupal" : {
-              "drupal_root" : "${WEB_ROOT}"
-            }
-          }
-        }
-      }
-
-################################################################################
-# Accessibility jobs for Drupal 8+
-#
-# [TESTING] This section can be removed for testing only.
-################################################################################
-
-Pa11y:
-  stage: tests
-  extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_PA11Y == "1"
-  script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${WEB_ROOT} || true
-    - robo prepare:folders
-    - robo install:drupal
-    # Install Pa11y-ci for tests with yarn.
-    - robo install:pa11y
-    # Run pa11y tests using ./gitlab-ci/pa11y-ci.json file definition.
-    - robo test:pa11y
-  after_script:
-    - cp -f ${WEB_ROOT}/core/reports/pa11y*.png ${CI_PROJECT_DIR}/${REPORT_DIR}/
-  variables:
-    <<: *test_variables
-    DRUPAL_INSTALL_PROFILE: "standard"
-  artifacts:
-    <<: *default_artifacts
-    paths:
-      - ${CI_PROJECT_DIR}/*.png
-
-################################################################################
-# Code quality jobs for Drupal 8+
-#
-# [TESTING] This section can be removed for testing only.
-################################################################################
-
-# Common definition for all qa jobs.
-.qa_template:
-  only:
-    refs:
-      - branches
-  except:
-    variables:
-      - $SKIP_QA == "1"
-
-# Automated quality check job when something is pushed/merged on master.
-# We have a limit on errors we accept on the tools, if failed we run a
-# report and stop.
-Code quality:
-  stage: code quality
-  extends: .qa_template
-  artifacts:
-    <<: *default_artifacts
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpmd.xml ${CI_PROJECT_DIR}/.phpmd.xml || true
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
-    - robo install:coder
-  script:
-    - phpqa --tools ${TOOLS}
-        --buildDir ${REPORT_DIR}
-        --analyzedDirs ${PHP_CODE_QA}
-
-# Drupal coding standard best practices report.
-Best practices:
-  stage: code quality
-  extends: .qa_template
-  except:
-    variables:
-      - $SKIP_QA == "1"
-      - $SKIP_QA_BESTPRACTICES == "1"
-  artifacts:
-    <<: *default_artifacts
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
-    # Move from Drupal to DrupalPractice standard.
-    - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.phpqa.yml
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
-    - robo install:coder
-  script:
-    - phpqa --tools ${BEST_PRACTICES}
-        --buildDir ${REPORT_DIR}
-        --analyzedDirs ${PHP_CODE_QA}
-  # Allow failure to produce report and warning.
-  allow_failure: true
-
-################################################################################
-# Code  lint jobs for Drupal 8+
-#
-# [TESTING] This section can be removed for testing only.
-################################################################################
-
-# Common definition for all lint jobs.
-.lint_template:
-  only:
-    refs:
-      - branches
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.eslintignore ${CI_PROJECT_DIR}/.eslintignore || true
-    - robo prepare:folders
-    # Install packages from core/package.json
-    - robo yarn:install
-    # Start from the core folder to access node_modules.
-    - cd ${WEB_ROOT}/core
-  # Allow failure to produce report and warning, not a critical job.
-  allow_failure: true
-
-# This is a eslint report based on Drupal 8.x standards.
-Js lint:
-  stage: code lint
-  extends: .lint_template
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-      - $SKIP_LINT_JS == "1"
-  artifacts:
-    <<: *default_artifacts
-    paths:
-      - ${REPORT_DIR}/js-lint-report.html
-  script:
-    # Run the eslint command to generate an html report.
-    - ${WEB_ROOT}/core/node_modules/.bin/eslint
-        --config ${WEB_ROOT}/core/.eslintrc.passing.json
-        --format html
-        --output-file ${REPORT_DIR}/js-lint-report.html
-        ${JS_CODE}
-
-# Drupal 8.x rules used here for stylelint to check css.
-Css lint:
-  stage: code lint
-  extends: .lint_template
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-      - $SKIP_LINT_CSS == "1"
-  # artifacts:
-    # <<: *default_artifacts
-    # paths:
-      # - ${REPORT_DIR}/*.txt
-  script:
-    # Css report, terminal only for now.
-    - ${WEB_ROOT}/core/node_modules/.bin/stylelint
-        --config ${WEB_ROOT}/core/.stylelintrc.json
-        --formatter verbose "${CSS_FILES}"
-
-# This is a sass lint report, default rules used here for Bootstrap based sass.
-Sass lint:
-  stage: code lint
-  extends: .lint_template
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-      - $SKIP_LINT_SASS == "1"
-  artifacts:
-    <<: *default_artifacts
-    paths:
-      - ${REPORT_DIR}/sass-lint-report.html
-  script:
-    # Install sass-lint dev.
-    - robo --load-from ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php yarn add git://github.com/sasstools/sass-lint.git#develop
-    # Html report.
-    -  ${WEB_ROOT}/core/node_modules/.bin/sass-lint --config ${CI_PROJECT_DIR}/.gitlab-ci/.sass-lint.yml
-        --verbose
-        --no-exit
-        --format html
-        --output ${REPORT_DIR}/sass-lint-report.html
-    - echo "[Note] If sass-lint succeed without errors, no report or message will appear."
-  allow_failure: true
-
-################################################################################
-# Code metrics, would probably make sense only for a tag release.
-#
-# [TESTING] This section can be removed for testing only.
-################################################################################
-
-# Common definition for all metrics jobs.
-.metrics_template:
-  only:
-    refs:
-      - master
-      - tags
-  except:
-    variables:
-      - $SKIP_METRICS == "1"
-  artifacts:
-    <<: *default_artifacts
-  before_script:
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml ${CI_PROJECT_DIR}/.phpqa.yml || true
-    - cp ${CI_PROJECT_DIR}/.gitlab-ci/RoboFile.php ${CI_PROJECT_DIR} || true
-    - robo prepare:folders
-
-# Phpmetrics report, no pass or failure as it's just informative.
-Php metrics:
-  stage: php code metrics
-  extends: .metrics_template
-  except:
-    variables:
-      - $SKIP_METRICS == "1"
-      - $SKIP_METRICS_PHPMETRICS == "1"
-  artifacts:
-    paths:
-      - ${REPORT_DIR}/
-  script:
-    - phpqa --tools phpmetrics
-        --buildDir ${REPORT_DIR}
-        --analyzedDirs ${PHP_CODE_METRICS}
-
-# Phploc, Pdepend report, no pass or failure as it's just informative.
-Php stats:
-  stage: php code metrics
-  extends: .metrics_template
-  except:
-    variables:
-      - $SKIP_METRICS == "1"
-      - $SKIP_METRICS_PHPSTATS == "1"
-  script:
-    - phpqa --tools phploc,pdepend
-        --buildDir ${REPORT_DIR}
-        --analyzedDirs ${PHP_CODE_METRICS}
-
-################################################################################
-# [DEPLOY] Deploy jobs definition.
-# [CI_TYPE] This section could be used only for a project with deploy.
-# [TESTING] This section can be removed for testing only.
-#
-# This is a sample workflow, testing is run on master and testing branches
-# pushes or merge, other deploy are manual. Using a basic bash deploy, you must
-# adapt if you are using a specific deploy process.
-# @see docs: https://docs.gitlab.com/ee/ci/examples/README.html
-#
-# Most of the time, you need to be sure you can ssh to the machine.
-# This next sample assume a deploy key has been added on the target host
-# ~/.ssh/authorized_keys
-# Private key can be set on Gitlab as 'PRIVATE_KEY':
-#   Settings > CI / CD > Variables
-################################################################################
-
-# Basic docker image with ssh to be able to access a remote.
-# Each access must add a ssh key, see samples below.
-.deploy_template:
-  image: alpine:latest
-  only:
-    refs:
-      - master
-      - tags
-  except:
-    variables:
-      - $SKIP_DEPLOY == "1"
-  # To use the result of the build job (composer install).
-  dependencies:
-    - Build
-  before_script:
-    - apk --no-cache add openssh-client
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    # Avoid warning on connection.
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
-    # Add our private key.
-    - echo -e "${PRIVATE_KEY}" > ~/.ssh/id_rsa
-    - chmod 400 ~/.ssh/id_rsa
-  variables:
-    PRIVATE_KEY: ""
-  when: manual
-
-Deploy to testing:
-  stage: deploy to testing
-  extends: .deploy_template
-  only:
-    refs:
-      - testing
-  environment:
-    name: testing
-    url: http://${TESTING_HOST}
-  # Add your deploy script.
-  script:
-    - ssh -p22 $USER_NAME@TESTING_HOST "/some/remote/scripts.sh --env=testing;"
-  variables:
-    PRIVATE_KEY: "${TESTING_PRIVATE_KEY}"
-
-Deploy to staging:
-  stage: deploy to staging
-  extends: .deploy_template
-  environment:
-    name: staging
-    url: http://${STAGING_HOST}
-  # Add your deploy script.
-  script:
-    - ssh -p22 $USER_NAME@TESTING_HOST "/some/remote/scripts.sh --env=testing;"
-  variables:
-    PRIVATE_KEY: "${STAGING_PRIVATE_KEY}"
-
-Deploy to production:
-  stage: deploy to production
-  extends: .deploy_template
-  environment:
-    name: production
-    url: http://${PRODUCTION_HOST}
-  # Add your deploy script.
-  script:
-    - ssh -p22 $USER_NAME@TESTING_HOST "/some/remote/scripts.sh --env=testing;"
-  variables:
-    PRIVATE_KEY: "${PRODUCTION_PRIVATE_KEY}"
-
-################################################################################
-# Variables are in a separate file to ease customization.
-################################################################################
-
+# The ref is relative to the version of the project to use, best to use a tag.
 include:
-  - local: '/.gitlab-ci/.gitlab-ci-variables.yml'
+  # If hosted on gitlab.com.
+  - project: 'mog33/gitlab-ci-drupal'
+    ref: 8.x-2-dev
+    file: '/.gitlab-ci/.gitlab-ci-template.yml'
+  # If hosted on an other Gitlab instance.
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/raw/8.x-2-dev/.gitlab-ci-template.yml'
 
 ################################################################################
-# Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
+# Gitlab-CI variables documentation:
+# https://docs.gitlab.com/ee/ci/variables/
+#
+# Variables, can be set here or on
+#   Gitlab CI UI > settings > CI/CD > variables
+# UI take precedence on variables here.
+# https://docs.gitlab.com/ee/ci/variables/README.html#priority-of-environment-variables
 ################################################################################
 
-image: mogtofu33/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
+variables:
+  # This is mandatory to get default variables.
+  extends: .default_variables
+
+  # Global config remote files ref.
+  # MUST be the same as include: ref: from above.
+  CI_REMOTE_FILES_REF: 8.x-2-dev
+
+  # Set a version, default is Drupal 8.8, can be 8.9 or 9.0.
+  # CI_DRUPAL_VERSION: "8.8"
+
+  ##############################################################################
+  # Override default variables for a module.
+  #
+  # Default CI setup is for a 'project' (full Drupal with a composer.json), next
+  # section contains common variables to change for a module (module, theme or
+  # profile). Simply uncomment to set the CI for a module.
+  #
+  # CI_TYPE: module
+  # # Default is 'no-drupal', ie: no Drupal included in the CI.
+  # CI_IMAGE_VARIANT: drupal
+  # # Code quality dirs, must include your PHP code to check.
+  # DIRS_QA: "${CI_PROJECT_DIR}"
+  # # Eslint / Stylelint files to test.
+  # DIRS_JS: "${CI_PROJECT_DIR}/**/*.js"
+  # DIRS_CSS: "${CI_PROJECT_DIR}/**/*.css"
+  # # phpmetrics / phpstats dirs to include.
+  # DIRS_PHP: "${CI_PROJECT_DIR}"
+  # # Set SKIP_XXX variable to 1 to skip.
+  # # Security is for a Drupal project with third party.
+  # SKIP_TEST_SECURITY: 1
+  # # Only needed if you have Behat tests.
+  # SKIP_TEST_BEHAT: 1
+  # # Accessibility tests, more for a Drupal project.
+  # SKIP_TEST_PA11Y: 1
+  # # Default is '--skiptags core', if Nightwatch.js tests, add your tag.
+  # NIGHTWATCH_TESTS: --tag my_module
+  # # Or you can disable Nightwatch tests with:
+  # SKIP_TEST_NIGHTWATCH: 1
+  # # If you don't have any css files, you can skip with
+  # SKIP_LINT_CSS: 1
+  # # If you don't have any javascript files, you can skip with
+  # SKIP_LINT_JS: 1
+  #
+  ##############################################################################
+
+  ##############################################################################
+  # Here you can override more variable.
+  # As a sample here is a list of DIRS and SKIP variables, see documentation for
+  # more variables.
+  ##############################################################################
+  ##############################################################################
+  # List of DIRS_* variables to define dirs to analyse for specific jobs.
+  # Code quality dirs, must include your PHP code to check.
+  # DIRS_QA: "${CI_PROJECT_DIR}"
+  # Eslint / Stylelint files to test.
+  # Space separated for multiple folders.
+  # Default is to check files under all custom folders.
+  # DIRS_JS: "${CI_PROJECT_DIR}/**/custom/**/*.js"
+  # DIRS_CSS: "${CI_PROJECT_DIR}/**/custom/**/css/*.css"
+  # phpmetrics / phpstats dirs to include.
+  # Default is to check all dirs.
+  # DIRS_PHP: "${CI_PROJECT_DIR}"
+  #
+  # # ALL SKIP variables, uncomment and set to 1 to skip a job.
+  # SKIP_BUILD: 1
+  # SKIP_TESTS: 1 # Skip all tests, ignore SKIP_TEST_*.
+  # SKIP_TEST_UNITKERNEL: 1
+  # SKIP_TEST_FUNCTIONAL: 1
+  # SKIP_TEST_FUNCTIONALJS: 1
+  # SKIP_TEST_NIGHTWATCH: 1
+  # SKIP_TEST_SECURITY: 1
+  # SKIP_TEST_BEHAT: 1
+  # SKIP_TEST_PA11Y: 1
+  # SKIP_QA: 1 # Skip all qa, ignore SKIP_QA_*.
+  # SKIP_QA_CODEQUALITY: 1
+  # SKIP_QA_BESTPRACTICES: 1
+  # SKIP_LINT: 1 # Skip all lint, ignore SKIP_LINT_*.
+  # SKIP_LINT_CSS: 1
+  # SKIP_LINT_JS: 1
+  # SKIP_METRICS: 1 # Skip all metrics, ignore SKIP_METRICS_*.
+  # SKIP_METRICS_PHPMETRICS: 1
+  # SKIP_METRICS_PHPSTATS: 1
+
+################################################################################
+# ADVANCED USAGE
+#
+# Default stages and any job can be overridden.
+# See documentation for more information.
+################################################################################
+
+# Override stages if needed. for example to add or adapt deploy.
+# Here we add a 'deploy to testing' step.
+# https://docs.gitlab.com/ee/ci/yaml/README.html#stages
+
+# stages:
+#   - build
+#   - tests
+#   - metrics
+#   # [DEPLOY] All deploy jobs can be set here.
+#   # Sample of a deploy workflow:
+#   # Manual if branch testing or master or tag.
+#   # - deploy to testing
+#   # Manual if branch master or tag.
+#   # - deploy to staging
+#   # Manual if branch master or tag.
+#   # - deploy to production
+
+################################################################################
+# [WIP] All reports on one page.
+################################################################################
+
+# pages:
+#   stage: publish reports
+#   extends: .publish_gitlab_pages_template
+
+################################################################################
+# Deploy samples.
+#
+# Some deploy samples that can be used as a starting point for your deploy.
+# Note that a deploy process is dependent of your infrastructure and tools,
+# there is no generic deploy process.
+################################################################################
+
+# SSH / SCP based deploy sample job for a project. Could be a starting point
+# if you have a remote ssh access to your environment.
+#
+# You must fill variables on the deploy job or on
+# Gitlab CI UI > settings > CI/CD
+#
+# Uncomment and adapt for each stages you added above.
+#
+# See Gitlab-CI Environments documentation:
+# https://docs.gitlab.com/ee/ci/environments.html#configuring-environments
+# For deploy samples, see examples in documentation:
+# https://docs.gitlab.com/ee/ci/examples/README.html
+
+# Deploy to testing:
+#   stage: deploy to testing
+#   extends: .deploy_ssh
+#   environment:
+#     name: testing
+#     url: https://SET_MY_URL
+#   # To make this deploy job manual on the pipeline.
+#   # https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
+#   # when: manual
+#   # Optional to override the tags default in .deploy_ssh
+#   # https://docs.gitlab.com/ee/ci/yaml/README.html#onlyexcept-basic
+#   only:
+#     refs:
+#       - testing
+#       # - master
+#       # - tags
+#   # Variables can be set from 'Gitlab CI UI > settings > CI/CD > variables' as
+#   # named below or directly here.
+#   variables:
+#     ENV_USER: "${TESTING_USER}"
+#     ENV_HOST: "${TESTING_HOST}"
+#     ENV_PATH: "${TESTING_PATH}"
+#     # Adapt if you are using the same key or different ssh keys.
+#     ENV_KEY: "${PRIVATE_KEY}"
+#     # ENV_KEY: "${TESTING_PRIVATE_KEY}"
+#     # ENV_KEY: "${STAGING_PRIVATE_KEY}"
+#     # ENV_KEY: "${PRODUCTION_PRIVATE_KEY}"
+#   ##############################################################################
+#   # Deploy script, this is just an example for scp / ssh remote command for a
+#   # Drupal project.
+#   ##############################################################################
+#   script:
+#     # Create remote path and send build.
+#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mkdir ${ENV_PATH}/_tmp"
+#     - scp -P22 -r vendor web *.php ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
+#     # Replace Drupal with new build and keep previous version.
+#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mv ${ENV_PATH}/current ${ENV_PATH}/_previous && mv ${ENV_PATH}/_tmp ${ENV_PATH}/current"
+#     # Run any personal deploy script (backup db, drush updb, drush cim...)
+#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "${ENV_PATH}/scripts/deploy.sh --env=testing"
+
+################################################################################
+# Release samples.
+################################################################################

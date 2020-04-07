@@ -1,0 +1,28 @@
+################################################################################
+# [WIP] Use Gitlab pages to publish the results on one page.
+# 
+# docker run --rm -it -v "/home/mog/code/gitlab-ci-drupal:/builds" -w /builds --env-file local/.env alpine:latest sh
+################################################################################
+
+.publish_gitlab_pages_template:
+  image: node:latest
+  except:
+    variables:
+      - $SKIP_PUBLISH_REPORT == "1"
+  script:
+    # Git clone
+    # get set data.
+    # gatsby build
+    # - npm install gatsby-cli
+    # - apk --no-cache add jq
+    # - mkdir -p ./public
+    # - cp -r ./report-*/ ./public/
+    # - cd ./public
+    # - |
+    #   d=$(ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
+    #   v=$(jq -n env);
+    #   echo "var data={\"dirs\": "$d", \"vars\": "$v" }" > js/data.js
+    
+  artifacts:
+    paths:
+    - public

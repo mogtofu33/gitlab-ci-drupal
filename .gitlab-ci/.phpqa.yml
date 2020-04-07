@@ -11,6 +11,7 @@ phpcs:
         file:
             # checkstyle is always included and overriden
             checkstyle: checkstyle.xml
+            junit: phpcs-unit.xml
 
 phpmd:
     standard: .phpmd.xml
@@ -27,6 +28,7 @@ phpqa:
     ignoredDirs: "vendor,bootstrap,tests,.gitlab-ci"
     ignoredFiles: "Readme.md,style.css,print.css,*Test.php,RoboFile.php"
     report: true
+    verbose: false
     execution: parallel
     extensions:
         - php

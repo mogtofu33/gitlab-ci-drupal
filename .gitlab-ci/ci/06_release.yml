@@ -1,0 +1,42 @@
+################################################################################
+# [WIP] Release to Gitlab, github or Drupal.org.
+################################################################################
+
+# https://gitlab.com/gitlab-org/release-cli/-/blob/master/docs/index.md#using-this-tool-in-gitlab-ci
+.release_gitlab:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli
+  when: manual
+  except:
+    - tags
+  except:
+    variables:
+      - $SKIP_RELEASE == "1"
+  script:
+    - release-cli create
+      --name release-branch-$CI_JOB_ID
+      --description release-branch-$CI_COMMIT_REF_NAME-$CI_JOB_ID
+      --tag-name job-$CI_JOB_ID
+      --ref $CI_COMMIT_SHA
+
+.release_drupal:
+  stage: release
+  image: node:lts-alpine
+  when: manual
+  except:
+    - tags
+  except:
+    variables:
+      - $SKIP_RELEASE == "1"
+  before script:
+    - apk --no-cache add git openssh-client
+    - yarn add semantic-release @semantic-release/git @semantic-release/changelog
+  script:
+    - npx semantic-release --branches next -r $GIT_REPOSITORY
+  variables:
+    GIT_REPOSITORY: $RELEASE_GIT_REPOSITORY
+    GIT_AUTHOR_NAME: $RELEASE_GIT_REPOSITORY
+    GIT_AUTHOR_EMAIL: $RELEASE_GIT_AUTHOR_EMAIL
+    GIT_COMMITTER_NAME: $RELEASE_GIT_COMMITTER_NAME
+    GIT_COMMITTER_EMAIL: $RELEASE_GIT_COMMITTER_EMAIL
+    DRUPAL_GIT_KEY: $RELEASE_DRUPAL_GIT_KEY

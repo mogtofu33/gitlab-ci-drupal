@@ -1,0 +1,77 @@
+# Project information
+site_name: Gitlab CI for Drupal 8/9
+site_url:
+site_author: Jean Valverde
+site_description: >-
+  Gitlab CI integration for Drupal 8 project or module: 
+  unit tests, code quality, linting, metrics and deploy.
+
+repo_name: mog33/gitlab-ci-drupal
+repo_url: https://gitlab.com/mog33/gitlab-ci-drupal
+
+theme:
+  name: material
+  features:
+    - instant
+    # - tabs
+  # Don't include MkDocs' JavaScript
+  include_search_page: false
+  search_index_only: true
+  language: en
+  palette:
+    primary: blue
+    accent: deep orange
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    logo: fontawesome/brands/drupal
+  # logo: assets/logo.svg
+  # favicon: assets/favicon.png
+
+# Plugins
+plugins:
+  - search
+  # - minify:
+  #     minify_html: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/drupal
+      link: https://www.drupal.org/u/mogtofu33
+    - icon: fontawesome/brands/gitlab
+      link: https://gitlab.com/mog33
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/u/mogtofu33
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/Mogtofu33
+    - icon: fontawesome/solid/blog
+      link: https://developpeur-drupal.com/en
+
+markdown_extensions:
+  - markdown.extensions.toc:
+      permalink: true
+  - markdown.extensions.admonition
+  - markdown.extensions.codehilite:
+      linenums: true
+      guess_lang: false
+  - markdown.extensions.footnotes
+  - pymdownx.snippets
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.magiclink:
+      hide_protocol: true
+      repo_url_shortener: true
+      repo_url_shorthand: true
+      user: 'mog33'
+      repo: 'gitlab-ci-drupal'
+      provider: 'gitlab'
+  - pymdownx.extra
+
+nav:
+  - Home: 'index.md'
+  - Usage: usage.md
+  - Advanced usage: advanced-usage.md
+  - Future plan: plan.md
+  - Credits: credits.md
+  - Support: support.md

@@ -1,0 +1,39 @@
+################################################################################
+# Build template used for Build job.
+################################################################################
+
+.build_template:
+  stage: build
+  extends: .variables_test
+  # Run on all tags, branches with word testing or dev.
+  # https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
+  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
+  only:
+    refs:
+      - /testing|dev/
+      - tags
+  before_script:
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - robo ci:prepare
+  # When using included Drupal for a module, the cache and artifacts can be
+  # removed as we don't install the Drupal with composer.
+  #
+  # On build we cache the composer and web folders to speed up the tests.
+  cache:
+    key: "drupal-${CI_COMMIT_REF_NAME}"
+    paths:
+      - vendor
+      - web
+  artifacts:
+    expire_in: 1 week
+    paths:
+      # Build files for next steps and deploy/release.
+      - vendor
+      - web
+      - drush
+      - scripts
+      - composer.json
+      - composer.lock
+      # Deprecated Drupal composer project template.
+      - .env.example
+      - load.environment.php

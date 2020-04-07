@@ -1,0 +1,3 @@
+themes/claro/**/*.css
+!themes/claro/**/*.pcss.css
+**/custom/**/reports/**/*.css

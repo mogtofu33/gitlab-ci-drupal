@@ -1,0 +1,57 @@
+################################################################################
+# Global tests variables.
+################################################################################
+
+.variables_test:
+  variables:
+    # Required by service:mysql.
+    MYSQL_DATABASE: "drupal"
+    MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+    # Required by Drupal tests with PHPunit.
+    # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
+    SIMPLETEST_BASE_URL: "http://localhost"
+    SIMPLETEST_DB: "mysql://root@mariadb/drupal"
+    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+    SYMFONY_DEPRECATIONS_HELPER: "disabled"
+    MINK_DRIVER_ARGS_WEBDRIVER: >
+      [
+        "chrome",
+        {
+          "browserName":"chrome",
+          "chromeOptions":{
+            "w3c":false,
+            "args":[
+              "--whitelisted-ips",
+              "--disable-gpu",
+              "--headless",
+              "--no-sandbox"
+            ]
+          }
+        },
+        "http://localhost:9515"
+      ]
+    # Any argument to pass to chromedriver, used by funtionnal Javascript tests.
+    # https://chromedriver.chromium.org/capabilities
+    # e.g. `--verbose --whitelisted-ips=0.0.0.0 --log-path=chromedriver.log`.
+    CHROMEDRIVER_OPTS: ''
+    # Behat with DrupalExtension.
+    # https://www.drupal.org/project/drupalextension
+    # Any argument to pass to chrome, used by Behat tests.
+    # https://chromedriver.chromium.org/capabilities
+    # e.g. `--verbose --whitelisted-ips=0.0.0.0 --log-path=chromedriver.log`.
+    CHROME_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
+    BEHAT_PARAMS: >
+      {
+        "extensions" : {
+          "Bex\\Behat\\ScreenshotExtension" : {
+            "image_drivers" : {
+              "local" : { "screenshot_directory" : "report-behat" }
+            }
+          },
+          "Drupal\\DrupalExtension" : {
+            "drupal" : {
+              "drupal_root" : "${WEB_ROOT}"
+            }
+          }
+        }
+      }

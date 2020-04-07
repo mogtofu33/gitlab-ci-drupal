@@ -1,0 +1,28 @@
+################################################################################
+# Testing template for phpunit, this provide Apache / Php.
+################################################################################
+
+.test_template:
+  extends: 
+    - .variables_test
+    - .artifacts_reports
+  dependencies:
+    - build
+  services:
+    - mariadb:latest
+  # Run on all tags, branches with word testing or dev.
+  # https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
+  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
+  only:
+    refs:
+      - /testing|dev/
+      - tags
+  before_script:
+    # Start Apache.
+    - apache2-foreground&
+    # Prepare ci.
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - robo ci:prepare
+    # Set permissions for tests.
+    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} && chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
