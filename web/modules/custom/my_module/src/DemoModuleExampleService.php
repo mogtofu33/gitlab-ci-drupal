@@ -17,7 +17,7 @@ class DemoModuleExampleService {
   /**
    * Constructs a DemoModuleExampleService object.
    */
-  public function __construct($dummy) {
+  public function __construct(bool $dummy) {
     $this->dummy = $dummy;
   }
 
