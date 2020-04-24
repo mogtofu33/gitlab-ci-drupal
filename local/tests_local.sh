@@ -313,8 +313,8 @@ _qa_template() {
       robo ci:prepare
 
     if ! $(_exist_dir /var/www/html/vendor/drupal/coder); then
-      docker exec -it -w /var/www/html ci-drupal \
-        composer require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6
+      docker exec -it ci-drupal \
+        composer --working-dir='/var/www/html' require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6 mglaman/phpstan-drupal
     fi
   fi
 }
@@ -324,10 +324,11 @@ _code_quality() {
   local CI_JOB_NAME="code-quality"
 
   # script
-  _dkexec phpqa --tools ${TOOLS} \
+  _dkexec \
+    phpqa --tools phpcs:0,phpstan:0,phpmd:0,phpcpd:0,parallel-lint:0 \
         --config ${CI_PROJECT_DIR}/.gitlab-ci \
         --buildDir "report-${CI_JOB_NAME}" \
-        --analyzedDirs "${CI_PROJECT_DIR}"
+        --analyzedDirs "${DIRS_QA}"
 }
 
 _best_practices() {
@@ -338,10 +339,11 @@ _best_practices() {
   _dkexec_bash \
   "sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml"
 
-  _dkexec phpqa --tools ${BEST_PRACTICES} \
+  _dkexec \
+    phpqa --tools phpcs:10 \
         --config ${CI_PROJECT_DIR}/.gitlab-ci \
         --buildDir "report-${CI_JOB_NAME}" \
-        --analyzedDirs "${CI_PROJECT_DIR}"
+        --analyzedDirs "${DIRS_QA}"
 }
 
 ####### Lint jobs
@@ -370,7 +372,7 @@ _eslint() {
     ${WEB_ROOT}/core/node_modules/.bin/eslint \
       --config ${WEB_ROOT}/core/.eslintrc.passing.json \
       --format html --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html" \
-      ${JS_CODE}
+      ${DIRS_JS}
 }
 
 _stylelint() {
@@ -394,7 +396,7 @@ _stylelint() {
     ${WEB_ROOT}/core/node_modules/.bin/stylelint \
       --config ${WEB_ROOT}/core/.stylelintrc.json \
       --formatter verbose \
-      ${CSS_FILES}
+      ${DIRS_CSS}
 }
 
 ####### Metrics jobs
@@ -419,8 +421,8 @@ _phpmetrics() {
   docker exec -t -w /var/www/html ci-drupal \
   phpqa --tools phpmetrics \
     --config ${CI_PROJECT_DIR}/.gitlab-ci\
-    --buildDir report-${CI_JOB_NAME} \
-    --analyzedDirs '${CI_PROJECT_DIR}'
+    --buildDir ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} \
+    --analyzedDirs '${DIRS_PHP}'
 }
 
 _phpstats() {
@@ -430,8 +432,8 @@ _phpstats() {
   docker exec -t -w /var/www/html ci-drupal \
   phpqa --tools phploc,pdepend \
     --config ${CI_PROJECT_DIR}/.gitlab-ci\
-    --buildDir report-${CI_JOB_NAME} \
-    --analyzedDirs '${CI_PROJECT_DIR}'
+    --buildDir ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} \
+    --analyzedDirs '${DIRS_PHP}'
 }
 
 ################################################################################
@@ -633,9 +635,9 @@ _env() {
   echo 'BEHAT_PARAMS='${BEHAT_PARAMS} >> $__env
 
   # Replace variables.
-  CI_REMOTE_FILES_REF=$(yq r $__yaml_variables "[.default_variables].CI_REMOTE_FILES_REF")
-  sed -i "s#\${CI_REMOTE_FILES_REF}#${CI_REMOTE_FILES_REF}#g" $__env
-  echo '# Fixed CI_REMOTE_FILES_REF' >> $__env
+  CI_REF=$(yq r $__yaml_variables "[.default_variables].CI_REF")
+  sed -i "s#\${CI_REF}#${CI_REF}#g" $__env
+  echo '# Fixed CI_REF' >> $__env
 
   echo '# Override variables' >> $__env
   yq r $__yaml "variables" >> $__env

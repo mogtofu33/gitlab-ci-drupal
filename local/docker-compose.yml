@@ -13,8 +13,8 @@ services:
   drupal:
     # Drupal included from official docker image + ci tools. Edit in .env file.
     # see https://gitlab.com/mog33/drupal8ci
-    image: mogtofu33/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
-    # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_DRUPAL_VERSION}-${CI_IMAGE_VARIANT}
+    image: mogtofu33/drupal8ci:${CI_REF}-${CI_DRUPAL_VERSION}-${CI_DRUPAL}
+    # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_REF}-${CI_DRUPAL_VERSION}-${CI_DRUPAL}
     ports:
       - "88:80"
       # Chromedriver port for Functional js.
@@ -35,18 +35,18 @@ services:
     container_name: ci-drupal
     env_file:
       - .env
-  node:
-    image: node:lts-alpine
-    container_name: ci-node
-    ports:
-      - 3000
-    volumes:
-      - ../:/home/node/app
-    command: tail -f /dev/null
-    working_dir: /home/node/app
-    user: "node"
-    env_file:
-      - .env
+  # node:
+  #   image: node:lts-alpine
+  #   container_name: ci-node
+  #   ports:
+  #     - 3000
+  #   volumes:
+  #     - ../:/home/node/app
+  #   command: tail -f /dev/null
+  #   working_dir: /home/node/app
+  #   user: "node"
+  #   env_file:
+  #     - .env
   mariadb:
     image: mariadb:latest
     expose:

@@ -13,7 +13,7 @@ Jobs are grouped by stages, to override stages, edit your `.gitlab-ci.yml` file.
 | Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | Yes (included) | text and html |
 | Security report | Symfony security-checker, look at versions in composer.lock | No | text |
 | Behat tests | Support Behat tests from `tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | Yes | html |
-| Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-dev/.gitlab-ci/) | Yes | text |
+| Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/) | Yes | text |
 | Code quality | Code sniffer with _Drupal standards_ | No | html |
 | Best practices | Code sniffer with _Drupal Best practices standard_ | No | html |
 | Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | No | html |
@@ -68,7 +68,7 @@ By default the configuration is to keep each job report **1 week**.
 To add some custom build steps for the `Build` job (ie: Yarn, Gulp, composer run, Bower, Webpack...)
 you can copy the `.gitlab-ci\build.php` file and include any task.
 
-I use [Robo.li](https://robo.li/) with this [RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-dev/.gitlab-ci/RoboFile.php)
+I use [Robo.li](https://robo.li/) with this [RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/RoboFile.php)
 for running some specific ci tasks and Drupal install.
 
 ### Custom deploy
@@ -114,7 +114,7 @@ The pipeline in this project support Unit, Kernel, Functional,
 tests in Drupal 8/9, see
 [Type of tests in Drupal 8/9](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
-The tests configuration is defined in [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-dev/.gitlab-ci/phpunit.xml).
+The tests configuration is defined in [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/phpunit.xml).
 
 There is 2 set of tests location:
 
@@ -130,7 +130,7 @@ There is a Gitlab variable to select the tests:
 
 Set this variable _empty_ to run all tests.
 
-To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-dev/.gitlab-ci/phpunit.xml) in your project
+To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/phpunit.xml) in your project
 and adapt for your tests.
 
 ### Codecov.io support
@@ -167,7 +167,7 @@ Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org), [Phploc](https:
 ### Accessibility with Pa11y
 
 Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in
-[.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-dev/.gitlab-ci/pa11y-ci.json)
+[.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/pa11y-ci.json)
 
 For setting your urls to test, adapt the urls section:
 

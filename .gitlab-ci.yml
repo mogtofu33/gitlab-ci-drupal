@@ -20,10 +20,10 @@
 include:
   # If hosted on gitlab.com.
   - project: 'mog33/gitlab-ci-drupal'
-    ref: 8.x-2-dev
+    ref: 2.x-dev
     file: '/.gitlab-ci/.gitlab-ci-template.yml'
   # If hosted on an other Gitlab instance.
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/raw/8.x-2-dev/.gitlab-ci-template.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/raw/2.x-dev/.gitlab-ci-template.yml'
 
 ################################################################################
 # Gitlab-CI variables documentation:
@@ -41,7 +41,7 @@ variables:
 
   # Global config remote files ref.
   # MUST be the same as include: ref: from above.
-  CI_REMOTE_FILES_REF: 8.x-2-dev
+  CI_REF: 2.x-dev
 
   # Set a version, default is Drupal 8.8, can be 8.9 or 9.0.
   # CI_DRUPAL_VERSION: "8.8"
@@ -55,7 +55,7 @@ variables:
   #
   # CI_TYPE: module
   # # Default is 'no-drupal', ie: no Drupal included in the CI.
-  # CI_IMAGE_VARIANT: drupal
+  # CI_DRUPAL: drupal
   # # Code quality dirs, must include your PHP code to check.
   # DIRS_QA: "${CI_PROJECT_DIR}"
   # # Eslint / Stylelint files to test.

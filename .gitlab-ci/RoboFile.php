@@ -27,6 +27,7 @@ class RoboFile extends \Robo\Tasks {
    * @var string
    *   The database URL. This can be overridden by specifying a $DB_URL or a
    *   $SIMPLETEST_DB environment variable.
+   *   Default is to the ci variables used with mariadb service.
    */
   protected $dbUrl = 'mysql://drupal:drupal@mariadb/drupal';
 
@@ -36,6 +37,7 @@ class RoboFile extends \Robo\Tasks {
    * @var string
    *   The docroot folder of Drupal. This can be overridden by specifying a
    *   $DOC_ROOT environment variable.
+   *   Default is to the ci image value.
    */
   protected $docRoot = '/var/www/html';
 
@@ -45,6 +47,7 @@ class RoboFile extends \Robo\Tasks {
    * @var string
    *   The webroot folder of Drupal. This can be overridden by specifying a
    *   $WEB_ROOT environment variable.
+   *   Default is to the ci image value.
    */
   protected $webRoot = '/var/www/html/web';
 
@@ -60,8 +63,9 @@ class RoboFile extends \Robo\Tasks {
    * CI_PROJECT_DIR context.
    *
    * @var string
-   *   The CI dir, look at env values for This can be  overridden by specifying
+   *   The CI dir, look at env values for This can be overridden by specifying
    *   a $CI_PROJECT_DIR environment variable.
+   *   Default is to Gitlab-ci value.
    */
   protected $ciProjectDir = "/builds";
 
@@ -102,13 +106,13 @@ class RoboFile extends \Robo\Tasks {
   protected $ciDrupalSettings = "https://gitlab.com/mog33/gitlab-ci-drupal/snippets/1892524/raw";
 
   /**
-   * CI_REMOTE_FILES context.
+   * CI_REF context.
    *
    * @var string
    *   The address of remote ci config files, This can be overridden by
-   *   specifying a $CI_REMOTE_FILES environment variable.
+   *   specifying a $CI_REF environment variable.
    */
-  protected $ciRemoteFiles = "";
+  protected $ciRef = "";
 
   /**
    * PHPUNIT_TESTS context.
@@ -149,8 +153,8 @@ class RoboFile extends \Robo\Tasks {
     if (getenv('CI_DRUPAL_SETTINGS')) {
       $this->ciDrupalSettings = getenv('CI_DRUPAL_SETTINGS');
     }
-    if (getenv('CI_REMOTE_FILES')) {
-      $this->ciRemoteFiles = getenv('CI_REMOTE_FILES');
+    if (getenv('CI_REF')) {
+      $this->ciRef = getenv('CI_REF');
     }
 
     // Pull a DB_URL from the environment, if it exists.
@@ -218,13 +222,13 @@ class RoboFile extends \Robo\Tasks {
           ->run();
       }
       else {
-        $this->__log("Download remote file: $this->ciRemoteFiles" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteFiles . $filename);
+        $this->__log("Download remote file: $this->ciRef" . "$filename");
+        $remote_file = file_get_contents($this->ciRef . $filename);
         if ($remote_file) {
           file_put_contents($drupal_dir . $filename, $remote_file);
         }
         else {
-          $this->io()->warning("Failed to get remote file: $this->ciRemoteFiles" . "$filename");
+          $this->io()->warning("Failed to get remote file: $this->ciRef" . "$filename");
         }
       }
     }
@@ -241,8 +245,8 @@ class RoboFile extends \Robo\Tasks {
     foreach ($files as $filename) {
       // Use local file if exist.
       if (!file_exists($dir . $filename)) {
-        $this->__log("Download remote file: $this->ciRemoteFiles" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteFiles . $filename);
+        $this->__log("Download remote file: $this->ciRef" . "$filename");
+        $remote_file = file_get_contents($this->ciRef . $filename);
         file_put_contents($dir . $filename, $remote_file);
       }
     }

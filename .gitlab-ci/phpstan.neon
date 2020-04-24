@@ -3,7 +3,6 @@ includes:
 parameters:
     drupal:
         drupal_root: /var/www/html
-    level: 7
-	excludes_analyse:
-		- *Test.php
-		- *TestBase.php
+    excludes_analyse:
+        - *Test.php
+        - *TestBase.php

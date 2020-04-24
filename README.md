@@ -2,7 +2,7 @@
 
 For any *issue*, please use the [Gitlab-CI project page](https://gitlab.com/mog33/gitlab-ci-drupal/-/issues)
 
-Current branch **8.x-2-dev** is based on an include behavior, ie you don't have to copy all files from this project.
+Current branch **2.x-dev** is based on an include behavior, ie you don't have to copy all files from this project.
 
 Documentation is currently being rewritten and is not yet fully accurate.
 
@@ -10,7 +10,7 @@ For legacy (unmaintained) version see branch [8.x-1-dev]https://gitlab.com/mog33
 
 Drupal 8.8 QA | Drupal 8.8 Tests | Drupal 8.9 Tests | (WIP) Drupal 9.0 Tests
 :---:|:---:|:---:|:---:
-[![pipeline status 8.x-2-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/8.x-2-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master) | [![pipeline status 8.x-2-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/8.x-2-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/8.x-2-dev) | [![pipeline status 8.9](https://gitlab.com/mog33/gitlab-ci-drupal/badges/8.x-2-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.9) | [![pipeline status 9.0](https://gitlab.com/mog33/gitlab-ci-drupal/badges/8.x-2-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-9.0)
+[![pipeline status 2.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/2.x-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/master) | [![pipeline status 2.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/2.x-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/2.x-dev) | [![pipeline status 8.9](https://gitlab.com/mog33/gitlab-ci-drupal/badges/2.x-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-8.9) | [![pipeline status 9.0](https://gitlab.com/mog33/gitlab-ci-drupal/badges/2.x-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/testing-9.0)
 
 <img src="https://www.drupal.org/files/druplicon-small.png" width="175">
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png" width="175">
@@ -35,7 +35,7 @@ Push your module to a Gitlab with CI and runners enabled.
 [Gitlab.com](https://gitlab.com) offer 2,000 CI pipeline minutes/month on free
 accounts.
 
-- Copy [.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-dev/.gitlab-ci.yml) file at the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
+- Copy [.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci.yml) file at the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
 
 - If your project is not on [Gitlab.com](https://gitlab.com), edit the `include` section.
 
@@ -59,7 +59,7 @@ accounts.
 
 Assuming your project include a `composer.json` file from the [Drupal project](https://www.drupal.org/docs/develop/using-composer/using-composer-to-install-drupal-and-manage-dependencies).
 
-- Copy [.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-dev/.gitlab-ci.yml) file, and if you are using _Behat_ the `behat_tests` folders in
+- Copy [.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci.yml) file, and if you are using _Behat_ the `behat_tests` folders in
 the root of your Drupal project as a starting point (same level as `composer.json` file).
 
 - Put your custom code in the `web/modules/custom` and `web/themes/custom` folders of your project.

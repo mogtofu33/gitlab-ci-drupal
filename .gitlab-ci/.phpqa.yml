@@ -24,11 +24,15 @@ phpcpd:
     minTokens: 70
 
 phpmetrics:
-    # junit: build/log-junit.xml
+    junit: /builds/report-unit-kernel/junit-unit-kernel.xml
+    # junit: /builds/report-functional/junit-functional.xml
+    # junit: /builds/report-functional-javascript/junit-functional-javascript.xml
 
 phpstan:
+    # https://phpstan.org/user-guide/rule-levels
     level: 7
-    # https://github.com/phpstan/phpstan#configuration
+    # https://phpstan.org/config-reference
+    # https://github.com/mglaman/phpstan-drupal#usage
     standard: phpstan.neon
 
 # Php file extensions to parse.

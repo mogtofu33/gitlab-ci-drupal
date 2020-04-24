@@ -14,9 +14,9 @@
   # https://docs.gitlab.com/ee/ci/variables/#debug-logging
   # CI_DEBUG_TRACE: 1
 
-  # Should be the same as 'include: ref:' from above. Default is last stable.
+  # Should be the same as 'include: ref:' from .gitlab-ci.yml. Default is last stable.
   # Use a specific tag to keep your CI consistent.
-  CI_REMOTE_FILES_REF: "8.x-2-dev"
+  CI_REF: "2.x-dev"
 
   # Minor Drupal version to work with, limited to tags on
   # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
@@ -38,8 +38,8 @@
   #   drupal
   #     Base image include Drupal from the official Docker.
   #     For a module, theme or profile.
-  CI_IMAGE_VARIANT: "no-drupal"
-  # CI_IMAGE_VARIANT: "drupal"
+  CI_DRUPAL: "no-drupal"
+  # CI_DRUPAL: "drupal"
 
   # Path to the Drupal web root.
   # /var/www/html is the Apache docroot of the image used to run the jobs.
@@ -50,7 +50,7 @@
   # Phpunit tests to run, only custom code or empty for all (included Drupal)
   # see .gitlab-ci/phpunit.xml for settings.
   # To use your own phpunit.xml file, simply copy it on your project in
-  # .gitlab-ci/ folder. Then you can adpat this variable to run your tests.
+  # .gitlab-ci/ folder. Then you can adapt this variable to run your tests.
   # Default 'custom' matches dir **/modules/custom/** and **/themes/custom/**
   PHPUNIT_TESTS: "custom"
 
@@ -151,4 +151,4 @@
   # Other variables for CI only that do not need editing.
   #
   # Config files location for inclusion if not present locally.
-  CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REMOTE_FILES_REF}/.gitlab-ci/"
+  CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REF}/.gitlab-ci/"
