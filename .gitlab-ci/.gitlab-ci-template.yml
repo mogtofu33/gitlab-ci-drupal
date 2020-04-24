@@ -104,23 +104,23 @@ unit-kernel:
       - $SKIP_TEST_UNITKERNEL == "1"
   script:
     # Prepare report folders for coverage.
-    - mkdir -p report-${CI_JOB_NAME}coverage-xml report-${CI_JOB_NAME}coverage-html
+    - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
     # Run PHPunit tests for unit, kernel, with coverage report.
     - ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
         --configuration ${WEB_ROOT}/core
-        --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}coverage-xml
-        --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}coverage-html
-        --coverage-clover ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}coverage.xml
+        --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
+        --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-html
+        --coverage-clover ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.xml
         --coverage-text
         --colors=never
-        --testdox-html report-${CI_JOB_NAME}phpunit.html
-        --log-junit report-${CI_JOB_NAME}junit-${CI_JOB_NAME}.xml
+        --testdox-html report-${CI_JOB_NAME}/phpunit.html
+        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml
         --verbose --debug
   after_script:
     # [CODECOV] integration, need to set up CI ENVIRONMENT VARIABLES 'CODECOV_TOKEN' to work.
     # see https://codecov.io
-    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}junit-coverage.xml" ]; then
-        bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}junit-coverage.xml" || true;
+    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/junit-coverage.xml" ]; then
+        bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/junit-coverage.xml" || true;
       fi
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
@@ -136,12 +136,12 @@ functional:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
         --configuration ${WEB_ROOT}/core
-        --log-junit report-${CI_JOB_NAME}junit-${CI_JOB_NAME}.xml
-        --testdox-html report-${CI_JOB_NAME}phpunit.html
+        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml
+        --testdox-html report-${CI_JOB_NAME}/phpunit.html
         --verbose --debug
   after_script:
-    - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}browser_output"
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}browser_output" || true
+    - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
 functional-javascript:
   stage: tests
@@ -157,12 +157,12 @@ functional-javascript:
     - curl -s http://localhost:9515/status | jq '.' || true
     - ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
         --configuration ${WEB_ROOT}/core
-        --log-junit report-${CI_JOB_NAME}junit-${CI_JOB_NAME}.xml
-        --testdox-html report-${CI_JOB_NAME}phpunit.html
+        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml
+        --testdox-html report-${CI_JOB_NAME}/phpunit.html
         --verbose --debug
   after_script:
-    - mkdir -p report-${CI_JOB_NAME}browser_output
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}browser_output" || true
+    - mkdir -p report-${CI_JOB_NAME}/browser_output
+    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 nightwatch-js:
@@ -185,7 +185,7 @@ nightwatch-js:
       patch -d ${WEB_ROOT} -N -p1 < 3017176.patch || true
     # Install packages from Drupal.
     - yarn --cwd ${WEB_ROOT}/core install
-    # Update chromedriver if needed, the ci image include the lastest stable version of chrome.
+    # Update chromedriver if needed, the ci image include the latest stable version of chrome.
     - yarn --cwd ${WEB_ROOT}/core upgrade chromedriver@$(google-chrome --product-version | cut -d. -f1)
     - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
     # Launch Nightwatch tests from core folder.
@@ -298,8 +298,8 @@ code-quality:
       - $SKIP_QA == "1"
       - $SKIP_QA_CODEQUALITY == "1"
   script:
-    # No erros allowed for Code sniffer.
-    - phpqa --tools phpcs:0,phpmd,phpcpd,parallel-lint
+    # No errors allowed for Code sniffer.
+    - phpqa --tools phpcs:0,phpstan:0,phpmd:0,phpcpd:0,parallel-lint:0
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
         --analyzedDirs "${DIRS_QA}"
@@ -340,10 +340,10 @@ eslint:
     # Start from the core folder to access node_modules.
     - cd ${WEB_ROOT}/core
     # Run the eslint command to generate an html report.
-    # --format junit --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}eslint-unit.xml"
+    # --format junit --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-unit.xml"
     - ${WEB_ROOT}/core/node_modules/.bin/eslint
         --config ${WEB_ROOT}/core/.eslintrc.passing.json
-        --format html --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}eslint.html"
+        --format html --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html"
         "${DIRS_JS}"
 
 # Drupal 8.x rules used here for stylelint to check css.

@@ -14,4 +14,4 @@
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare
     # Coder is needed for Drupal coding standards 'Drupal' and 'DrupalPractice'.
-    - composer require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6
+    - composer require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6 mglaman/phpstan-drupal

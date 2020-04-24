@@ -1,0 +1,9 @@
+includes:
+    - /var/www/html/vendor/mglaman/phpstan-drupal/extension.neon
+parameters:
+    drupal:
+        drupal_root: /var/www/html
+    level: 7
+	excludes_analyse:
+		- *Test.php
+		- *TestBase.php

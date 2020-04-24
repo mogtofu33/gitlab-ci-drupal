@@ -9,19 +9,27 @@ phpcs:
         cli:
             - full
         file:
-            # checkstyle is always included and overriden
+            # checkstyle is always included and overridden
             checkstyle: checkstyle.xml
             junit: phpcs-unit.xml
 
 phpmd:
     standard: .phpmd.xml
 
-# pdepend:
-    # coverageReport: build/coverage-clover.xml
+pdepend:
+    coverageReport: /builds/report-unit-kernel/coverage.xml
 
 phpcpd:
     minLines: 5
     minTokens: 70
+
+phpmetrics:
+    # junit: build/log-junit.xml
+
+phpstan:
+    level: 7
+    # https://github.com/phpstan/phpstan#configuration
+    standard: phpstan.neon
 
 # Php file extensions to parse.
 phpqa:
