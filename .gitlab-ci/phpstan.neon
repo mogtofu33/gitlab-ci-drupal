@@ -1,5 +1,5 @@
 includes:
-    - /var/www/html/vendor/mglaman/phpstan-drupal/extension.neon
+    - /var/www/.composer/vendor/mglaman/phpstan-drupal/extension.neon
 parameters:
     drupal:
         drupal_root: /var/www/html

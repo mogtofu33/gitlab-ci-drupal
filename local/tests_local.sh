@@ -312,9 +312,9 @@ _qa_template() {
     docker exec -it -w /var/www/html ci-drupal \
       robo ci:prepare
 
-    if ! $(_exist_dir /var/www/html/vendor/drupal/coder); then
+    if ! $(_exist_dir /var/www/html/vendor/mglaman); then
       docker exec -it ci-drupal \
-        composer --working-dir='/var/www/html' require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6 mglaman/phpstan-drupal
+        composer --working-dir='/var/www/.composer' require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6 mglaman/phpstan-drupal
     fi
   fi
 }
@@ -328,7 +328,8 @@ _code_quality() {
     phpqa --tools phpcs:0,phpstan:0,phpmd:0,phpcpd:0,parallel-lint:0 \
         --config ${CI_PROJECT_DIR}/.gitlab-ci \
         --buildDir "report-${CI_JOB_NAME}" \
-        --analyzedDirs "${DIRS_QA}"
+        --analyzedDirs "${DIRS_QA}" \
+        --verbose
 }
 
 _best_practices() {
