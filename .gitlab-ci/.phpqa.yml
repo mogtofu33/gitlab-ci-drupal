@@ -24,7 +24,7 @@ phpcpd:
     minTokens: 70
 
 phpmetrics:
-    composer: /var/www/html/
+    # composer: ../../../../var/www/html/
     junit: /builds/report-unit-kernel/junit-unit-kernel.xml
     # junit: /builds/report-functional/junit-functional.xml
     # junit: /builds/report-functional-javascript/junit-functional-javascript.xml
