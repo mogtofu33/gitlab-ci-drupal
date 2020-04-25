@@ -229,7 +229,7 @@ behat:
   script:
     # @TODO, update when drupal/drupal-extension support Drupal 9
     - |
-      # Test if Drupal <9
+      # Test if Drupal < 9
       if [ $(echo ${CI_DRUPAL_VERSION} | cut -d. -f1) == "9" ]; then
         echo -e "\033[1;31mDrupal 9 not yet supported for Behat tests.\033[0;37m"
         exit 1

@@ -147,14 +147,6 @@ variables:
 #   # - deploy to production
 
 ################################################################################
-# [WIP] All reports on one page.
-################################################################################
-
-# pages:
-#   stage: publish reports
-#   extends: .publish_gitlab_pages_template
-
-################################################################################
 # Deploy samples.
 #
 # Some deploy samples that can be used as a starting point for your deploy.
