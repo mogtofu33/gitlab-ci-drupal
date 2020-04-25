@@ -239,7 +239,7 @@ class RoboFile extends \Robo\Tasks {
           ->run();
       }
       else {
-        $this->__log("Download remote file: $this->ciRef" . "$filename");
+        $this->__notice("Download remote file: $this->ciRef" . "$filename");
         $remote_file = file_get_contents($this->ciRef . $filename);
         if ($remote_file) {
           file_put_contents($drupal_dir . $filename, $remote_file);
@@ -257,7 +257,7 @@ class RoboFile extends \Robo\Tasks {
     foreach ($this->ciFiles['ci'] as $filename) {
       // Use local file if exist.
       if (!file_exists($src_dir . $filename)) {
-        $this->__log("Download remote file: $this->ciRef" . "$filename");
+        $this->__notice("Download remote file: $this->ciRef" . "$filename");
         $remote_file = file_get_contents($this->ciRef . $filename);
         file_put_contents($src_dir . $filename, $remote_file);
       }
@@ -275,7 +275,7 @@ class RoboFile extends \Robo\Tasks {
       case "demo":
         // Override phpunit.xml file if exist.
         if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests)) {
-          $this->__log('Override phpunit.xml file with: phpunit.xml.' . $this->phpunitTests);
+          $this->__notice('Override phpunit.xml file with: phpunit.xml.' . $this->phpunitTests);
           if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml')) {
             unlink($this->ciProjectDir . '/.gitlab-ci/phpunit.xml');
           }
@@ -446,7 +446,7 @@ class RoboFile extends \Robo\Tasks {
       ->chmod($dir, 0777, 0000, true)
       ->run();
 
-    $this->__log("Installing Drupal with profile $profile...");
+    $this->__notice("Installing Drupal with profile $profile...");
 
     $filename = $this->ciProjectDir . '/dump/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql';
 
@@ -645,8 +645,18 @@ class RoboFile extends \Robo\Tasks {
    */
   private function __log($message) {
     if ($this->verbose) {
-      $this->say("[notice] $message");
+      $this->say("[log] $message");
     }
+  }
+
+  /**
+   * Log a notice message in the CI logs.
+   *
+   * @param string $message
+   *   Message to log.
+   */
+  private function __notice($message) {
+    $this->say("[notice] $message");
   }
 
   /**
