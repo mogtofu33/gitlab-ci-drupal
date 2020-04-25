@@ -10,9 +10,6 @@
       - /testing|dev/
       - master
       - tags
-  except:
-    variables:
-      - $SKIP_METRICS == "1"
   before_script:
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare

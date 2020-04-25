@@ -8,7 +8,7 @@ namespace Drupal\my_module;
 class DemoModuleExampleService {
 
   /**
-   * Node storage.
+   * Dummy thing.
    *
    * @var bool
    */

@@ -214,10 +214,7 @@ security-checker:
       - $SKIP_TESTS == "1"
       - $SKIP_TEST_SECURITY == "1"
   script:
-    - phpqa --tools security-checker:0
-        --config ${CI_PROJECT_DIR}/.gitlab-ci
-        --buildDir "report-${CI_JOB_NAME}"
-        --analyzedDirs "${CI_PROJECT_DIR}"
+    - security-checker security:check /var/www/html/composer.lock
   # Allow failure to produce report and warning when we have an error.
   allow_failure: true
 
@@ -282,52 +279,31 @@ pa11y:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}" && cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
 
 ################################################################################
-# Code quality jobs for Drupal 8+
+# Code quality jobs for Drupal 8+ based on PHPQA
+# https://github.com/EdgedesignCZ/phpqa
 ################################################################################
 
-# Automated quality check job when something is pushed/merged on master.
-# We have a limit on errors we accept on the tools, if failed we run a
-# report and stop.
-# See Phpqa available tools:
-#   https://github.com/EdgedesignCZ/phpqa#available-tools
-code-quality:
+php-qa:
   stage: tests
   extends: .qa_template
   except:
     variables:
       - $SKIP_QA == "1"
-      - $SKIP_QA_CODEQUALITY == "1"
   script:
     # Default is no errors allowed for quality tests.
-    - phpqa --tools phpcs:0,phpstan:0,phpmd:0,phpcpd:0,parallel-lint:0
+    - phpqa --tools ${TOOLS_QA}
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
         --analyzedDirs "${DIRS_QA}"
-
-# Drupal coding standard best practices report.
-best-practices:
-  stage: tests
-  extends: .qa_template
-  except:
-    variables:
-      - $SKIP_QA == "1"
-      - $SKIP_QA_BESTPRACTICES == "1"
-  script:
-    # Move from Drupal to DrupalPractice standard.
-    - sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml
-    # Coding best practices errors limit, ~10 is reasonable.
-    - phpqa --tools phpcs:10
-        --config ${CI_PROJECT_DIR}/.gitlab-ci
-        --buildDir "report-${CI_JOB_NAME}"
-        --analyzedDirs "${DIRS_QA}"
-  # Allow failure to produce report and warning.
-  allow_failure: true
+  # Allow failure to produce report and warning, not blocking the pipeline.
+  # allow_failure: true
 
 ################################################################################
 # Code lint jobs for Drupal 8+
 ################################################################################
 
 # This is a eslint report based on Drupal 8.x standards.
+# https://www.drupal.org/docs/develop/standards/javascript
 # @TODO: junit report.Deploy
 eslint:
   stage: tests
@@ -347,6 +323,7 @@ eslint:
         "${DIRS_JS}"
 
 # Drupal 8.x rules used here for stylelint to check css.
+# https://www.drupal.org/docs/develop/standards/css
 # @TODO: stylelint html & junit report. + sass / scss support?
 # https://www.npmjs.com/package/stylelint-junit-formatter
 stylelint:
@@ -365,35 +342,32 @@ stylelint:
         --formatter verbose
         "${DIRS_CSS}"
 
+twiglint:
+  stage: tests
+  extends: .lint_template
+  except:
+    variables:
+      - $SKIP_LINT == "1"
+      - $SKIP_LINT_TWIG == "1"
+  script:
+    - curl -fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint || true
+    # Lint report, terminal only.
+    - php twig-lint lint "${DIRS_TWIG}"
+
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
 ################################################################################
 
-# Phpmetrics report, no pass or failure as it's just informative.
+# Phpmetrics, Phploc, Pdepend report, no pass or failure as it's just informative.
 # @TODO phpmetrics with junit report from code-coverage
-phpmetrics:
+metrics:
   stage: metrics
   extends: .metrics_template
   except:
     variables:
       - $SKIP_METRICS == "1"
-      - $SKIP_METRICS_PHPMETRICS == "1"
   script:
-    - phpqa --tools phpmetrics
-        --config ${CI_PROJECT_DIR}/.gitlab-ci
-        --buildDir "report-${CI_JOB_NAME}"
-        --analyzedDirs "${DIRS_PHP}"
-
-# Phploc, Pdepend report, no pass or failure as it's just informative.
-phpstats:
-  stage: metrics
-  extends: .metrics_template
-  except:
-    variables:
-      - $SKIP_METRICS == "1"
-      - $SKIP_METRICS_PHPSTATS == "1"
-  script:
-    - phpqa --tools phploc,pdepend
+    - phpqa --tools ${TOOLS_METRICS}
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"
         --analyzedDirs "${DIRS_PHP}"

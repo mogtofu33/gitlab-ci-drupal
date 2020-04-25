@@ -79,6 +79,29 @@ class RoboFile extends \Robo\Tasks {
   protected $ciProjectName = "my_project";
 
   /**
+   * Configuration files for CI context.
+   *
+   * @var array
+   *   The CI files configuration for jobs from .gitlab-ci folder.
+   *   Indexed by destination as 'core' (drupal_root/core/) or 'ci'
+   *   (.gitlab-ci/).
+   */
+  protected $ciFiles = [
+    'core' => [
+      '.eslintignore',
+      '.stylelintignore',
+      '.env',
+      'phpunit.xml',
+    ],
+    'ci' => [
+      '.phpmd.xml',
+      '.phpqa.yml',
+      'pa11y-ci.json',
+      'phpstan.neon',
+    ],
+  ];
+
+  /**
    * NIGHTWATCH_TESTS context.
    *
    * @var string
@@ -204,21 +227,15 @@ class RoboFile extends \Robo\Tasks {
   public function ciGetConfigFiles() {
     $this->__log("Prepare config files for CI");
 
-    $dir = $this->ciProjectDir . '/.gitlab-ci/';
+    $src_dir = $this->ciProjectDir . '/.gitlab-ci/';
     $drupal_dir = $this->webRoot . '/core/';
 
-    $files_core = [
-      '.eslintignore',
-      '.stylelintignore',
-      '.env',
-      'phpunit.xml',
-    ];
-
-    foreach ($files_core as $filename) {
+    // Manage files for drupal_root/core folder.
+    foreach ($this->ciFiles['core'] as $filename) {
       // Use local file if exist.
-      if (file_exists($dir . $filename)) {
+      if (file_exists($src_dir . $filename)) {
         $this->taskFilesystemStack()
-          ->copy($dir . $filename, $drupal_dir . $filename, true)
+          ->copy($src_dir . $filename, $drupal_dir . $filename, true)
           ->run();
       }
       else {
@@ -233,21 +250,16 @@ class RoboFile extends \Robo\Tasks {
       }
     }
 
-    $files = [
-      '.phpmd.xml',
-      '.phpqa.yml',
-      'pa11y-ci.json',
-    ];
-
     // Create directory if do not exist.
-    $this->_mkdir($dir);
+    $this->_mkdir($src_dir);
 
-    foreach ($files as $filename) {
+    // Manage ci configuration files for .gitlab-ci folder.
+    foreach ($this->ciFiles['ci'] as $filename) {
       // Use local file if exist.
-      if (!file_exists($dir . $filename)) {
+      if (!file_exists($src_dir . $filename)) {
         $this->__log("Download remote file: $this->ciRef" . "$filename");
         $remote_file = file_get_contents($this->ciRef . $filename);
-        file_put_contents($dir . $filename, $remote_file);
+        file_put_contents($src_dir . $filename, $remote_file);
       }
     }
   }

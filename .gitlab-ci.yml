@@ -61,6 +61,8 @@ variables:
   # # Eslint / Stylelint files to test.
   # DIRS_JS: "${CI_PROJECT_DIR}/**/*.js"
   # DIRS_CSS: "${CI_PROJECT_DIR}/**/*.css"
+  # # Twig files to test.
+  # DIRS_TWIG "${CI_PROJECT_DIR}"
   # # phpmetrics / phpstats dirs to include.
   # DIRS_PHP: "${CI_PROJECT_DIR}"
   # # Set SKIP_XXX variable to 1 to skip.
@@ -78,6 +80,8 @@ variables:
   # SKIP_LINT_CSS: 1
   # # If you don't have any javascript files, you can skip with
   # SKIP_LINT_JS: 1
+  # # If you don't have any twig files, you can skip with
+  # SKIP_LINT_TWIG: 1
   #
   ##############################################################################
 
@@ -95,6 +99,8 @@ variables:
   # Default is to check files under all custom folders.
   # DIRS_JS: "${CI_PROJECT_DIR}/**/custom/**/*.js"
   # DIRS_CSS: "${CI_PROJECT_DIR}/**/custom/**/css/*.css"
+  # Twig files to test, recursive.
+  # DIRS_TWIG "${CI_PROJECT_DIR}"
   # phpmetrics / phpstats dirs to include.
   # Default is to check all dirs.
   # DIRS_PHP: "${CI_PROJECT_DIR}"
@@ -109,15 +115,12 @@ variables:
   # SKIP_TEST_SECURITY: 1
   # SKIP_TEST_BEHAT: 1
   # SKIP_TEST_PA11Y: 1
-  # SKIP_QA: 1 # Skip all qa, ignore SKIP_QA_*.
-  # SKIP_QA_CODEQUALITY: 1
-  # SKIP_QA_BESTPRACTICES: 1
+  # SKIP_QA: 1
   # SKIP_LINT: 1 # Skip all lint, ignore SKIP_LINT_*.
   # SKIP_LINT_CSS: 1
   # SKIP_LINT_JS: 1
-  # SKIP_METRICS: 1 # Skip all metrics, ignore SKIP_METRICS_*.
-  # SKIP_METRICS_PHPMETRICS: 1
-  # SKIP_METRICS_PHPSTATS: 1
+  # SKIP_LINT_TWIG: 1
+  # SKIP_METRICS: 1
 
 ################################################################################
 # ADVANCED USAGE

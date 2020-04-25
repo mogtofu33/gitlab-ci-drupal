@@ -2,7 +2,9 @@
 # For more options see:
 #   https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml
 phpcs:
-    standard: Drupal
+    standard:
+        - Drupal
+        - DrupalPractice
     ignoreWarnings: true
     # https://github.com/squizlabs/PHP_CodeSniffer/wiki/Reporting
     reports:

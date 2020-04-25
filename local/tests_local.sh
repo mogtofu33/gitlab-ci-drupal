@@ -235,10 +235,12 @@ _security_checker() {
   printf "\\n%s[INFO]%s Perform job 'Security report' (security_checker)\\n\\n" "${_blu}" "${_end}"
   local CI_JOB_NAME="security-checker"
 
-  _dkexec phpqa --tools security-checker:0 \
-        --config ${CI_PROJECT_DIR}/.gitlab-ci \
-        --buildDir "report-${CI_JOB_NAME}" \
-        --analyzedDirs "/var/www/html"
+  # _dkexec phpqa --tools security-checker:0 \
+  #       --config ${CI_PROJECT_DIR}/.gitlab-ci \
+  #       --buildDir "report-${CI_JOB_NAME}" \
+  #       --analyzedDirs "/var/www/html"
+  _dkexec \
+    security-checker security:check /var/www/html/composer.lock
 }
 
 # Replicate test behat .gitlab-ci/.gitlab-ci-template.yml
@@ -312,39 +314,24 @@ _qa_template() {
     docker exec -it -w /var/www/html ci-drupal \
       robo ci:prepare
 
-    if ! $(_exist_dir /var/www/html/vendor/mglaman); then
+    if ! $(_exist_dir /var/www/.composer/vendor/mglaman/phpstan-drupal); then
       docker exec -it ci-drupal \
         composer --working-dir='/var/www/.composer' require --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6 mglaman/phpstan-drupal
     fi
   fi
 }
 
-_code_quality() {
-  printf "\\n%s[INFO]%s Perform job 'Code quality' (code_quality)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="code-quality"
+_php_qa() {
+  printf "\\n%s[INFO]%s Perform job 'PHP QA' (php_qa)\\n\\n" "${_blu}" "${_end}"
+  local CI_JOB_NAME="php-qa"
 
   # script
   _dkexec \
-    phpqa --tools phpcs:0,phpstan:0,phpmd:0,phpcpd:0,parallel-lint:0 \
+    phpqa --tools ${TOOLS_QA} \
         --config ${CI_PROJECT_DIR}/.gitlab-ci \
         --buildDir "report-${CI_JOB_NAME}" \
         --analyzedDirs "${DIRS_QA}" \
         --verbose
-}
-
-_best_practices() {
-  printf "\\n%s[INFO]%s Perform job 'Best practices' (best_practices)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="best-practices"
-
-  # script
-  _dkexec_bash \
-  "sed -i 's/Drupal/DrupalPractice/g' ${CI_PROJECT_DIR}/.gitlab-ci/.phpqa.yml"
-
-  _dkexec \
-    phpqa --tools phpcs:10 \
-        --config ${CI_PROJECT_DIR}/.gitlab-ci \
-        --buildDir "report-${CI_JOB_NAME}" \
-        --analyzedDirs "${DIRS_QA}"
 }
 
 ####### Lint jobs
@@ -360,7 +347,7 @@ _lint_template() {
     docker exec -it -w /var/www/html ci-drupal \
       robo ci:prepare
     docker exec -it ci-drupal \
-     yarn --cwd ${WEB_ROOT}/core install
+      yarn --cwd ${WEB_ROOT}/core install
   fi
 }
 
@@ -398,6 +385,17 @@ _stylelint() {
       --config ${WEB_ROOT}/core/.stylelintrc.json \
       --formatter verbose \
       ${DIRS_CSS}
+}
+
+_twiglint() {
+  printf "\\n%s[INFO]%s Perform job 'Twig lint' (twiglint)\\n\\n" "${_blu}" "${_end}"
+  local CI_JOB_NAME="twiglint"
+
+  docker exec -it ci-drupal \
+    curl -fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
+  
+  docker exec -it ci-drupal \
+    php twig-lint lint "${DIRS_TWIG}"
 }
 
 ####### Metrics jobs
@@ -880,6 +878,7 @@ Usage:
 
 Arguments with option:
   test                Run a test, ie: test unit_kernel
+  qa                  Run a QA, ie: test php_qa
 
   Standalone jobs:
     security_checker
@@ -889,8 +888,7 @@ Arguments with option:
     nightwatch
     behat
     pa11y
-    code_quality
-    best_practices
+    php_qa
     js_lint
     css_lint
     phpmetrics
