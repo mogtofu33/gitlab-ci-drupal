@@ -19,7 +19,7 @@ phpmd:
     standard: .phpmd.xml
 
 pdepend:
-    coverageReport: /builds/report-unit-kernel/coverage.xml
+    coverageReport: /tmp/coverage.xml
 
 phpcpd:
     minLines: 5
@@ -27,9 +27,9 @@ phpcpd:
 
 phpmetrics:
     # composer: ../../../../var/www/html/
-    junit: /builds/report-unit-kernel/junit-unit-kernel.xml
-    # junit: /builds/report-functional/junit-functional.xml
-    # junit: /builds/report-functional-javascript/junit-functional-javascript.xml
+    junit: /tmp/junit-unit-kernel.xml
+    # junit: junit-functional.xml
+    # junit: junit-functional-javascript.xml
 
 phpstan:
     # https://phpstan.org/user-guide/rule-levels
@@ -43,7 +43,7 @@ phpqa:
     ignoredDirs: "vendor,bootstrap,tests,.gitlab-ci"
     ignoredFiles: "Readme.md,style.css,print.css,*Test.php,RoboFile.php"
     report: true
-    verbose: false
+    verbose: true
     execution: parallel
     extensions:
         - php
