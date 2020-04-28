@@ -9,7 +9,7 @@
 # License: GPL-3
 #
 # If you want to support this project, you can
-# - Buy me a coffee : https://bit.ly/34jPKcE
+# - Buy me a coffee: https://bit.ly/34jPKcE
 # - Hire me as a freelance for any Drupal related work
 # - Promote me to any company looking for any Drupal related work
 # - Help me with testing / documentation / grammar fixes / use cases
@@ -62,7 +62,7 @@ variables:
   # DIRS_JS: "${CI_PROJECT_DIR}/**/*.js"
   # DIRS_CSS: "${CI_PROJECT_DIR}/**/*.css"
   # # Twig files to test.
-  # DIRS_TWIG "${CI_PROJECT_DIR}"
+  # DIRS_TWIG: "${CI_PROJECT_DIR}"
   # # phpmetrics / phpstats dirs to include.
   # DIRS_PHP: "${CI_PROJECT_DIR}"
   # # Set SKIP_XXX variable to 1 to skip.
@@ -86,23 +86,28 @@ variables:
   ##############################################################################
 
   ##############################################################################
-  # Here you can override more variable.
   # As a sample here is a list of DIRS and SKIP variables, see documentation for
   # more variables.
-  ##############################################################################
-  ##############################################################################
+  #
   # List of DIRS_* variables to define dirs to analyse for specific jobs.
   # Code quality dirs, must include your PHP code to check.
+  # 
   # DIRS_QA: "${CI_PROJECT_DIR}"
+  # 
   # Eslint / Stylelint files to test.
   # Space separated for multiple folders.
   # Default is to check files under all custom folders.
+  # 
   # DIRS_JS: "${CI_PROJECT_DIR}/**/custom/**/*.js"
   # DIRS_CSS: "${CI_PROJECT_DIR}/**/custom/**/css/*.css"
+  # 
   # Twig files to test, recursive.
+  # 
   # DIRS_TWIG "${CI_PROJECT_DIR}"
-  # phpmetrics / phpstats dirs to include.
+  # 
+  # Phpmetrics / Phpstats dirs to include.
   # Default is to check all dirs.
+  # 
   # DIRS_PHP: "${CI_PROJECT_DIR}"
   #
   # # ALL SKIP variables, uncomment and set to 1 to skip a job.
@@ -121,92 +126,3 @@ variables:
   # SKIP_LINT_JS: 1
   # SKIP_LINT_TWIG: 1
   # SKIP_METRICS: 1
-
-################################################################################
-# ADVANCED USAGE
-#
-# Default stages and any job can be overridden.
-# See documentation for more information.
-################################################################################
-
-# Override stages if needed. for example to add or adapt deploy.
-# Here we add a 'deploy to testing' step.
-# https://docs.gitlab.com/ee/ci/yaml/README.html#stages
-
-# stages:
-#   - build
-#   - tests
-#   - metrics
-#   # [DEPLOY] All deploy jobs can be set here.
-#   # Sample of a deploy workflow:
-#   # Manual if branch testing or master or tag.
-#   # - deploy to testing
-#   # Manual if branch master or tag.
-#   # - deploy to staging
-#   # Manual if branch master or tag.
-#   # - deploy to production
-
-################################################################################
-# Deploy samples.
-#
-# Some deploy samples that can be used as a starting point for your deploy.
-# Note that a deploy process is dependent of your infrastructure and tools,
-# there is no generic deploy process.
-################################################################################
-
-# SSH / SCP based deploy sample job for a project. Could be a starting point
-# if you have a remote ssh access to your environment.
-#
-# You must fill variables on the deploy job or on
-# Gitlab CI UI > settings > CI/CD
-#
-# Uncomment and adapt for each stages you added above.
-#
-# See Gitlab-CI Environments documentation:
-# https://docs.gitlab.com/ee/ci/environments.html#configuring-environments
-# For deploy samples, see examples in documentation:
-# https://docs.gitlab.com/ee/ci/examples/README.html
-
-# Deploy to testing:
-#   stage: deploy to testing
-#   extends: .deploy_ssh
-#   environment:
-#     name: testing
-#     url: https://SET_MY_URL
-#   # To make this deploy job manual on the pipeline.
-#   # https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
-#   # when: manual
-#   # Optional to override the tags default in .deploy_ssh
-#   # https://docs.gitlab.com/ee/ci/yaml/README.html#onlyexcept-basic
-#   only:
-#     refs:
-#       - testing
-#       # - master
-#       # - tags
-#   # Variables can be set from 'Gitlab CI UI > settings > CI/CD > variables' as
-#   # named below or directly here.
-#   variables:
-#     ENV_USER: "${TESTING_USER}"
-#     ENV_HOST: "${TESTING_HOST}"
-#     ENV_PATH: "${TESTING_PATH}"
-#     # Adapt if you are using the same key or different ssh keys.
-#     ENV_KEY: "${PRIVATE_KEY}"
-#     # ENV_KEY: "${TESTING_PRIVATE_KEY}"
-#     # ENV_KEY: "${STAGING_PRIVATE_KEY}"
-#     # ENV_KEY: "${PRODUCTION_PRIVATE_KEY}"
-#   ##############################################################################
-#   # Deploy script, this is just an example for scp / ssh remote command for a
-#   # Drupal project.
-#   ##############################################################################
-#   script:
-#     # Create remote path and send build.
-#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mkdir ${ENV_PATH}/_tmp"
-#     - scp -P22 -r vendor web *.php ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
-#     # Replace Drupal with new build and keep previous version.
-#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mv ${ENV_PATH}/current ${ENV_PATH}/_previous && mv ${ENV_PATH}/_tmp ${ENV_PATH}/current"
-#     # Run any personal deploy script (backup db, drush updb, drush cim...)
-#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "${ENV_PATH}/scripts/deploy.sh --env=testing"
-
-################################################################################
-# Release samples.
-################################################################################

@@ -9,7 +9,7 @@
 # License: GPL-3
 #
 # If you want to support this project, you can
-# - Buy me a coffee : https://bit.ly/34jPKcE
+# - Buy me a coffee: https://bit.ly/34jPKcE
 # - Hire me as a freelance for any Drupal related work
 # - Promote me to any company looking for any Drupal related work
 # - Help me with testing / Documentation / Use cases
@@ -67,12 +67,6 @@ stages:
 # (grunt, webpack, yarn...).
 build:
   extends: .build_template
-  # Run on all tags, branches with word testing or dev NOT on master OR if
-  # variable SKIP_BUILD is set to 1
-  # https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
-  except:
-    variables:
-      - $SKIP_BUILD == "1"
   script:
     # Validate the composer.json file.
     - if [ ${CI_TYPE} == "project" ]; then
@@ -98,10 +92,10 @@ build:
 unit-kernel:
   stage: tests
   extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_UNITKERNEL == "1"
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_UNITKERNEL == "1"'
+      when: never
+    - when: on_success
   script:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
@@ -128,10 +122,10 @@ unit-kernel:
 functional:
   stage: tests
   extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_FUNCTIONAL == "1"
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_FUNCTIONAL == "1"'
+      when: never
+    - when: on_success
   script:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
@@ -146,10 +140,10 @@ functional:
 functional-javascript:
   stage: tests
   extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_FUNCTIONALJS == "1"
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_FUNCTIONALJS == "1"'
+      when: never
+    - when: on_success
   script:
     # Launch Chromedriver.
     - /scripts/start-chromedriver.sh&
@@ -168,10 +162,10 @@ functional-javascript:
 nightwatch-js:
   stage: tests
   extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_NIGHTWATCH == "1"
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_NIGHTWATCH == "1"'
+      when: never
+    - when: on_success
   script:
     # @TODO: remove when Drupal 8.7/8.8 is deprecated.
     - |
@@ -209,10 +203,10 @@ nightwatch-js:
 security-checker:
   stage: tests
   extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_SECURITY == "1"
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_SECURITY == "1"'
+      when: never
+    - when: on_success
   script:
     - security-checker security:check /var/www/html/composer.lock
   # Allow failure to produce report and warning when we have an error.
@@ -222,10 +216,10 @@ security-checker:
 behat:
   stage: tests
   extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_BEHAT == "1"
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_BEHAT == "1"'
+      when: never
+    - when: on_success
   script:
     # @TODO, update when drupal/drupal-extension support Drupal 9
     - |
@@ -264,10 +258,10 @@ behat:
 pa11y:
   stage: tests
   extends: .test_template
-  except:
-    variables:
-      - $SKIP_TESTS == "1"
-      - $SKIP_TEST_PA11Y == "1"
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_PA11Y == "1"'
+      when: never
+    - when: on_success
   script:
     # Install Drupal with the standard profile.
     - robo drupal:install standard
@@ -286,9 +280,10 @@ pa11y:
 php-qa:
   stage: tests
   extends: .qa_template
-  except:
-    variables:
-      - $SKIP_QA == "1"
+  rules:
+    - if: '$SKIP_QA == "1"'
+      when: never
+    - when: on_success
   script:
     # Default is no errors allowed for quality tests.
     - phpqa --tools ${TOOLS_QA}
@@ -304,14 +299,14 @@ php-qa:
 
 # This is a eslint report based on Drupal 8.x standards.
 # https://www.drupal.org/docs/develop/standards/javascript
-# @TODO: junit report.Deploy
+# @TODO: junit report.
 eslint:
   stage: tests
   extends: .lint_template
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-      - $SKIP_LINT_JS == "1"
+  rules:
+    - if: '$SKIP_LINT == "1" || $SKIP_LINT_JS == "1"'
+      when: never
+    - when: always
   script:
     # Start from the core folder to access node_modules.
     - cd ${WEB_ROOT}/core
@@ -329,10 +324,10 @@ eslint:
 stylelint:
   stage: tests
   extends: .lint_template
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-      - $SKIP_LINT_CSS == "1"
+  rules:
+    - if: '$SKIP_LINT == "1" || $SKIP_LINT_CSS == "1"'
+      when: never
+    - when: always
   script:
     # Start from the core folder to access node_modules.
     - cd ${WEB_ROOT}/core
@@ -345,10 +340,10 @@ stylelint:
 twiglint:
   stage: tests
   extends: .lint_template
-  except:
-    variables:
-      - $SKIP_LINT == "1"
-      - $SKIP_LINT_TWIG == "1"
+  rules:
+    - if: '$SKIP_LINT == "1" || $SKIP_LINT_TWIG == "1"'
+      when: never
+    - when: always
   script:
     - curl -fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint || true
     # Lint report, terminal only.
@@ -363,9 +358,10 @@ twiglint:
 metrics:
   stage: metrics
   extends: .metrics_template
-  except:
-    variables:
-      - $SKIP_METRICS == "1"
+  rules:
+    - if: '$SKIP_METRICS == "1"'
+      when: never
+    - when: on_success
   script:
     - touch /tmp/junit-unit-kernel.xml /tmp/coverage.xml
     - cp ./report-unit-kernel/junit-unit-kernel.xml /tmp/ || true
@@ -374,6 +370,67 @@ metrics:
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"
         --analyzedDirs "${DIRS_PHP}"
+
+################################################################################
+# Deploy samples.
+#
+# @TODO: move to doc.
+# Some deploy samples that can be used as a starting point for your deploy.
+# Note that a deploy process is dependent of your infrastructure and tools,
+# there is no generic deploy process.
+################################################################################
+
+# SSH / SCP based deploy sample job for a project. Could be a starting point
+# if you have a remote ssh access to your environment.
+#
+# You must fill variables on the deploy job or on
+# Gitlab CI UI > settings > CI/CD
+#
+# Uncomment and adapt for each stages you added above.
+#
+# See Gitlab-CI Environments documentation:
+# https://docs.gitlab.com/ee/ci/environments.html#configuring-environments
+# For deploy samples, see examples in documentation:
+# https://docs.gitlab.com/ee/ci/examples/README.html
+
+# Deploy to testing:
+#   stage: deploy to testing
+#   extends: .deploy_ssh
+#   environment:
+#     name: testing
+#     url: https://SET_MY_URL
+#   # To make this deploy job manual on the pipeline.
+#   # https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
+#   # when: manual
+#   # Variables can be set from 'Gitlab CI UI > settings > CI/CD > variables' as
+#   # named below or directly here.
+#   variables:
+#     ENV_USER: "${TESTING_USER}"
+#     ENV_HOST: "${TESTING_HOST}"
+#     ENV_PATH: "${TESTING_PATH}"
+#     # Adapt if you are using the same key or different ssh keys.
+#     ENV_KEY: "${PRIVATE_KEY}"
+#     # ENV_KEY: "${TESTING_PRIVATE_KEY}"
+#     # ENV_KEY: "${STAGING_PRIVATE_KEY}"
+#     # ENV_KEY: "${PRODUCTION_PRIVATE_KEY}"
+#   ##############################################################################
+#   # Deploy script, this is just an example for scp / ssh remote command for a
+#   # Drupal project.
+#   ##############################################################################
+#   script:
+#     # Create remote path and send build.
+#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mkdir ${ENV_PATH}/_tmp"
+#     - scp -P22 -r vendor web *.php ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
+#     # Replace Drupal with new build and keep previous version.
+#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mv ${ENV_PATH}/current ${ENV_PATH}/_previous && mv ${ENV_PATH}/_tmp ${ENV_PATH}/current"
+#     # Run any personal deploy script (backup db, drush updb, drush cim...)
+#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "${ENV_PATH}/scripts/deploy.sh --env=testing"
+
+################################################################################
+# Release samples.
+################################################################################
+
+# [WIP]
 
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci

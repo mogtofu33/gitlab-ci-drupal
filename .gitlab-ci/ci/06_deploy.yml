@@ -21,10 +21,9 @@
   dependencies:
     - build
   # Deploy only for a release as a tag.
-  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
-  only:
-    refs:
-      - tags
+  # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
+  rules:
+    - if: '$CI_COMMIT_TAG != null'
   # Add our ssh key to be able to use ssh/scp with the remote environment.
   before_script:
     - |

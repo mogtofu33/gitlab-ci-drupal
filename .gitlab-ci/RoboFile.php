@@ -129,13 +129,13 @@ class RoboFile extends \Robo\Tasks {
   protected $ciDrupalSettings = "https://gitlab.com/mog33/gitlab-ci-drupal/snippets/1892524/raw";
 
   /**
-   * CI_REF context.
+   * CI_REMOTE_FILES context.
    *
    * @var string
    *   The address of remote ci config files, This can be overridden by
-   *   specifying a $CI_REF environment variable.
+   *   specifying a $CI_REMOTE_FILES environment variable.
    */
-  protected $ciRef = "";
+  protected $ciRemoteRef = "";
 
   /**
    * PHPUNIT_TESTS context.
@@ -176,8 +176,8 @@ class RoboFile extends \Robo\Tasks {
     if (getenv('CI_DRUPAL_SETTINGS')) {
       $this->ciDrupalSettings = getenv('CI_DRUPAL_SETTINGS');
     }
-    if (getenv('CI_REF')) {
-      $this->ciRef = getenv('CI_REF');
+    if (getenv('CI_REMOTE_FILES')) {
+      $this->ciRemoteRef = getenv('CI_REMOTE_FILES');
     }
 
     // Pull a DB_URL from the environment, if it exists.
@@ -239,13 +239,13 @@ class RoboFile extends \Robo\Tasks {
           ->run();
       }
       else {
-        $this->__notice("Download remote file: $this->ciRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRef . $filename);
+        $this->__notice("Download remote file: $this->ciRemoteRef" . "$filename");
+        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
         if ($remote_file) {
           file_put_contents($drupal_dir . $filename, $remote_file);
         }
         else {
-          $this->io()->warning("Failed to get remote file: $this->ciRef" . "$filename");
+          $this->io()->warning("Failed to get remote file: $this->ciRemoteRef" . "$filename");
         }
       }
     }
@@ -257,8 +257,8 @@ class RoboFile extends \Robo\Tasks {
     foreach ($this->ciFiles['ci'] as $filename) {
       // Use local file if exist.
       if (!file_exists($src_dir . $filename)) {
-        $this->__notice("Download remote file: $this->ciRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRef . $filename);
+        $this->__notice("Download remote file: $this->ciRemoteRef" . "$filename");
+        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
         file_put_contents($src_dir . $filename, $remote_file);
       }
     }

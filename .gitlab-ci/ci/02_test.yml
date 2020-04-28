@@ -10,13 +10,6 @@
     - build
   services:
     - mariadb:latest
-  # Run on all tags, branches with word testing or dev.
-  # https://docs.gitlab.com/ee/ci/yaml/#onlyexcept-advanced
-  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
-  only:
-    refs:
-      - /testing|dev/
-      - tags
   before_script:
     # Start Apache.
     - apache2-foreground&

@@ -4,12 +4,6 @@
 
 .metrics_template:
   extends: .artifacts_reports
-  # @TODO: replace with rules # https://docs.gitlab.com/ee/ci/yaml/README.html#rules
-  only:
-    refs:
-      - /testing|dev/
-      - master
-      - tags
   before_script:
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare

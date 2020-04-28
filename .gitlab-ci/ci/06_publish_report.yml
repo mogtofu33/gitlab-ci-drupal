@@ -6,9 +6,6 @@
 
 .publish_gitlab_pages_template:
   image: node:latest
-  except:
-    variables:
-      - $SKIP_PUBLISH_REPORT == "1"
   script:
     # Git clone
     # get set data.
