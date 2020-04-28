@@ -85,12 +85,11 @@ _test_template() {
     printf "%s[SKIP]%s .test_template\\n" "${_dim_blu}" "${_end}"
   else
     printf "%s[NOTICE]%s Replicate .test_template\\n" "${_dim}" "${_end}"
-    # Simulate gitlab-ci Downloading artifacts.
-    # _extract_artifacts
 
     # before_script
     # Apache launch is entrypoint, so no need to launch it locally.
     # docker exec -d ci-drupal bash -c "apache2-foreground"
+
     _get_robo_file
     docker exec -it -w /var/www/html ci-drupal \
       robo ci:prepare
@@ -106,7 +105,7 @@ _test_template() {
 # Replicate test unit-kernel .gitlab-ci/.gitlab-ci-template.yml
 _unit_kernel() {
   printf "\\n%s[INFO]%s Perform job 'Unit and kernel tests' (unit-kernel)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="unit-kernel"
+  local CI_JOB_NAME="phpunit_unit-kernel"
 
   # script
   _dkexec mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
@@ -120,12 +119,12 @@ _unit_kernel() {
         --coverage-text \
         --colors=never \
         --testdox-html report-${CI_JOB_NAME}/phpunit.html \
-        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml \
+        --log-junit report-${CI_JOB_NAME}/junit-unit-kernel.xml \
         --verbose --debug
 
   # after_script
-  # if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/junit-coverage.xml" ]; then
-  #   bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/junit-coverage.xml" || true;
+  # if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
+  #   bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/coverage.xml" || true;
   # fi
 
 }
@@ -133,7 +132,7 @@ _unit_kernel() {
 # Replicate test functional .gitlab-ci/.gitlab-ci-template.yml
 _functional() {
   printf "\\n%s[INFO]%s Perform job 'Functional' (functional)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="functional"
+  local CI_JOB_NAME="phpunit_functional"
 
   # Not in gitlab-ci.yml
   # Specific to run a local test as apache.
@@ -147,7 +146,7 @@ _functional() {
   _dkexec \
   sudo -E -u www-data /var/www/html/vendor/bin/phpunit --testsuite ${PHPUNIT_TESTS}functional \
         --configuration ${WEB_ROOT}/core \
-        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml \
+        --log-junit report-${CI_JOB_NAME}/junit-functional.xml \
         --testdox-html report-${CI_JOB_NAME}/phpunit.html \
         --verbose --debug
 
@@ -158,7 +157,7 @@ _functional() {
 # Replicate test functional-javascript .gitlab-ci/.gitlab-ci-template.yml
 _functional_js() {
   printf "\\n%s[INFO]%s Perform job 'Functional Js' (functional_js)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="functional-javascript"
+  local CI_JOB_NAME="phpunit_functionaljs"
 
   # script
   if ((_USE_DEBUG)); then
@@ -173,7 +172,7 @@ _functional_js() {
   _dkexec \
   /var/www/html/vendor/bin/phpunit --testsuite ${PHPUNIT_TESTS}functional-javascript \
         --configuration ${WEB_ROOT}/core \
-        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml \
+        --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml \
         --testdox-html report-${CI_JOB_NAME}/phpunit.html \
         --verbose --debug
 
@@ -182,9 +181,9 @@ _functional_js() {
 }
 
 # Replicate test nightwatch-js .gitlab-ci/.gitlab-ci-template.yml
-_nightwatch() {
+_nightwatchjs() {
   printf "\\n%s[INFO]%s Perform job 'Nightwatch Js' (nightwatch)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="nightwatch-js"
+  local CI_JOB_NAME="nightwatchjs"
 
   echo "(WIP)"
 
@@ -231,7 +230,7 @@ _nightwatch() {
 }
 
 # Replicate test security-checker .gitlab-ci/.gitlab-ci-template.yml
-_security_checker() {
+_security() {
   printf "\\n%s[INFO]%s Perform job 'Security report' (security_checker)\\n\\n" "${_blu}" "${_end}"
   local CI_JOB_NAME="security-checker"
 
@@ -286,7 +285,7 @@ _behat() {
 # Replicate test pa11y .gitlab-ci/.gitlab-ci-template.yml
 _pa11y() {
   printf "\\n%s[INFO]%s Perform job 'Pa11y' (pa11y)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="pa11y"
+  local CI_JOB_NAME="accessibility_pa11y"
 
   # script
   _install_drupal standard
@@ -351,9 +350,9 @@ _lint_template() {
   fi
 }
 
-_eslint() {
+_lint_js() {
   printf "\\n%s[INFO]%s Perform job 'Js lint' (eslint)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="eslint"
+  local CI_JOB_NAME="lint_js"
 
   # script
   docker exec -it -w /var/www/html/web/core ci-drupal \
@@ -363,9 +362,9 @@ _eslint() {
       ${DIRS_JS}
 }
 
-_stylelint() {
+_lint_css() {
   printf "\\n%s[INFO]%s Perform job 'Css lint' (stylelint)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="stylelint"
+  local CI_JOB_NAME="lint_css"
 
   # script
   # _dkexec mkdir -p ${WEB_ROOT}/core
@@ -387,9 +386,9 @@ _stylelint() {
       ${DIRS_CSS}
 }
 
-_twiglint() {
+_lint_twig() {
   printf "\\n%s[INFO]%s Perform job 'Twig lint' (twiglint)\\n\\n" "${_blu}" "${_end}"
-  local CI_JOB_NAME="twiglint"
+  local CI_JOB_NAME="lint_twig"
 
   docker exec -it ci-drupal \
     curl -fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
@@ -455,24 +454,6 @@ _create_artifacts() {
     else
       printf "%s[SKIP]%s Artifact already exist.\\n" "${_dim_blu}" "${_end}"
     fi
-  fi
-}
-
-# Replicate Build job artifacts.
-_extract_artifacts() {
-  if [ ${CI_TYPE} == "project" ]; then
-    if [ -f ./tmp/artifacts.tgz ]
-    then
-      printf "%s[NOTICE]%s replicate extract_artifacts..." "${_dim}" "${_end}"
-      _dkexec mv /tmp/artifacts.tgz /var/www/html
-      _dkexec tar -xzf /var/www/html/artifacts.tgz
-      _dkexec rm -f /var/www/html/artifacts.tgz
-      printf " Done!\\n"
-    else
-      printf "%s[SKIP]%s No artifacts!\\n" "${_dim_blu}" "${_end}"
-    fi
-  else
-    printf "%s[SKIP]%s Not a project, extract_artifacts skipped.\\n" "${_dim_blu}" "${_end}"
   fi
 }
 
@@ -879,23 +860,24 @@ Usage:
 Arguments with option:
   test                Run a test, ie: test unit_kernel
   qa                  Run a QA, ie: test php_qa
+  lint                Run a Lint, ie: lint lint_css
 
-  Standalone jobs:
-    security_checker
+  Standalone tests:
+    security
     unit_kernel
     functional
     functional_js
-    nightwatch
+    nightwatchjs
     behat
     pa11y
-    php_qa
-    js_lint
-    css_lint
-    phpmetrics
-    phpstats
 
-Arguments:
-  all                 Run all!
+  Standalone qa:
+    php_qa
+
+  Standalone lint:
+    lint_js
+    lint_css
+    lint_twig
 
 Options
   -h|--help                       Print help.
@@ -904,7 +886,6 @@ Options
   -si|--skip-install              Skip Drupal install step (behat, pay11c).
   -sa|-skip-all                   Skip build, prepare and install.
   -sim|--simulate                 Robo simulate action.
-  --clean                         Delete previous reports.
   --debug                         Debug this script.
   --debug-fail                    Debug this script, stop on any error.
 

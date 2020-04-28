@@ -89,7 +89,7 @@ build:
 # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 ################################################################################
 
-unit-kernel:
+phpunit_unit-kernel:
   stage: tests
   extends: .test_template
   rules:
@@ -108,18 +108,18 @@ unit-kernel:
         --coverage-text
         --colors=never
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
-        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml
+        --log-junit report-${CI_JOB_NAME}/junit-unit-kernel.xml
         --verbose --debug
   after_script:
     # [CODECOV] integration, need to set up CI ENVIRONMENT VARIABLES 'CODECOV_TOKEN' to work.
     # see https://codecov.io
-    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/junit-coverage.xml" ]; then
-        bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/junit-coverage.xml" || true;
+    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
+        bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/coverage.xml" || true;
       fi
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-functional:
+phpunit_functional:
   stage: tests
   extends: .test_template
   rules:
@@ -130,14 +130,14 @@ functional:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
         --configuration ${WEB_ROOT}/core
-        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml
+        --log-junit report-${CI_JOB_NAME}/junit-functional.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
         --verbose --debug
   after_script:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
-functional-javascript:
+phpunit_functionaljs:
   stage: tests
   extends: .test_template
   rules:
@@ -151,7 +151,7 @@ functional-javascript:
     - curl -s http://localhost:9515/status | jq '.' || true
     - ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
         --configuration ${WEB_ROOT}/core
-        --log-junit report-${CI_JOB_NAME}/junit-${CI_JOB_NAME}.xml
+        --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
         --verbose --debug
   after_script:
@@ -159,7 +159,7 @@ functional-javascript:
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-nightwatch-js:
+nightwatchjs:
   stage: tests
   extends: .test_template
   rules:
@@ -200,7 +200,7 @@ nightwatch-js:
 ################################################################################
 
 # Symfony security-checker report.
-security-checker:
+security:
   stage: tests
   extends: .test_template
   rules:
@@ -255,7 +255,7 @@ behat:
 ################################################################################
 
 # @TODO: xml / html or text report ?
-pa11y:
+accessibility_pa11y:
   stage: tests
   extends: .test_template
   rules:
@@ -300,7 +300,7 @@ php-qa:
 # This is a eslint report based on Drupal 8.x standards.
 # https://www.drupal.org/docs/develop/standards/javascript
 # @TODO: junit report.
-eslint:
+lint_js:
   stage: tests
   extends: .lint_template
   rules:
@@ -321,7 +321,7 @@ eslint:
 # https://www.drupal.org/docs/develop/standards/css
 # @TODO: stylelint html & junit report. + sass / scss support?
 # https://www.npmjs.com/package/stylelint-junit-formatter
-stylelint:
+lint_css:
   stage: tests
   extends: .lint_template
   rules:
@@ -337,7 +337,7 @@ stylelint:
         --formatter verbose
         "${DIRS_CSS}"
 
-twiglint:
+lint_twig:
   stage: tests
   extends: .lint_template
   rules:
@@ -364,8 +364,8 @@ metrics:
     - when: on_success
   script:
     - touch /tmp/junit-unit-kernel.xml /tmp/coverage.xml
-    - cp ./report-unit-kernel/junit-unit-kernel.xml /tmp/ || true
-    - cp ./report-unit-kernel/coverage.xml /tmp/ || true
+    - cp ./report-phpunit_unit-kernel/junit-unit-kernel.xml /tmp/ || true
+    - cp ./report-phpunit_unit-kernel/coverage.xml /tmp/ || true
     - phpqa --tools ${TOOLS_METRICS}
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"

@@ -19,6 +19,7 @@ phpmd:
     standard: .phpmd.xml
 
 pdepend:
+    # Must be copied in the job, see metrics:script.
     coverageReport: /tmp/coverage.xml
 
 phpcpd:
@@ -26,10 +27,13 @@ phpcpd:
     minTokens: 70
 
 phpmetrics:
-    # composer: ../../../../var/www/html/
+    # Choose phpunit to use for metrics.
+    # Must be copied in the job, see metrics:script.
     junit: /tmp/junit-unit-kernel.xml
-    # junit: junit-functional.xml
-    # junit: junit-functional-javascript.xml
+    # junit: /tmp/junit-functional.xml
+    # junit: /tmp/junit-functionaljs.xml
+    # Composer usage for a project can slow a lot Phpmetrics.
+    # composer: ../../../../var/www/html/
 
 phpstan:
     # https://phpstan.org/user-guide/rule-levels
