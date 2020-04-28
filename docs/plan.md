@@ -1,8 +1,14 @@
 ## Future plan
 
-You want to help me make this better? Good! just PR!
+You want to help me make this better? Good! just PR / MR!
 
 I would like to:
+
+- Add a one page report that can be published to Gitlab pages
+  
+- Add release sample
+ - Release to Gitlab when https://gitlab.com/gitlab-org/release-cli/-/blob/master/docs/index.md#using-this-tool-in-gitlab-ci
+ - Release to Drupal.org
 
 - Add a variable for artifacts expire_in value, when this is merged:  
 https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/1893

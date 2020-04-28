@@ -3,7 +3,7 @@
 # linting, metrics and deploy samples.
 #
 # Project: https://gitlab.com/mog33/gitlab-ci-drupal
-# Documentation: https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/8.x-2-x/README.md
+# Documentation: https://mog33.gitlab.io/docs-gitlab-ci-drupal
 # Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
 # Author: Jean Valverde contact@dev-drupal.com
 # License: GPL-3
@@ -59,10 +59,10 @@ variables:
   # # Code quality dirs, must include your PHP code to check.
   # DIRS_QA: "${CI_PROJECT_DIR}"
   # # Eslint / Stylelint files to test.
-  # DIRS_JS: "${CI_PROJECT_DIR}/**/*.js"
-  # DIRS_CSS: "${CI_PROJECT_DIR}/**/*.css"
+  # DIRS_JS: "${CI_PROJECT_DIR}/js/*.js"
+  # DIRS_CSS: "${CI_PROJECT_DIR}/css/*.css"
   # # Twig files to test.
-  # DIRS_TWIG: "${CI_PROJECT_DIR}"
+  # DIRS_TWIG: "${CI_PROJECT_DIR}/templates"
   # # phpmetrics / phpstats dirs to include.
   # DIRS_PHP: "${CI_PROJECT_DIR}"
   # # Set SKIP_XXX variable to 1 to skip.
@@ -126,3 +126,8 @@ variables:
   # SKIP_LINT_JS: 1
   # SKIP_LINT_TWIG: 1
   # SKIP_METRICS: 1
+
+################################################################################
+# Advanced usage with this file, see doc.
+# https://mog33.gitlab.io/docs-gitlab-ci-drupal/advanced-usage
+################################################################################

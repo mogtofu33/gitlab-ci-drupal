@@ -61,10 +61,9 @@
   NIGHTWATCH_TESTS: "--skiptags core"
   # NIGHTWATCH_TESTS: "--tag custom"
 
-  # See Phpqa available tools:
-  #   https://github.com/EdgedesignCZ/phpqa#available-tools
-  # ':0' is the number of errors allowed, default is very strict.
-  TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,phpcpd:0,parallel-lint:0"
+  # See Phpqa available tools: https://github.com/EdgedesignCZ/phpqa#available-tools
+  # ':0' is the number of errors allowed, default here is very strict.
+  TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,phpcpd:0"
   TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
   ##############################################################################

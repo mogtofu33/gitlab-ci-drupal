@@ -37,7 +37,7 @@ phpmetrics:
 
 phpstan:
     # https://phpstan.org/user-guide/rule-levels
-    level: 7
+    level: 5
     # https://phpstan.org/config-reference
     # https://github.com/mglaman/phpstan-drupal#usage
     standard: phpstan.neon

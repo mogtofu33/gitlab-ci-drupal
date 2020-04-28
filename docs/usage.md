@@ -26,9 +26,7 @@ skip variables are described in [variables.yml](https://gitlab.com/mog33/gitlab-
 
 ### Workflow of jobs
 
-Tests (and Build) are by default on a branches with `tests` or `testing` word
-and on all `tags`
+Tests (and Build) are by default on each push, check `rules:` to adapt.
+See documentation: https://docs.gitlab.com/ee/ci/yaml/#rules
 
-Metrics jobs are by default on each push on `master` and all `tags`.
-
-[WIP] @TODO Switch to rules and add documentation on how to override.
+You can add global rules on the workflow in your `.gitlab-ci.yml`, see https://docs.gitlab.com/ee/ci/yaml/#workflowrules

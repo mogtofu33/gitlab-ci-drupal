@@ -11,20 +11,18 @@ Jobs are grouped by stages, to override stages, edit your `.gitlab-ci.yml` file.
 | Functional | Phpunit functional test (Browser based tests) | No | xml and html |
 | Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | Yes (included) | xml and html |
 | Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | Yes (included) | text and html |
-| Security report | Symfony security-checker, look at versions in composer.lock | No | text |
-| Behat tests | Support Behat tests from `tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | Yes | html |
+| Security | Symfony security-checker, look at versions in composer.lock | No | text |
+| Behat tests | Support Behat tests from `behat_tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | Yes | html |
 | Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/) | Yes | text |
-| Code quality | Code sniffer with _Drupal standards_ | No | html |
-| Best practices | Code sniffer with _Drupal Best practices standard_ | No | html |
+| Code quality | Code sniffer with _Drupal standards_, _Drupal Best practice_s standard. Phpstan, Phpmd, Phpcpd | No | html |
 | Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | No | html |
 | Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules) | No | text |
-| Php metrics | Code metrics in a nice html report with phpmetrics | No | html |
-| Php stats | Code stats with phploc, pdepend | No | html |
+| Php metrics | Code metrics ans stats in a nice html report with phpmetrics, phploc, pdepend | No | html |
 | Deploy to... | Sample of deploy jobs with ssh to a host | No | No |
 
 ### CI image tools
 
-All tools are included in a specific [docker image](https://gitlab.com/mog33/drupal8ci).
+Most tools are included in a specific [docker image](https://gitlab.com/mog33/drupal8ci).
 
 Nothing could be done without a bunch of awesome humans building awesome tools.
 
@@ -194,3 +192,53 @@ From this starting point, you can include any script to match your deploy
 process.
 
 For some examples, see the documentation: [https://docs.gitlab.com/ee/ci/examples/README.html](https://docs.gitlab.com/ee/ci/examples/README.html)
+
+#### Deploy SSH sample
+
+SSH / SCP based deploy sample job for a project.
+
+Could be a starting point if you have a remote ssh access to your environment.
+
+You must fill variables on the deploy job or in Gitlab UI:
+* Gitlab CI UI > settings > CI/CD
+
+See Gitlab-CI Environments documentation:
+https://docs.gitlab.com/ee/ci/environments.html#configuring-environments
+
+For deploy samples, see examples in documentation:
+https://docs.gitlab.com/ee/ci/examples/README.html
+
+```yaml
+Deploy to testing:
+  stage: deploy to testing
+  extends: .deploy_ssh
+  environment:
+    name: testing
+    url: https://SET_MY_URL
+  # To make this deploy job manual on the pipeline.
+  # https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
+  # when: manual
+  # Variables can be set from 'Gitlab CI UI > settings > CI/CD > variables' as
+  # named below or directly here.
+  variables:
+    ENV_USER: "${TESTING_USER}"
+    ENV_HOST: "${TESTING_HOST}"
+    ENV_PATH: "${TESTING_PATH}"
+    # Adapt if you are using the same key or different ssh keys.
+    ENV_KEY: "${PRIVATE_KEY}"
+    # ENV_KEY: "${TESTING_PRIVATE_KEY}"
+    # ENV_KEY: "${STAGING_PRIVATE_KEY}"
+    # ENV_KEY: "${PRODUCTION_PRIVATE_KEY}"
+  ##############################################################################
+  # Deploy script, this is just an example for scp / ssh remote command for a
+  # Drupal project.
+  ##############################################################################
+  script:
+    # Create remote path and send build.
+    - ssh -p22 ${ENV_USER}@${ENV_HOST} "mkdir ${ENV_PATH}/_tmp"
+    - scp -P22 -r vendor web *.php ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
+    # Replace Drupal with new build and keep previous version.
+    - ssh -p22 ${ENV_USER}@${ENV_HOST} "mv ${ENV_PATH}/current ${ENV_PATH}/_previous && mv ${ENV_PATH}/_tmp ${ENV_PATH}/current"
+    # Run any personal deploy script (backup db, drush updb, drush cim...)
+    - ssh -p22 ${ENV_USER}@${ENV_HOST} "${ENV_PATH}/scripts/deploy.sh --env=testing"
+```

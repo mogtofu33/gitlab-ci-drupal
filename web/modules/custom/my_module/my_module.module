@@ -12,8 +12,6 @@ use Drupal\Core\Form\FormStateInterface;
  * Implements hook_help().
  *
  * Base implements for a drupal module.
- *
- * @phpstan-ignore-next-line
  */
 function my_module_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
@@ -30,8 +28,6 @@ function my_module_help($route_name, RouteMatchInterface $route_match) {
 
 /**
  * Implements hook_form_FORM_ID_alter().
- *
- * @phpstan-ignore-next-line
  */
 function my_module_form_simple_testing_form_alter(&$form, FormStateInterface $form_state) {
   $form['text']['#description'] = t('Please do not fail.');

@@ -3,7 +3,7 @@
 # code quality, linting, metrics and deploy samples.
 #
 # Project: https://gitlab.com/mog33/gitlab-ci-drupal
-# Documentation: https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/master/README.md
+# Documentation: https://mog33.gitlab.io/docs-gitlab-ci-drupal
 # Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
 # Author: Jean Valverde contact@dev-drupal.com
 # License: GPL-3
@@ -181,19 +181,18 @@ nightwatchjs:
     - yarn --cwd ${WEB_ROOT}/core install
     # Update chromedriver if needed, the ci image include the latest stable version of chrome.
     - yarn --cwd ${WEB_ROOT}/core upgrade chromedriver@$(google-chrome --product-version | cut -d. -f1)
-    - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+    - mkdir -p /tmp/report-${CI_JOB_NAME}
     # Launch Nightwatch tests from core folder.
     - yarn --cwd ${WEB_ROOT}/core test:nightwatch
-        --output_folder ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
-        --detailed_output false
   after_script:
     # Html report, install plugin and run from the xml report.
     - yarn --cwd ${WEB_ROOT}/core add nightwatch-html-reporter
     - ${WEB_ROOT}/core/node_modules/.bin/nightwatch-html-reporter
-        --report-dir ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+        --report-dir /tmp/report-${CI_JOB_NAME}
         --output nightwatch.html
         --browser false
         --theme outlook
+    - cp -r /tmp/report-${CI_JOB_NAME} ${CI_PROJECT_DIR}/
 
 ################################################################################
 # Third party tools tests.
@@ -363,9 +362,7 @@ metrics:
       when: never
     - when: on_success
   script:
-    - touch /tmp/junit-unit-kernel.xml /tmp/coverage.xml
-    - cp ./report-phpunit_unit-kernel/junit-unit-kernel.xml /tmp/ || true
-    - cp ./report-phpunit_unit-kernel/coverage.xml /tmp/ || true
+    - cp ./report-phpunit_*/*.xml /tmp/ || true
     - phpqa --tools ${TOOLS_METRICS}
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"
@@ -373,58 +370,7 @@ metrics:
 
 ################################################################################
 # Deploy samples.
-#
-# @TODO: move to doc.
-# Some deploy samples that can be used as a starting point for your deploy.
-# Note that a deploy process is dependent of your infrastructure and tools,
-# there is no generic deploy process.
 ################################################################################
-
-# SSH / SCP based deploy sample job for a project. Could be a starting point
-# if you have a remote ssh access to your environment.
-#
-# You must fill variables on the deploy job or on
-# Gitlab CI UI > settings > CI/CD
-#
-# Uncomment and adapt for each stages you added above.
-#
-# See Gitlab-CI Environments documentation:
-# https://docs.gitlab.com/ee/ci/environments.html#configuring-environments
-# For deploy samples, see examples in documentation:
-# https://docs.gitlab.com/ee/ci/examples/README.html
-
-# Deploy to testing:
-#   stage: deploy to testing
-#   extends: .deploy_ssh
-#   environment:
-#     name: testing
-#     url: https://SET_MY_URL
-#   # To make this deploy job manual on the pipeline.
-#   # https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
-#   # when: manual
-#   # Variables can be set from 'Gitlab CI UI > settings > CI/CD > variables' as
-#   # named below or directly here.
-#   variables:
-#     ENV_USER: "${TESTING_USER}"
-#     ENV_HOST: "${TESTING_HOST}"
-#     ENV_PATH: "${TESTING_PATH}"
-#     # Adapt if you are using the same key or different ssh keys.
-#     ENV_KEY: "${PRIVATE_KEY}"
-#     # ENV_KEY: "${TESTING_PRIVATE_KEY}"
-#     # ENV_KEY: "${STAGING_PRIVATE_KEY}"
-#     # ENV_KEY: "${PRODUCTION_PRIVATE_KEY}"
-#   ##############################################################################
-#   # Deploy script, this is just an example for scp / ssh remote command for a
-#   # Drupal project.
-#   ##############################################################################
-#   script:
-#     # Create remote path and send build.
-#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mkdir ${ENV_PATH}/_tmp"
-#     - scp -P22 -r vendor web *.php ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
-#     # Replace Drupal with new build and keep previous version.
-#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mv ${ENV_PATH}/current ${ENV_PATH}/_previous && mv ${ENV_PATH}/_tmp ${ENV_PATH}/current"
-#     # Run any personal deploy script (backup db, drush updb, drush cim...)
-#     - ssh -p22 ${ENV_USER}@${ENV_HOST} "${ENV_PATH}/scripts/deploy.sh --env=testing"
 
 ################################################################################
 # Release samples.
