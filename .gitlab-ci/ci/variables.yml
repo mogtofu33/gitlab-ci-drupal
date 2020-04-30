@@ -32,15 +32,6 @@
   CI_TYPE: "project"
   # CI_TYPE: "module"
 
-  # Select the base image for all tests and actions, options are:
-  #   no-drupal
-  #     Default value, this repo must include composer.json file.
-  #   drupal
-  #     Base image include Drupal from the official Docker.
-  #     For a module, theme or profile.
-  CI_DRUPAL: "no-drupal"
-  # CI_DRUPAL: "drupal"
-
   # Path to the Drupal web root.
   # /var/www/html is the Apache docroot of the image used to run the jobs.
   # For a project based on Drupal this is 'web'. Can be 'docroot' on some

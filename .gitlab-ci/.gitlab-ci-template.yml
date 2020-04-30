@@ -67,6 +67,9 @@ stages:
 # (grunt, webpack, yarn...).
 build:
   extends: .build_template
+  rules:
+    - if: '$SKIP_BUILD == "1"'
+      when: never
   script:
     # Validate the composer.json file.
     - if [ ${CI_TYPE} == "project" ]; then
@@ -105,6 +108,7 @@ phpunit_unit-kernel:
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-html
         --coverage-clover ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.xml
+        --coverage-php ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.cov
         --coverage-text
         --colors=never
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
@@ -383,4 +387,4 @@ metrics:
 ################################################################################
 
 default:
-  image: mogtofu33/drupal8ci:${CI_REF}-${CI_DRUPAL_VERSION}-${CI_DRUPAL}
+  image: mogtofu33/drupal8ci:${CI_REF}-${CI_DRUPAL_VERSION}

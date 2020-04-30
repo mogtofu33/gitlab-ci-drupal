@@ -54,8 +54,6 @@ variables:
   # profile). Simply uncomment to set the CI for a module.
   #
   # CI_TYPE: module
-  # # Default is 'no-drupal', ie: no Drupal included in the CI.
-  # CI_DRUPAL: drupal
   # # Code quality dirs, must include your PHP code to check.
   # DIRS_QA: "${CI_PROJECT_DIR}"
   # # Eslint / Stylelint files to test.
