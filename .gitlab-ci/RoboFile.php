@@ -279,7 +279,13 @@ class RoboFile extends Tasks {
       if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml')) {
         unlink($this->ciProjectDir . '/.gitlab-ci/phpunit.xml');
       }
-      copy($this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests, $this->ciProjectDir . '/.gitlab-ci/phpunit.xml');
+      $this->taskFilesystemStack()
+        ->copy(
+          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests,
+          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml',
+          TRUE
+          )
+        ->run();
     }
     else {
       $this->ciLog('No override phpunit.xml file found as: phpunit.xml.' . $this->phpunitTests);
@@ -293,8 +299,9 @@ class RoboFile extends Tasks {
       case "project":
         // We have a composer.json file.
         if (file_exists($this->ciProjectDir . '/composer.json')) {
-          $this->ciLog("Project include Drupal, let symlink.");
-          $this->ciSymlink(
+          $this->ciLog("Project include Drupal, let mirror.");
+          // Cannot symlink because $this->docRoot is a mounted volume.
+          $this->ciMirror(
             $this->ciProjectDir,
             $this->docRoot
           );
@@ -583,17 +590,43 @@ class RoboFile extends Tasks {
       $this->io()->warning("Missing src folder: $src");
     }
     else {
-      if (file_exists($target)) {
-        $this->ciLog("[SKIP] Existing target: $target, is it a problem?");
-      }
-      elseif (file_exists($target) && $remove_if_exist) {
+      if (file_exists($target) && $remove_if_exist) {
         $this->_deleteDir($target);
       }
 
-      $this->ciLog("Symlink $src to $target");
       // Symlink our folder in the target.
       $this->taskFilesystemStack()
         ->symlink($src, $target)
+        ->run();
+    }
+  }
+
+  /**
+   * Helper to mirror files and folders.
+   *
+   * @param string $src
+   *   Folder source.
+   * @param string $target
+   *   Folder target.
+   */
+  private function ciMirror($src, $target) {
+    if (!file_exists($src)) {
+      $this->ciNotice("Missing src folder: $src");
+    }
+    else {
+      if (file_exists($target) && $remove_if_exist) {
+        $this->taskFilesystemStack()
+          ->remove($target)
+          ->mkdir($target)
+          ->run();
+      }
+      if (!file_exists($target)) {
+        $this->ciNotice("Missing target folder: $target");
+      }
+
+      // Mirror our folder in the target.
+      $this->taskFilesystemStack()
+        ->mirror($src, $target)
         ->run();
     }
   }

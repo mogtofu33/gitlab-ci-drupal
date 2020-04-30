@@ -23,10 +23,10 @@
       # Build files for next steps and deploy/release.
       - vendor
       - web
-      - drush
-      - scripts
       - composer.json
       - composer.lock
       # Deprecated Drupal composer project template.
+      - drush
+      - scripts
       - .env.example
       - load.environment.php
