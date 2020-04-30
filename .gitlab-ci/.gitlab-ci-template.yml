@@ -73,11 +73,11 @@ build:
     - when: always
   script:
     # Validate the composer.json file.
-    - if [ ${CI_TYPE} == "project" ]; then
+    - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n --no-ansi;
       fi
     # Install the project.
-    - if [ ${CI_TYPE} == "project" ]; then
+    - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         composer install --no-ansi -n --prefer-dist;
       fi
     # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
@@ -185,7 +185,14 @@ nightwatchjs:
     # Install packages from Drupal.
     - yarn --cwd ${WEB_ROOT}/core install
     # Update chromedriver if needed, the ci image include the latest stable version of chrome.
+    # Drupal package.json can be late on chromedriver version.
     - yarn --cwd ${WEB_ROOT}/core upgrade chromedriver@$(google-chrome --product-version | cut -d. -f1)
+    # Log versions.
+    - |
+      ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
+      ${WEB_ROOT}/core/node_modules/.bin/chromedriver --version
+      /usr/bin/google-chrome --version
+    # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     # Launch Nightwatch tests from core folder.
     - yarn --cwd ${WEB_ROOT}/core test:nightwatch
@@ -372,16 +379,6 @@ metrics:
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"
         --analyzedDirs "${DIRS_PHP}"
-
-################################################################################
-# Deploy samples.
-################################################################################
-
-################################################################################
-# Release samples.
-################################################################################
-
-# [WIP]
 
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci

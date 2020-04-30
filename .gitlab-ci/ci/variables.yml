@@ -106,9 +106,9 @@
   # Third party tests.
   # Symfony security check on composer.lock
   SKIP_TEST_SECURITY: 0
-  # Behat tests from behat_tests folder.
+  # Behat tests from behat_tests folder. Demo tests, skip by default.
   SKIP_TEST_BEHAT: 1
-  # Accessibility test
+  # Accessibility test, skip by default.
   SKIP_TEST_PA11Y: 1
   #
   ##############################################################################
