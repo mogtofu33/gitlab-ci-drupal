@@ -70,6 +70,7 @@ build:
   rules:
     - if: '$SKIP_BUILD == "1"'
       when: never
+    - when: always
   script:
     # Validate the composer.json file.
     - if [ ${CI_TYPE} == "project" ]; then
@@ -79,7 +80,7 @@ build:
     - if [ ${CI_TYPE} == "project" ]; then
         composer install --no-ansi -n --prefer-dist;
       fi
-    # Ensure we have Drupal Dev third party for next tests.
+    # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
     - if [ ! -f "./vendor/bin/phpunit" ]; then
         composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
       fi
