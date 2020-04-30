@@ -10,6 +10,7 @@ use Drupal\my_module\DemoModuleExampleService;
  * Test Kernel.
  *
  * @group my_module
+ * @coversDefaultClass \Drupal\my_module\DemoModuleExampleService
  */
 class ExampleKernelTest extends KernelTestBase {
 
@@ -41,7 +42,7 @@ class ExampleKernelTest extends KernelTestBase {
   }
 
   /**
-   * @covers Drupal\my_module\DemoModuleExampleService::isDummy
+   * @covers ::isDummy
    */
   public function testIsDummy() {
     $this->assertEquals($this->myService->isDummy(), TRUE);

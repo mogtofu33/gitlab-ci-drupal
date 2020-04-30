@@ -6,13 +6,17 @@ use Drupal\Tests\UnitTestCase;
 use Drupal\my_module\DemoModuleExampleService;
 
 /**
- * Tests Unit DemoModuleExampleService.
+ * @coversDefaultClass \Drupal\my_module\DemoModuleExampleService
  *
  * @group my_module
- * @coversDefaultClass \Drupal\my_module\DemoModuleExampleService
  */
 class ExampleUnitTest extends UnitTestCase {
 
+  /**
+   * Dummy thing.
+   *
+   * @var bool
+   */
   protected $dummy;
 
   /**
@@ -24,7 +28,7 @@ class ExampleUnitTest extends UnitTestCase {
   }
 
   /**
-   * @covers Drupal\my_module\DemoModuleExampleService::isDummy
+   * @covers ::isDummy
    */
   public function testIsDummy() {
     // Dummy test.
