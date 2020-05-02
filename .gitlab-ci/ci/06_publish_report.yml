@@ -5,21 +5,16 @@
 ################################################################################
 
 .publish_gitlab_pages_template:
-  image: node:latest
+  image: alpine:latest
   script:
-    # Git clone
-    # get set data.
-    # gatsby build
-    # - npm install gatsby-cli
-    # - apk --no-cache add jq
-    # - mkdir -p ./public
-    # - cp -r ./report-*/ ./public/
-    # - cd ./public
-    # - |
-    #   d=$(ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
-    #   v=$(jq -n env);
-    #   echo "var data={\"dirs\": "$d", \"vars\": "$v" }" > js/data.js
-    
+    - apk --no-cache add jq tree git
+    - git clone https://gitlab.com/mog33/reports--gitlab-ci-drupal.git public
+    - cp -r ./report-*/ ./public/
+    - cd ./public
+    - |
+      d=$(ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
+      v=$(jq -n env);
+      echo "var data={\"dirs\": "$d", \"vars\": "$v" }" > js/data.js
   artifacts:
     paths:
     - public

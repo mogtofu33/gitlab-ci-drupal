@@ -219,7 +219,8 @@ security:
       when: never
     - when: on_success
   script:
-    - security-checker security:check /var/www/html/composer.lock
+    - mkdir -p report-${CI_JOB_NAME}
+    - security-checker security:check /var/www/html/composer.lock 2>&1 | tee report-${CI_JOB_NAME}/security.txt
   # Allow failure to produce report and warning when we have an error.
   allow_failure: true
 
@@ -278,10 +279,11 @@ accessibility_pa11y:
     - robo drupal:install standard
     # Install Pa11y-ci for tests with yarn.
     - yarn --cwd ${WEB_ROOT}/core add pa11y-ci
+    - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
     # Run pa11y tests using ./gitlab-ci/pa11y-ci.json file definition.
-    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci --config ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json
+    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci --config ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json 2>&1 | tee report-${CI_JOB_NAME}/pa11y.txt
   after_script:
-    - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}" && cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
+    - cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
 
 ################################################################################
 # Code quality jobs for Drupal 8+ based on PHPQA
@@ -347,6 +349,7 @@ lint_css:
         --config ${WEB_ROOT}/core/.stylelintrc.json
         --formatter verbose
         "${DIRS_CSS}"
+        2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_css.txt
 
 lint_twig:
   stage: tests
@@ -358,7 +361,7 @@ lint_twig:
   script:
     - curl -fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint || true
     # Lint report, terminal only.
-    - php twig-lint lint "${DIRS_TWIG}"
+    - php twig-lint lint "${DIRS_TWIG}" 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.

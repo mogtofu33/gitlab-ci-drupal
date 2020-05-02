@@ -7,6 +7,7 @@
   before_script:
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare
+    - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
     # Install packages from core/package.json
     - yarn --cwd ${WEB_ROOT}/core install
   # Allow failure to produce report and warning, not a critical job.
