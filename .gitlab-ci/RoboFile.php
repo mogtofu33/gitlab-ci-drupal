@@ -614,7 +614,7 @@ class RoboFile extends Tasks {
       $this->ciNotice("Missing src folder: $src");
     }
     else {
-      if (file_exists($target) && $remove_if_exist) {
+      if (file_exists($target)) {
         $this->taskFilesystemStack()
           ->remove($target)
           ->mkdir($target)
