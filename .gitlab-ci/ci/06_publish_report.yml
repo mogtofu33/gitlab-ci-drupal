@@ -7,14 +7,17 @@
 .publish_gitlab_pages_template:
   image: alpine:latest
   script:
-    - apk --no-cache add jq tree git
+    - apk --no-cache add jq tree git curl
     - git clone https://gitlab.com/mog33/reports--gitlab-ci-drupal.git public
     - cp -r ./report-*/ ./public/
     - cd ./public
+    # @TODO use CI_BUILD_TOKEN when working.
     - |
-      d=$(ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
+      j=$(curl -s -H "PRIVATE-TOKEN: $MY_GITLAB_TOKEN" $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs || true);
+      f=$(ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
+      d=$(tree -J --dirsfirst -f --noreport -I "." -I "index.html|README.md");
       v=$(jq -n env);
-      echo "var data={\"dirs\": "$d", \"vars\": "$v" }" > js/data.js
+      echo "var data={\"jobs\":"$j",\"dirs\":"$d",\"flat\":"$f",\"vars\":"$v" }" > js/data.js
   artifacts:
     paths:
     - public

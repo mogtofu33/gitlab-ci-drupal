@@ -51,7 +51,7 @@ stages:
   - tests
   - metrics
   # [WIP]
-  # - publish reports
+  - publish reports
   # - release
   # [DEPLOY] All deploy jobs can be set here.
   # Sample of a deploy workflow:
@@ -220,7 +220,7 @@ security:
     - when: on_success
   script:
     - mkdir -p report-${CI_JOB_NAME}
-    - security-checker security:check /var/www/html/composer.lock 2>&1 | tee report-${CI_JOB_NAME}/security.txt
+    - security-checker security:check /var/www/html/composer.lock --no-ansi 2>&1 | tee report-${CI_JOB_NAME}/security.txt
   # Allow failure to produce report and warning when we have an error.
   allow_failure: true
 
@@ -382,6 +382,14 @@ metrics:
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"
         --analyzedDirs "${DIRS_PHP}"
+
+################################################################################
+# Publish all reports as a one page to Gitlab pages.
+################################################################################
+
+pages:
+  stage: publish reports
+  extends: .publish_gitlab_pages_template
 
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
