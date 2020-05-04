@@ -4,20 +4,29 @@
 # docker run --rm -it -v "/home/mog/code/gitlab-ci-drupal:/builds" -w /builds --env-file local/.env alpine:latest sh
 ################################################################################
 
-.publish_gitlab_pages_template:
-  image: alpine:latest
+.publish_gitlab_pages:
+  image: node:alpine
   script:
     - apk --no-cache add jq tree git curl
-    - git clone https://gitlab.com/mog33/reports--gitlab-ci-drupal.git public
-    - cp -r ./report-*/ ./public/
-    - cd ./public
-    # @TODO use CI_BUILD_TOKEN when working.
+    - git clone https://gitlab.com/mog33/reports--gitlab-ci-drupal.git dashboard
+    - mkdir -p dashboard/src/reports/
+    - cp -r ./report-*/ ./dashboard/src/reports/
+    - cd ./dashboard
+    # @TODO use CI_BUILD_TOKEN if working one day.
+    # https://docs.gitlab.com/ee/api/#gitlab-ci-job-token
     - |
-      j=$(curl -s -H "PRIVATE-TOKEN: $MY_GITLAB_TOKEN" $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs || true);
-      f=$(ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
-      d=$(tree -J --dirsfirst -f --noreport -I "." -I "index.html|README.md");
-      v=$(jq -n env);
-      echo "var data={\"jobs\":"$j",\"dirs\":"$d",\"flat\":"$f",\"vars\":"$v" }" > js/data.js
+      # Test if variable MY_GITLAB_TOKEN is set.
+      if [ -z ${MY_GITLAB_TOKEN} ]; then
+        echo -e "\033[1;31mMissing variable MY_GITLAB_TOKEN for reports publishing\033[0;37m"
+        exit 1
+      fi
+    - |
+      j=$(curl --header "PRIVATE-TOKEN: $MY_GITLAB_TOKEN" $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs | jq '[.[] | {job: .name, status: .status}]');
+      d=$(cd src/reports; ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
+      v=$(jq -n env | sed '/token/Id' | sed '/email/Id');
+      echo "const data={\"jobs\":"$j",\"dirs\":"$d",\"vars\":"$v"}" > src/js/data.js
+    - yarn install
+    - npx gulp build
   artifacts:
     paths:
-    - public
+    - dashboard/public
