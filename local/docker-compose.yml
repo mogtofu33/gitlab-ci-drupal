@@ -17,12 +17,10 @@ services:
     # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_REF}-${CI_DRUPAL_VERSION}
     ports:
       - "88:80"
-      # Chromedriver port for Functional js.
-      # - "9515:9515"
-      # Behat Chrome remote debugging port.
-      # - "9222:9222"
     expose:
+      # Chromedriver port for Functional js.
       - "9515"
+      # Behat Chrome remote debugging port.
       - "9222"
     links:
       - mariadb
@@ -35,18 +33,27 @@ services:
     container_name: ci-drupal
     env_file:
       - .env
-  # node:
-  #   image: node:lts-alpine
-  #   container_name: ci-node
-  #   ports:
-  #     - 3000
+  # report:
+  #   image: alpine:latest
+  #   container_name: ci-report
   #   volumes:
-  #     - ../:/home/node/app
+  #     - ../:/app
   #   command: tail -f /dev/null
-  #   working_dir: /home/node/app
-  #   user: "node"
+  #   working_dir: /app
   #   env_file:
   #     - .env
+  node:
+    image: node:alpine
+    container_name: ci-node
+    ports:
+      - 3000
+    volumes:
+      - ../:/home/node/app
+    command: tail -f /dev/null
+    working_dir: /home/node/app
+    user: "node"
+    env_file:
+      - .env
   mariadb:
     image: mariadb:latest
     expose:

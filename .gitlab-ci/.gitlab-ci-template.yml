@@ -81,10 +81,10 @@ build:
         composer install --no-ansi -n --prefer-dist;
       fi
     # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
-    - if [ ! -f "./vendor/bin/phpunit" ]; then
-        composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
+    - if [ ! -f "${WEB_ROOT}/../vendor/bin/phpunit" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+        composer require -d /var/www/html --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
       fi
-    - ./vendor/bin/phpunit --version
+    - ${WEB_ROOT}/../vendor/bin/phpunit --version
     # Call any extra build script from ./.gitlab-ci/scripts/build.php
     - robo ci:build
 
@@ -104,7 +104,7 @@ phpunit_unit-kernel:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
     # Run PHPunit tests for unit, kernel, with coverage report.
-    - ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+    - ${WEB_ROOT}/../vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
         --configuration ${WEB_ROOT}/core
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-html
@@ -133,7 +133,7 @@ phpunit_functional:
     - when: on_success
   script:
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
+    - sudo -E -u www-data ${WEB_ROOT}/../vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functional.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
@@ -154,7 +154,7 @@ phpunit_functionaljs:
     - /scripts/start-chromedriver.sh&
     - sleep 2s
     - curl -s http://localhost:9515/status | jq '.' || true
-    - ./vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
+    - ${WEB_ROOT}/../vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
@@ -254,7 +254,7 @@ behat:
         "emuse/behat-html-formatter:0.1.*"
         "drupal/drupal-extension:~4.0"
     # Run the behat tests from the 'tests/' folder at the root of the project.
-    - ${WEB_ROOT}/../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+    - ${WEB_ROOT}/.${WEB_ROOT}/../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
         --format progress
         --out std
         --format junit
