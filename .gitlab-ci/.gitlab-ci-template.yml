@@ -240,6 +240,12 @@ behat:
         echo -e "\033[1;31mDrupal 9 not yet supported for Behat tests.\033[0;37m"
         exit 1
       fi
+      - |
+      # Test if we have a behat.yml file
+      if [ ! -f "${CI_PROJECT_DIR}/behat_tests/behat.yml" ]; then
+        echo -e "\033[1;31mNo behat tests found in behat_tests/behat.yml.\033[0;37m"
+        exit 1
+      fi
     # Install Drupal with the standard profile.
     - robo drupal:install standard
     # Starting Chrome, we are not using Chromedriver.
@@ -248,19 +254,22 @@ behat:
     # Test Chrome is running properly.
     - curl -s http://localhost:9222/json/version | jq '.' || true
     # Install behat and plugins with more memory.
-    - COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest
-        "bex/behat-screenshot:^1.2"
-        "dmore/behat-chrome-extension:^1.3"
-        "emuse/behat-html-formatter:0.1.*"
-        "drupal/drupal-extension:~4.0"
-    # Run the behat tests from the 'tests/' folder at the root of the project.
-    - ${WEB_ROOT}/.${WEB_ROOT}/../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
-        --format progress
-        --out std
-        --format junit
-        --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
-        --format html
-        --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+    - |
+      if [ ! -f "${WEB_ROOT}/../vendor/bin/behat" ]; then
+        COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest
+          "bex/behat-screenshot:^1.2"
+          "dmore/behat-chrome-extension:^1.3"
+          "emuse/behat-html-formatter:0.1.*"
+          "drupal/drupal-extension:~4.0"
+      fi
+    # Run the behat tests from the 'behat_tests/' folder at the root of the project.
+    - ${WEB_ROOT}/../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+          --format progress
+          --out std
+          --format junit
+          --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+          --format html
+          --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
 
 ################################################################################
 # Accessibility jobs for Drupal 8+
