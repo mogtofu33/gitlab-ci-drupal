@@ -4,7 +4,7 @@
 # docker run --rm -it -v "/home/mog/code/gitlab-ci-drupal:/builds" -w /builds --env-file local/.env alpine:latest sh
 ################################################################################
 
-.publish_gitlab_pages:
+.simple_dashboard:
   image: node:alpine
   script:
     - apk --no-cache add jq tree git curl
