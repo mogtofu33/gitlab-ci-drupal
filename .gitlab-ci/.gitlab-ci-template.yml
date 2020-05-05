@@ -240,7 +240,7 @@ behat:
         echo -e "\033[1;31mDrupal 9 not yet supported for Behat tests.\033[0;37m"
         exit 1
       fi
-      - |
+    - |
       # Test if we have a behat.yml file
       if [ ! -f "${CI_PROJECT_DIR}/behat_tests/behat.yml" ]; then
         echo -e "\033[1;31mNo behat tests found in behat_tests/behat.yml.\033[0;37m"
