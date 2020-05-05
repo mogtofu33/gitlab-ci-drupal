@@ -23,10 +23,11 @@
     - |
       j=$(curl --header "PRIVATE-TOKEN: $MY_GITLAB_TOKEN" $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs | jq '[.[] | {job: .name, status: .status}]');
       d=$(cd src/reports; ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
-      v=$(jq -n env | sed '/token/Id' | sed '/email/Id');
+      v=$(jq -n env | sed '/TOKEN/d' | sed '/email/d');
       echo "const data={\"jobs\":"$j",\"dirs\":"$d",\"vars\":"$v"}" > src/js/data.js
     - yarn install
     - npx gulp build
   artifacts:
+    when: always
     paths:
     - dashboard/public
