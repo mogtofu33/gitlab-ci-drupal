@@ -1,7 +1,5 @@
 ################################################################################
-# [WIP] Use Gitlab pages to publish the results on one page.
-# 
-# docker run --rm -it -v "/home/mog/code/gitlab-ci-drupal:/builds" -w /builds --env-file local/.env alpine:latest sh
+# [WIP] Publish the results on one page.
 ################################################################################
 
 .simple_dashboard:
@@ -17,17 +15,20 @@
     - |
       # Test if variable MY_GITLAB_TOKEN is set.
       if [ -z ${MY_GITLAB_TOKEN} ]; then
-        echo -e "\033[1;31mMissing variable MY_GITLAB_TOKEN for reports publishing\033[0;37m"
+        echo -e "\033[1;31mMissing variable MY_GITLAB_TOKEN for reports dashboard\033[0;37m"
         exit 1
       fi
     - |
       j=$(curl --header "PRIVATE-TOKEN: $MY_GITLAB_TOKEN" $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs | jq '[.[] | {job: .name, status: .status}]');
       d=$(cd src/reports; ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
+      fd=$(cd src/reports; tree -J --dirsfirst -f --noreport -I "." -I "index.html|README.md");
       v=$(jq -n env | sed '/TOKEN/d' | sed '/email/d');
-      echo "const data={\"jobs\":"$j",\"dirs\":"$d",\"vars\":"$v"}" > src/js/data.js
+      echo "const data={\"jobs\":"$j",\"dirs\":"$d",,\"full_dirs\":"$fd"\"vars\":"$v"}" > src/js/data.js
     - yarn install
     - npx gulp build
+  after_script:
+    - cp -r dashboard/public .
   artifacts:
     when: always
     paths:
-    - dashboard/public
+      - public
