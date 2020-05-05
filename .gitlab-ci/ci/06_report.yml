@@ -10,22 +10,10 @@
     - mkdir -p dashboard/src/reports/
     - cp -r ./report-*/ ./dashboard/src/reports/
     - cd ./dashboard
-    # @TODO use CI_BUILD_TOKEN if working one day.
-    # https://docs.gitlab.com/ee/api/#gitlab-ci-job-token
-    - |
-      # Test if variable MY_GITLAB_TOKEN is set.
-      if [ -z ${MY_GITLAB_TOKEN} ]; then
-        echo -e "\033[1;31mMissing variable MY_GITLAB_TOKEN for reports dashboard\033[0;37m"
-        exit 1
-      fi
-    - |
-      j=$(curl --header "PRIVATE-TOKEN: $MY_GITLAB_TOKEN" $CI_API_V4_URL/projects/$CI_PROJECT_ID/pipelines/$CI_PIPELINE_ID/jobs | jq '[.[] | {job: .name, status: .status}]');
-      d=$(cd src/reports; ls -d report-* | jq -R -s -c 'split("\n")[:-1]');
-      fd=$(cd src/reports; tree -J --dirsfirst -f --noreport -I "." -I "index.html|README.md");
-      v=$(jq -n env | sed '/TOKEN/d' | sed '/email/d');
-      echo "const data={\"jobs\":"$j",\"dirs\":"$d",,\"full_dirs\":"$fd"\"vars\":"$v"}" > src/js/data.js
+    # Prepare data collection.
+    - chmod +x ./src/scripts/ci_vars.sh  && ./src/scripts/ci_vars.sh > src/data/data.json
     - yarn install
-    - npx gulp build
+    - yarn build
   after_script:
     - cp -r dashboard/public .
   artifacts:
