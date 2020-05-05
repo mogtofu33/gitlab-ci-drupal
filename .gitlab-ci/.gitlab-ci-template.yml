@@ -256,10 +256,10 @@ behat:
     # Install behat and plugins with more memory.
     - |
       if [ ! -f "${WEB_ROOT}/../vendor/bin/behat" ]; then
-        COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest
-          "bex/behat-screenshot:^1.2"
-          "dmore/behat-chrome-extension:^1.3"
-          "emuse/behat-html-formatter:0.1.*"
+        COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest \
+          "bex/behat-screenshot:^1.2" \
+          "dmore/behat-chrome-extension:^1.3" \
+          "emuse/behat-html-formatter:0.1.*" \
           "drupal/drupal-extension:~4.0"
       fi
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
