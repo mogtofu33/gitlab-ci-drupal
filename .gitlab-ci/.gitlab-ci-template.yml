@@ -399,6 +399,8 @@ metrics:
 dashboard:
   stage: aggregate reports
   extends: .simple_dashboard
+  rules:
+    - when: always
 
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
