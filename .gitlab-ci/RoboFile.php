@@ -614,12 +614,12 @@ class RoboFile extends Tasks {
       $this->ciNotice("Missing src folder: $src");
     }
     else {
-      if (file_exists($target)) {
-        $this->taskFilesystemStack()
-          ->remove($target)
-          ->mkdir($target)
-          ->run();
-      }
+      // if (file_exists($target)) {
+      //   $this->taskFilesystemStack()
+      //     ->remove($target)
+      //     ->mkdir($target)
+      //     ->run();
+      // }
       if (!file_exists($target)) {
         $this->ciNotice("Missing target folder: $target");
       }
