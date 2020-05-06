@@ -84,8 +84,8 @@ variables:
   ##############################################################################
 
   ##############################################################################
-  # As a sample here is a list of DIRS and SKIP variables, see documentation for
-  # more variables.
+  # As a sample here is a list of some variables, see documentation for more
+  # variables.
   #
   # List of DIRS_* variables to define dirs to analyse for specific jobs.
   # Code quality dirs, must include your PHP code to check.
@@ -124,6 +124,13 @@ variables:
   # SKIP_LINT_JS: 1
   # SKIP_LINT_TWIG: 1
   # SKIP_METRICS: 1
+
+  # QA and Metrics tools.
+  # See Phpqa available tools: https://github.com/EdgedesignCZ/phpqa#available-tools
+  # ':0' is the number of errors allowed, default here is very strict.
+  #
+  # TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,phpcpd:0"
+  # TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
 ################################################################################
 # Advanced usage with this file, see doc.
