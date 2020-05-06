@@ -381,7 +381,7 @@ metrics:
   rules:
     - if: '$SKIP_METRICS == "1"'
       when: never
-    - when: on_success
+    - when: always
   script:
     - cp ./report-phpunit_*/*.xml /tmp/ || true
     - phpqa --tools ${TOOLS_METRICS}
