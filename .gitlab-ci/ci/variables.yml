@@ -57,6 +57,13 @@
   TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,phpcpd:0"
   TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
+  # Composer override to use packagist mirror.
+  # COMPOSER_REPO_PACKAGIST_URL: "https?://repo.packagist.org"
+
+  # Composer override to use github oauth token.
+  # https://getcomposer.org/doc/06-config.md#github-oauth
+  # COMPOSER_GITHUB_OAUTH_TOKEN: ""
+
   ##############################################################################
   # List of DIRS_* variables to define dirs to analyse for specific jobs.
   #
