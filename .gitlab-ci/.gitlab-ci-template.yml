@@ -134,7 +134,6 @@ phpunit_functional:
     - if: '$SKIP_TESTS == "1" || $SKIP_TEST_FUNCTIONAL == "1"'
       when: never
     - when: on_success  # Only for this project to generate documentation.
-    - '/.gitlab-ci/ci/internal_documentation.yml'
   script:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ${WEB_ROOT}/../vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
