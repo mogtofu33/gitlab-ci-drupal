@@ -28,5 +28,4 @@
       # Deprecated Drupal composer project template.
       - drush
       - scripts
-      - .env.example
       - load.environment.php

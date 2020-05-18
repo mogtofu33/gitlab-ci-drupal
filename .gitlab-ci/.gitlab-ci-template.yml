@@ -34,6 +34,8 @@ include:
   - '/.gitlab-ci/ci/06_report.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
   - '/.gitlab-ci/ci/06_release.yml'
+  # Only for this project to generate documentation.
+  - '/.gitlab-ci/ci/internal_documentation.yml'
 
 # Variables must be used in your .gitlab-ci.yml:
 #

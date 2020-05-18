@@ -30,7 +30,7 @@ For legacy (unmaintained) version see branch [8.x-1-dev](https://gitlab.com/mog3
 Documentation is currently being rewritten and is not yet fully accurate.
 ```
 
-* https://mog33.gitlab.io/docs-gitlab-ci-drupal
+* https://mog33.gitlab.io/gitlab-ci-drupal
 
 ## Quick How TO
 
@@ -41,7 +41,7 @@ Push your module / theme to a Gitlab with CI and runners enabled.
 [Gitlab.com](https://gitlab.com) offer 2,000 CI pipeline minutes/month on free
 accounts.
 
-- Copy [.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci.yml) file at the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
+- Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/starter.gitlab-ci.yml) file at the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
 
 - If your project is not on [Gitlab.com](https://gitlab.com), edit the `include` section.
 
@@ -63,7 +63,7 @@ accounts.
 
 Assuming your project include a `composer.json` file from the [Drupal project](https://www.drupal.org/docs/develop/using-composer/using-composer-to-install-drupal-and-manage-dependencies).
 
-- Copy [.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci.yml) file, and if you are using _Behat_ the `behat_tests` folders in
+- Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/starter.gitlab-ci.yml) file, and if you are using _Behat_ the `behat_tests` folders in
 the root of your Drupal project as a starting point (same level as `composer.json` file).
 
 - Put your custom code in the `web/modules/custom` and `web/themes/custom` folders of your project.

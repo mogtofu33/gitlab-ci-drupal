@@ -1,0 +1,138 @@
+################################################################################
+# Gitlab CI integration for Drupal 8/9 project or module: tests, code quality,
+# linting, metrics and deploy samples.
+#
+# Project: https://gitlab.com/mog33/gitlab-ci-drupal
+# Documentation: https://mog33.gitlab.io/docs-gitlab-ci-drupal
+# Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
+# Author: Jean Valverde contact@dev-drupal.com
+# License: GPL-3
+#
+# If you want to support this project, you can
+# - Buy me a coffee: https://bit.ly/34jPKcE
+# - Hire me as a freelance for any Drupal related work
+# - Promote me to any company looking for any Drupal related work
+# - Help me with testing / documentation / grammar fixes / use cases
+#
+################################################################################
+
+# The ref is relative to the version of the project to use, best to use a tag.
+include:
+  # If hosted on gitlab.com.
+  - project: 'mog33/gitlab-ci-drupal'
+    ref: 2.x-dev
+    file: '/.gitlab-ci/.gitlab-ci-template.yml'
+  # If hosted on an other Gitlab instance.
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/raw/2.x-dev/.gitlab-ci-template.yml'
+
+################################################################################
+# Gitlab-CI variables documentation:
+# https://docs.gitlab.com/ee/ci/variables/
+#
+# Variables, can be set here or on
+#   Gitlab CI UI > settings > CI/CD > variables
+# UI take precedence on variables here.
+# https://docs.gitlab.com/ee/ci/variables/README.html#priority-of-environment-variables
+################################################################################
+
+variables:
+  # This is mandatory to get default variables.
+  extends: .default_variables
+
+  # Global config remote files ref.
+  # MUST be the same as include: ref: from above.
+  CI_REF: 2.x-dev
+
+  # Set a version, default is Drupal 8.8, can be 8.9 or 9.0.
+  # CI_DRUPAL_VERSION: "8.8"
+
+  ##############################################################################
+  # Override default variables for a module.
+  #
+  # Default CI setup is for a 'project' (full Drupal with a composer.json), next
+  # section contains common variables to change for a module (module, theme or
+  # profile). Simply uncomment to set the CI for a module.
+  #
+  # CI_TYPE: module
+  # # Code quality dirs, must include your PHP code to check.
+  # DIRS_QA: "${CI_PROJECT_DIR}"
+  # # Eslint / Stylelint files to test.
+  # DIRS_JS: "${CI_PROJECT_DIR}/js/*.js"
+  # DIRS_CSS: "${CI_PROJECT_DIR}/css/*.css"
+  # # Twig files to test.
+  # DIRS_TWIG: "${CI_PROJECT_DIR}/templates"
+  # # phpmetrics / phpstats dirs to include.
+  # DIRS_PHP: "${CI_PROJECT_DIR}"
+  # # Set SKIP_XXX variable to 1 to skip.
+  # # Security is for a Drupal project with third party.
+  # SKIP_TEST_SECURITY: 1
+  # # Only needed if you have Behat tests.
+  # SKIP_TEST_BEHAT: 1
+  # # Accessibility tests, more for a Drupal project.
+  # SKIP_TEST_PA11Y: 1
+  # # Default is '--skiptags core', if Nightwatch.js tests, add your tag.
+  # NIGHTWATCH_TESTS: --tag my_module
+  # # Or you can disable Nightwatch tests with:
+  # SKIP_TEST_NIGHTWATCH: 1
+  # # If you don't have any css files, you can skip with
+  # SKIP_LINT_CSS: 1
+  # # If you don't have any javascript files, you can skip with
+  # SKIP_LINT_JS: 1
+  # # If you don't have any twig files, you can skip with
+  # SKIP_LINT_TWIG: 1
+  #
+  ##############################################################################
+
+  ##############################################################################
+  # As a sample here is a list of some variables, see documentation for more
+  # variables.
+  #
+  # List of DIRS_* variables to define dirs to analyse for specific jobs.
+  # Code quality dirs, must include your PHP code to check.
+  # 
+  # DIRS_QA: "${CI_PROJECT_DIR}"
+  # 
+  # Eslint / Stylelint files to test.
+  # Space separated for multiple folders.
+  # Default is to check files under all custom folders.
+  # 
+  # DIRS_JS: "${CI_PROJECT_DIR}/**/custom/**/*.js"
+  # DIRS_CSS: "${CI_PROJECT_DIR}/**/custom/**/css/*.css"
+  # 
+  # Twig files to test, recursive.
+  # 
+  # DIRS_TWIG "${CI_PROJECT_DIR}"
+  # 
+  # Phpmetrics / Phpstats dirs to include.
+  # Default is to check all dirs.
+  # 
+  # DIRS_PHP: "${CI_PROJECT_DIR}"
+  #
+  # # ALL SKIP variables, uncomment and set to 1 to skip a job.
+  # SKIP_BUILD: 1
+  # SKIP_TESTS: 1 # Skip all tests, ignore SKIP_TEST_*.
+  # SKIP_TEST_UNITKERNEL: 1
+  # SKIP_TEST_FUNCTIONAL: 1
+  # SKIP_TEST_FUNCTIONALJS: 1
+  # SKIP_TEST_NIGHTWATCH: 1
+  # SKIP_TEST_SECURITY: 1
+  # SKIP_TEST_BEHAT: 1
+  # SKIP_TEST_PA11Y: 1
+  # SKIP_QA: 1
+  # SKIP_LINT: 1 # Skip all lint, ignore SKIP_LINT_*.
+  # SKIP_LINT_CSS: 1
+  # SKIP_LINT_JS: 1
+  # SKIP_LINT_TWIG: 1
+  # SKIP_METRICS: 1
+
+  # QA and Metrics tools.
+  # See Phpqa available tools: https://github.com/EdgedesignCZ/phpqa#available-tools
+  # ':0' is the number of errors allowed, default here is very strict.
+  #
+  # TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,phpcpd:0"
+  # TOOLS_METRICS: "phpmetrics,phploc,pdepend"
+
+################################################################################
+# Advanced usage with this file, see doc.
+# https://mog33.gitlab.io/docs-gitlab-ci-drupal/advanced-usage
+################################################################################
