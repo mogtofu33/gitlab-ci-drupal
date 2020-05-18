@@ -84,10 +84,10 @@ build:
         composer install --no-ansi -n --prefer-dist;
       fi
     # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
-    - if [ ! -f "${WEB_ROOT}/../vendor/bin/phpunit" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        composer require -d /var/www/html --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
+    - if [ ! -f "vendor/bin/phpunit" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+        composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
       fi
-    - ${WEB_ROOT}/../vendor/bin/phpunit --version
+    - vendor/bin/phpunit --version
     # Call any extra build script from ./.gitlab-ci/scripts/build.php
     - robo ci:build
 

@@ -5,7 +5,7 @@
 .build_template:
   stage: build
   extends: .variables_test
-  before_script:
+  after_script:
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare
   # When using included Drupal for a module, the cache and artifacts can be
