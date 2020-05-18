@@ -7,6 +7,8 @@
   extends: .variables_test
   after_script:
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    # Call any extra build script from ./.gitlab-ci/scripts/build.php
+    - robo ci:build
     - robo ci:prepare
   # When using included Drupal for a module, the cache and artifacts can be
   # removed as we don't install the Drupal with composer.

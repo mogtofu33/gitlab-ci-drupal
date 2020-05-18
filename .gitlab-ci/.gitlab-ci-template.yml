@@ -88,8 +88,6 @@ build:
         composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
       fi
     - vendor/bin/phpunit --version
-    # Call any extra build script from ./.gitlab-ci/scripts/build.php
-    - robo ci:build
 
 ################################################################################
 # Drupal tests.
