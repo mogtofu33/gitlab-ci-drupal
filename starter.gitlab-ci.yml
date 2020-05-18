@@ -109,7 +109,7 @@ variables:
   # DIRS_PHP: "${CI_PROJECT_DIR}"
   #
   # # ALL SKIP variables, uncomment and set to 1 to skip a job.
-  # SKIP_BUILD: 1
+  # SKIP_BUILD: 1 # if not running any tests or deploy.
   #
   # SKIP_TESTS: 1 # Skip all tests, ignore SKIP_TEST_*.
   # SKIP_TEST_UNITKERNEL: 1

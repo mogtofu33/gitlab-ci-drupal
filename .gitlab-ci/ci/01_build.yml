@@ -5,6 +5,13 @@
 .build_template:
   stage: build
   extends: .variables_test
+  before_script:
+    - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
+        composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
+      fi
+    - if [ ! -z ${COMPOSER_GITHUB_OAUTH_TOKEN} ]; then
+        composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
+      fi
   after_script:
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     # Call any extra build script from ./.gitlab-ci/scripts/build.php

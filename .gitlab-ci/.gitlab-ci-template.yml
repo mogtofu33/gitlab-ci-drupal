@@ -69,12 +69,6 @@ build:
       when: never
     - when: always
   script:
-    - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
-        composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
-      fi
-    - if [ ! -z ${COMPOSER_GITHUB_OAUTH_TOKEN} ]; then
-        composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
-      fi
     # Validate the composer.json file.
     - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n --no-ansi;
@@ -255,12 +249,6 @@ behat:
     # Test Chrome is running properly.
     - curl -s http://localhost:9222/json/version | jq '.' || true
     # Install behat and plugins with more memory.
-    - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
-        composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
-      fi
-    - if [ ! -z ${COMPOSER_GITHUB_OAUTH_TOKEN} ]; then
-        composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
-      fi
     - |
       if [ ! -f "${WEB_ROOT}/../vendor/bin/behat" ]; then
         COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest \
