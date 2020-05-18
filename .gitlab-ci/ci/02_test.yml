@@ -17,7 +17,7 @@
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
       fi
-    - if [ ! -z ${COMPOSER_GITHUB_OAUTH_TOKEN} ]; then
+    - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
         composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
       fi
     # Set permissions for tests.

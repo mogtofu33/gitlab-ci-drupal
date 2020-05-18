@@ -11,10 +11,8 @@
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
       fi
-    - if [ ! -z ${COMPOSER_GITHUB_OAUTH_TOKEN} ]; then
+    - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
         composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
       fi
-    # Coder is needed for Drupal coding standards 'Drupal' and 'DrupalPractice'.
-    - composer require --working-dir='/var/www/.composer' --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6
-    # Phpstan needed for Code quality.
-    - composer require --working-dir='/var/www/html' --no-ansi -n mglaman/phpstan-drupal phpstan/phpstan:^0.12.19 nette/neon:^3.1
+    # Avoid phpstan failing.
+    - cd /var/www/html

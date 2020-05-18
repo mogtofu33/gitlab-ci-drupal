@@ -79,7 +79,7 @@ build:
       fi
     # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
     - if [ ! -f "vendor/bin/phpunit" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
+        composer require --no-ansi -n --dev "drupal/core-dev:^${CI_DRUPAL_VERSION}";
       fi
     - vendor/bin/phpunit --version
 
@@ -99,7 +99,7 @@ phpunit_unit-kernel:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
     # Run PHPunit tests for unit, kernel, with coverage report.
-    - ${WEB_ROOT}/../vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+    - ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
         --configuration ${WEB_ROOT}/core
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-html
@@ -128,7 +128,7 @@ phpunit_functional:
     - when: on_success  # Only for this project to generate documentation.
   script:
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${WEB_ROOT}/../vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
+    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functional.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
@@ -149,7 +149,7 @@ phpunit_functionaljs:
     - /scripts/start-chromedriver.sh&
     - sleep 2s
     - curl -s http://localhost:9515/status | jq '.' || true
-    - ${WEB_ROOT}/../vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
+    - ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
@@ -250,15 +250,15 @@ behat:
     - curl -s http://localhost:9222/json/version | jq '.' || true
     # Install behat and plugins with more memory.
     - |
-      if [ ! -f "${WEB_ROOT}/../vendor/bin/behat" ]; then
-        COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest \
+      if [ ! -f "${DOC_ROOT}/vendor/bin/behat" ]; then
+        COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest --dev \
           "bex/behat-screenshot:^1.2" \
           "dmore/behat-chrome-extension:^1.3" \
           "emuse/behat-html-formatter:0.1.*" \
           "drupal/drupal-extension:~4.0"
       fi
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
-    - ${WEB_ROOT}/../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+    - ${DOC_ROOT}//vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
           --format progress
           --out std
           --format junit

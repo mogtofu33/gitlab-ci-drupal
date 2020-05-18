@@ -69,6 +69,12 @@ you can copy the `.gitlab-ci\build.php` file and include any task.
 I use [Robo.li](https://robo.li/) with this [RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/RoboFile.php)
 for running some specific ci tasks and Drupal install.
 
+### Build with private repositories
+
+You can use private repositories in your `composer.json` adding a ssh private key as a variable with name `CI_BUILD_KEY`
+
+See https://getcomposer.org/doc/05-repositories.md#using-private-repositories
+
 ### Custom deploy
 
 You can take a look in `.gitlab-ci.yml` for the `Deploy samples` section as a first step of editing to match your project.

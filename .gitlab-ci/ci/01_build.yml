@@ -9,8 +9,16 @@
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
       fi
-    - if [ ! -z ${COMPOSER_GITHUB_OAUTH_TOKEN} ]; then
-        composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
+    - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
+        composer config -g github-oauth.github.com ${COMPOSER_GITHUB_OAUTH_TOKEN};
+      fi
+    - |
+      # Add a ssh build key if there is a variable CI_BUILD_KEY.
+      if [ ! -z "${CI_BUILD_KEY}" ]; then
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh;
+        echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config;
+        echo -e "${CI_BUILD_KEY}" > ~/.ssh/id_rsa;
+        chmod 400 ~/.ssh/id_rsa;
       fi
   after_script:
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
