@@ -110,19 +110,24 @@ variables:
   #
   # # ALL SKIP variables, uncomment and set to 1 to skip a job.
   # SKIP_BUILD: 1
+  #
   # SKIP_TESTS: 1 # Skip all tests, ignore SKIP_TEST_*.
   # SKIP_TEST_UNITKERNEL: 1
   # SKIP_TEST_FUNCTIONAL: 1
   # SKIP_TEST_FUNCTIONALJS: 1
-  # SKIP_TEST_NIGHTWATCH: 1
   # SKIP_TEST_SECURITY: 1
-  # SKIP_TEST_BEHAT: 1
-  # SKIP_TEST_PA11Y: 1
+  #
+  # SKIP_TEST_NIGHTWATCH: 1 # Current default is to skip.
+  # SKIP_TEST_BEHAT: 1 # Current default is to skip.
+  # SKIP_TEST_PA11Y: 1 # Current default is to skip.
+  #
   # SKIP_QA: 1
+  #
   # SKIP_LINT: 1 # Skip all lint, ignore SKIP_LINT_*.
   # SKIP_LINT_CSS: 1
   # SKIP_LINT_JS: 1
   # SKIP_LINT_TWIG: 1
+  #
   # SKIP_METRICS: 1
 
   # QA and Metrics tools.

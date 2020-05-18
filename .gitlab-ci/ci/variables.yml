@@ -142,7 +142,11 @@
   #############################################################################
 
   ##############################################################################
-  # Other variables for CI only that do not need editing.
+  # Other variables for CI only that do not need editing in normal usage.
   #
   # Config files location for inclusion if not present locally.
   CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REF}/.gitlab-ci/"
+  #
+  # docker image version used for CI.
+  # Should be the same as CI_REF, but can be overridden for some use cases.
+  CI_IMAGE_REF: ${CI_REF}
