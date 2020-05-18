@@ -7,6 +7,7 @@
   dependencies:
     - build
   before_script:
+    - robo ci:prepare
     - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
     # Install packages from core/package.json
     - yarn --cwd ${WEB_ROOT}/core install

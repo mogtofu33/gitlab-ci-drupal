@@ -6,3 +6,5 @@
   extends: .artifacts_reports
   dependencies:
     - build
+  before_script:
+    - robo ci:prepare

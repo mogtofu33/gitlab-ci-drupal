@@ -13,6 +13,7 @@
   before_script:
     # Start Apache.
     - apache2-foreground&
+    - robo ci:prepare
     # Set permissions for tests.
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
     - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} && chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
