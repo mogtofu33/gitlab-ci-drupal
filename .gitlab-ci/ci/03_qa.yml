@@ -7,8 +7,6 @@
   dependencies:
     - build
   before_script:
-    # - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
-    # - robo ci:prepare
     # Coder is needed for Drupal coding standards 'Drupal' and 'DrupalPractice'.
     # Phpstan needed for Code quality.
     - composer require --working-dir='/var/www/.composer' --no-ansi -n drupal/coder:^8.3 dealerdirect/phpcodesniffer-composer-installer:^0.6 mglaman/phpstan-drupal
