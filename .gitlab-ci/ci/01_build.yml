@@ -25,6 +25,9 @@
       - web
       - composer.json
       - composer.lock
+      # Files from this project.
+      - RoboFile.php
+      - .gitlab-ci
       # Deprecated Drupal composer project template.
       - drush
       - scripts
