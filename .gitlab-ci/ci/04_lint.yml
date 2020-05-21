@@ -7,6 +7,12 @@
   dependencies:
     - build
   before_script:
+    # Support Yarn registry mirror.
+    - if [ ! -z "${YARN_REGISTRY}" ]; then
+        yarn config set registry ${YARN_REGISTRY};
+      fi
+    # Prepare ci (copy or symlink files in Docker image doc root).
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare
     - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
     # Install packages from core/package.json

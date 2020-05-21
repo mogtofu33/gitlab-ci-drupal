@@ -13,6 +13,8 @@
   before_script:
     # Start Apache.
     - apache2-foreground&
+    # Prepare ci (copy or symlink files in Docker image doc root).
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare
     # Support composer mirrors and token.
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then

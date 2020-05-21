@@ -55,9 +55,15 @@
   NIGHTWATCH_TESTS: "--skiptags core"
   # NIGHTWATCH_TESTS: "--tag custom"
 
-  # See Phpqa available tools: https://github.com/EdgedesignCZ/phpqa#available-tools
+  # Select install profile for Behat and Pa11y tests.
+  BEHAT_INSTALL_PROFILE: "standard"
+  PA11Y_INSTALL_PROFILE: "standard"
+
+  # See Phpqa available tools:
+  # https://github.com/EdgedesignCZ/phpqa#available-tools
   # ':0' is the number of errors allowed, default here is very strict.
-  TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,phpcpd:0"
+  # @TODO: phpcpd failing with "file not found" for a module.
+  TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,parallel-lint:0,phpcpd"
   TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
   # Composer override to use packagist mirror.
@@ -66,6 +72,9 @@
   # Composer override to use github oauth token.
   # https://getcomposer.org/doc/06-config.md#github-oauth
   # COMPOSER_GITHUB_OAUTH_TOKEN: ""
+
+  # Yarn override to use registry mirror.
+  # YARN_REGISTRY: "https://registry.yarnpkg.com"
 
   ##############################################################################
   # List of DIRS_* variables to define dirs to analyse for specific jobs.
@@ -80,12 +89,12 @@
   DIRS_JS: "${WEB_ROOT}/**/custom/**/*.js"
   DIRS_CSS: "${WEB_ROOT}/**/custom/**/css/*.css"
   #
-  # Twig files to test.
+  # Twig templates files to test.
   DIRS_TWIG: "${WEB_ROOT}/themes/custom"
   #
   # phpmetrics / phpstats dirs to include.
   #
-  # Default is to check all dirs.
+  # Default is to check all custom dirs.
   DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
 
   ##############################################################################
@@ -111,15 +120,15 @@
   SKIP_TEST_FUNCTIONALJS: 0
   # Nightwatch tests (browser with javascript tests), since Drupal 8.6
   # Currently not fully ready for Drupal so skip by default.
-  SKIP_TEST_NIGHTWATCH: 1
+  SKIP_TEST_NIGHTWATCH: 0
   #
   # Third party tests.
   # Symfony security check on composer.lock
   SKIP_TEST_SECURITY: 0
   # Behat tests from behat_tests folder. Demo tests, skip by default.
-  SKIP_TEST_BEHAT: 1
+  SKIP_TEST_BEHAT: 0
   # Accessibility test, skip by default.
-  SKIP_TEST_PA11Y: 1
+  SKIP_TEST_PA11Y: 0
   #
   ##############################################################################
   # Skip PHP QA jobs (phpcs, phpstan, phpmd, phpcpd, parallel-lint)
@@ -142,14 +151,39 @@
   # Skip all metrics jobs (phpmetrics, phploc, pdepend)
   SKIP_METRICS: 0
   #
-  #############################################################################
+  ##############################################################################
 
   ##############################################################################
   # Other variables for CI only that do not need editing in normal usage.
   #
-  # Config files location for inclusion if not present locally.
+  # Any argument to pass to chromedriver, used by functional Javascript tests.
+  # https://chromedriver.chromium.org/capabilities
+  # e.g. `--verbose --whitelisted-ips=0.0.0.0 --log-path=chromedriver.log`.
+  CHROMEDRIVER_OPTS: ''
+  #
+  # Settings for Behat with DrupalExtension and ScreenshotExtensions, match the
+  # tests on behat_tests included in this project.
+  # https://www.drupal.org/project/drupalextension
+  # https://github.com/elvetemedve/behat-screenshot
+  BEHAT_PARAMS: >
+    {
+      "extensions" : {
+        "Bex\\Behat\\ScreenshotExtension" : {
+          "image_drivers" : {
+            "local" : { "screenshot_directory" : "report-behat" }
+          }
+        },
+        "Drupal\\DrupalExtension" : {
+          "drupal" : {
+            "drupal_root" : "${WEB_ROOT}"
+          }
+        }
+      }
+    }
+  #
+  # Config files location for inclusion if not present locally (from ./.gitlab-ci/).
   CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REF}/.gitlab-ci/"
   #
-  # docker image version used for CI.
+  # Docker image version used for CI.
   # Should be the same as CI_REF, but can be overridden for some use cases.
   CI_IMAGE_REF: ${CI_REF}

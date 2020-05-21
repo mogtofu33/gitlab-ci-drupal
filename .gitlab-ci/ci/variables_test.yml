@@ -30,28 +30,6 @@
         },
         "http://localhost:9515"
       ]
-    # Any argument to pass to chromedriver, used by funtionnal Javascript tests.
-    # https://chromedriver.chromium.org/capabilities
-    # e.g. `--verbose --whitelisted-ips=0.0.0.0 --log-path=chromedriver.log`.
-    CHROMEDRIVER_OPTS: ''
-    # Behat with DrupalExtension.
-    # https://www.drupal.org/project/drupalextension
-    # Any argument to pass to chrome, used by Behat tests.
     # https://chromedriver.chromium.org/capabilities
     # e.g. `--verbose --whitelisted-ips=0.0.0.0 --log-path=chromedriver.log`.
     CHROME_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
-    BEHAT_PARAMS: >
-      {
-        "extensions" : {
-          "Bex\\Behat\\ScreenshotExtension" : {
-            "image_drivers" : {
-              "local" : { "screenshot_directory" : "report-behat" }
-            }
-          },
-          "Drupal\\DrupalExtension" : {
-            "drupal" : {
-              "drupal_root" : "${WEB_ROOT}"
-            }
-          }
-        }
-      }

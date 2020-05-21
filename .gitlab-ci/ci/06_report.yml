@@ -20,3 +20,4 @@
     when: always
     paths:
       - public
+      - dashboard

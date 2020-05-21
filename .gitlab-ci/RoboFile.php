@@ -103,6 +103,8 @@ class RoboFile extends Tasks {
       '.phpqa.yml',
       'pa11y-ci.json',
       'phpstan.neon',
+      'install_drupal.sh',
+      'settings.local.php',
     ],
   ];
 
@@ -260,7 +262,7 @@ class RoboFile extends Tasks {
 
     // Manage ci configuration files for .gitlab-ci folder.
     foreach ($this->ciFiles['ci'] as $filename) {
-      // Use local file if exist.
+      // Use remote file if local do not exist.
       if (!file_exists($src_dir . $filename)) {
         $this->ciNotice("Download remote file: $this->ciRemoteRef" . "$filename");
         $remote_file = file_get_contents($this->ciRemoteRef . $filename);
@@ -310,7 +312,7 @@ class RoboFile extends Tasks {
           $this->ciLog("Project seems to have only custom code.");
           // Root contain a web/ folder, we symlink each folders.
           foreach (['modules', 'themes', 'profiles'] as $type) {
-            $this->ciSymlink(
+            $this->ciMirror(
               $this->ciProjectDir . '/web/' . $type . '/custom',
               $this->webRoot . '/' . $type . '/custom'
             );
@@ -322,7 +324,7 @@ class RoboFile extends Tasks {
       case "theme":
       case "profile":
         // Root contain the theme / module, we symlink with project name.
-        $this->ciSymlink(
+        $this->ciMirror(
           $this->ciProjectDir,
           $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
         );
@@ -614,12 +616,6 @@ class RoboFile extends Tasks {
       $this->ciNotice("Missing src folder: $src");
     }
     else {
-      // if (file_exists($target)) {
-      //   $this->taskFilesystemStack()
-      //     ->remove($target)
-      //     ->mkdir($target)
-      //     ->run();
-      // }
       if (!file_exists($target)) {
         $this->ciNotice("Missing target folder: $target");
       }

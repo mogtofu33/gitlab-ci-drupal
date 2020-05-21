@@ -3,7 +3,7 @@
 # code quality, linting, metrics and deploy samples.
 #
 # Project: https://gitlab.com/mog33/gitlab-ci-drupal
-# Documentation: https://mog33.gitlab.io/docs-gitlab-ci-drupal
+# Documentation: https://mog33.gitlab.io/gitlab-ci-drupal
 # Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
 # Author: Jean Valverde contact@dev-drupal.com
 # License: GPL-3
@@ -79,9 +79,22 @@ build:
       fi
     # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
     - if [ ! -f "vendor/bin/phpunit" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        composer require --no-ansi -n --dev "drupal/core-dev:^${CI_DRUPAL_VERSION}";
+        composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
+        vendor/bin/phpunit --version;
       fi
-    - vendor/bin/phpunit --version
+    # Install behat and plugins with maximum memory.
+    - |
+      if [ ! -f "vendor/bin/behat" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+        COMPOSER_MEMORY_LIMIT=-1 composer require --no-ansi -n --no-suggest \
+          "bex/behat-screenshot:^1.2" \
+          "dmore/behat-chrome-extension:^1.3" \
+          "emuse/behat-html-formatter:0.1.*" \
+          "drupal/drupal-extension:~4.0"
+      fi
+    - |
+      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+        composer require --no-ansi -n --no-suggest drush/drush
+      fi
 
 ################################################################################
 # Drupal tests.
@@ -215,7 +228,7 @@ security:
     - when: on_success
   script:
     - mkdir -p report-${CI_JOB_NAME}
-    - security-checker security:check /var/www/html/composer.lock --no-ansi 2>&1 | tee report-${CI_JOB_NAME}/security.txt
+    - security-checker security:check ${DOC_ROOT}/composer.lock --no-ansi 2>&1 | tee report-${CI_JOB_NAME}/security.txt
   # Allow failure to produce report and warning when we have an error.
   allow_failure: true
 
@@ -241,24 +254,16 @@ behat:
         echo -e "\033[1;31mNo behat tests found in behat_tests/behat.yml.\033[0;37m"
         exit 1
       fi
-    # Install Drupal with the standard profile.
-    - robo drupal:install standard
     # Starting Chrome, we are not using Chromedriver.
     - /scripts/start-chrome.sh&
-    - sleep 2s
+    - cd ${WEB_ROOT}
+    # Install Drupal with the selected profile.
+    - chmod +x ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh
+    - ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh ${BEHAT_INSTALL_PROFILE}
     # Test Chrome is running properly.
     - curl -s http://localhost:9222/json/version | jq '.' || true
-    # Install behat and plugins with more memory.
-    - |
-      if [ ! -f "${DOC_ROOT}/vendor/bin/behat" ]; then
-        COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest --dev \
-          "bex/behat-screenshot:^1.2" \
-          "dmore/behat-chrome-extension:^1.3" \
-          "emuse/behat-html-formatter:0.1.*" \
-          "drupal/drupal-extension:~4.0"
-      fi
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
-    - ${DOC_ROOT}//vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+    - ../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
           --format progress
           --out std
           --format junit
@@ -279,13 +284,15 @@ accessibility_pa11y:
       when: never
     - when: on_success
   script:
-    # Install Drupal with the standard profile.
-    - robo drupal:install standard
+    - cd ${WEB_ROOT}
+    # Install Drupal with the selected profile.
+    - chmod +x ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh
+    - ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh ${PA11Y_INSTALL_PROFILE}
     # Install Pa11y-ci for tests with yarn.
     - yarn --cwd ${WEB_ROOT}/core add pa11y-ci
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
     # Run pa11y tests using ./gitlab-ci/pa11y-ci.json file definition.
-    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci --config ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json 2>&1 | tee report-${CI_JOB_NAME}/pa11y.txt
+    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci --config ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y.txt
   after_script:
     - cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
 
@@ -302,7 +309,7 @@ php-qa:
       when: never
     - when: on_success
   script:
-    # Default is no errors allowed for quality tests.
+    # Check variable TOOLS_QA to select tools.
     - phpqa --tools ${TOOLS_QA}
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
@@ -381,7 +388,10 @@ metrics:
       when: never
     - when: always
   script:
-    - cp ./report-phpunit_*/*.xml /tmp/ || true
+    # See .gitlab-ci/.phpqa.yml config for phpmetrics to choose a source.
+    - cp ./report-phpunit_unit-kernel/*.xml /tmp/ || true
+    - cp ./report-phpunit_functional/*.xml /tmp/ || true
+    - cp ./report-phpunit_functionaljs/*.xml /tmp/ || true
     - phpqa --tools ${TOOLS_METRICS}
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"

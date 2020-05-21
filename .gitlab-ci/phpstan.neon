@@ -4,5 +4,6 @@ parameters:
     drupal:
         drupal_root: /var/www/html
     excludes_analyse:
+        - *RoboFile.php
         - *Test.php
         - *TestBase.php

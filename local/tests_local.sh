@@ -61,7 +61,7 @@ _build() {
   else
     if ! $(_exist_file /var/www/html/vendor/bin/phpunit); then
       docker exec -it -w /var/www/html ci-drupal \
-        composer require --no-ansi -n --dev drupal/core-dev:^${CI_DRUPAL_VERSION}
+        composer require --no-ansi -n drupal/core-dev:^${CI_DRUPAL_VERSION}
     else
       printf "%s[SKIP]%s Phpunit installed\\n" "${_dim_blu}" "${_end}"
     fi
@@ -265,7 +265,7 @@ _behat() {
   # docker exec -t ci-drupal curl -s http://localhost:9222/json/version | jq '.'
 
   # _dkexec \
-  # COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest --dev \
+  # COMPOSER_MEMORY_LIMIT=-1 composer require -d /var/www/html --no-ansi -n --no-suggest \
   #       "bex/behat-screenshot:^1.2" \
   #       "dmore/behat-chrome-extension:^1.3" \
   #       "emuse/behat-html-formatter:0.1.*" \
@@ -330,7 +330,6 @@ _php_qa() {
         --config ${CI_PROJECT_DIR}/.gitlab-ci \
         --buildDir "report-${CI_JOB_NAME}" \
         --analyzedDirs "${DIRS_QA}" \
-        --verbose
 }
 
 ####### Lint jobs
@@ -535,7 +534,7 @@ _install_drupal() {
 _set_dev_mode() {
   printf "\\n%s[INFO]%s Set dev mode\\n\\n" "${_blu}" "${_end}"
   docker exec -it -w /var/www/html ci-drupal \
-    composer require drupal/console drupal/devel drupal/devel_php --dev
+    composer require drupal/console drupal/devel drupal/devel_php
   docker exec -it -w ${WEB_ROOT} ci-drupal \
     /var/www/html/vendor/bin/drupal site:mode dev
 }
@@ -569,7 +568,11 @@ _init_stack() {
 
 _env() {
 
-  __yaml="$_DIR/../.gitlab-ci.yml"
+  if [ -f "$_DIR/../starter.gitlab-ci.yml" ]; then
+    __yaml="$_DIR/../starter.gitlab-ci.yml"
+  else
+    __yaml="$_DIR/../.gitlab-ci.yml"
+  fi
   __yaml_variables="$_DIR/../.gitlab-ci/ci/variables.yml"
   __yaml_variables_test="$_DIR/../.gitlab-ci/ci/variables_test.yml"
   __yaml_local="$_DIR/.local.yml"

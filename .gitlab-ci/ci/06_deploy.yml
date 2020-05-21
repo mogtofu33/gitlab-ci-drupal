@@ -4,7 +4,8 @@
 # This is a sample for a basic deploy template with SSH to a remote machine.
 # @see docs: https://docs.gitlab.com/ee/ci/examples/README.html
 #
-# See file .gitlab-ci.yml for a Deploy job sample using this template.
+# For a Deploy job sample using this template see:
+# https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#deploy-ssh-sample
 #
 # You need to be sure you can ssh to the machine.
 # This next sample assume a deploy key has been added on the target host in

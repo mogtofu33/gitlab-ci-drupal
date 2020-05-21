@@ -30,9 +30,6 @@
     # Call any extra build script from ./.gitlab-ci/scripts/build.php
     - robo ci:build
     - robo ci:prepare
-  # When using included Drupal for a module, the cache and artifacts can be
-  # removed as we don't install the Drupal with composer.
-  #
   # On build we cache the composer and web folders to speed up the tests.
   cache:
     key: "drupal-${CI_COMMIT_REF_NAME}"

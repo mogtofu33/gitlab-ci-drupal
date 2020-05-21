@@ -3,7 +3,7 @@
 # linting, metrics and deploy samples.
 #
 # Project: https://gitlab.com/mog33/gitlab-ci-drupal
-# Documentation: https://mog33.gitlab.io/docs-gitlab-ci-drupal
+# Documentation: https://mog33.gitlab.io/gitlab-ci-drupal
 # Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
 # Author: Jean Valverde contact@dev-drupal.com
 # License: GPL-3
@@ -47,15 +47,33 @@ variables:
   # CI_DRUPAL_VERSION: "8.8"
 
   ##############################################################################
+  # Tests disabled by default because need a specific setup / configuration.
+  #
+  # Only needed if you have Behat tests, comment or set to 0 to enable.
+  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#behat-tests
+  SKIP_TEST_BEHAT: 1
+
+  # Accessibility tests, need a profile and setup.
+  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#accessibility-with-pa11y
+  SKIP_TEST_PA11Y: 1
+
+  # Only if you have Nightwatch tests in your code.
+  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
+  SKIP_TEST_NIGHTWATCH: 1
+  # Default is '--skiptags core', add your tag.
+  # NIGHTWATCH_TESTS: --tag my_module
+
+  ##############################################################################
   # Override default variables for a module.
   #
   # Default CI setup is for a 'project' (full Drupal with a composer.json), next
   # section contains common variables to change for a module (module, theme or
-  # profile). Simply uncomment to set the CI for a module.
+  # profile). Simply uncomment and adapt dirs to set the CI for a module.
   #
   # CI_TYPE: module
   # # Code quality dirs, must include your PHP code to check.
-  # DIRS_QA: "${CI_PROJECT_DIR}"
+  # # Phpstan need autoloading, that's why we use web_root.
+  # DIRS_QA: "${WEB_ROOT}/modules/custom"
   # # Eslint / Stylelint files to test.
   # DIRS_JS: "${CI_PROJECT_DIR}/js/*.js"
   # DIRS_CSS: "${CI_PROJECT_DIR}/css/*.css"
@@ -66,14 +84,6 @@ variables:
   # # Set SKIP_XXX variable to 1 to skip.
   # # Security is for a Drupal project with third party.
   # SKIP_TEST_SECURITY: 1
-  # # Only needed if you have Behat tests.
-  # SKIP_TEST_BEHAT: 1
-  # # Accessibility tests, more for a Drupal project.
-  # SKIP_TEST_PA11Y: 1
-  # # Default is '--skiptags core', if Nightwatch.js tests, add your tag.
-  # NIGHTWATCH_TESTS: --tag my_module
-  # # Or you can disable Nightwatch tests with:
-  # SKIP_TEST_NIGHTWATCH: 1
   # # If you don't have any css files, you can skip with
   # SKIP_LINT_CSS: 1
   # # If you don't have any javascript files, you can skip with
@@ -90,23 +100,23 @@ variables:
   # List of DIRS_* variables to define dirs to analyse for specific jobs.
   # Code quality dirs, must include your PHP code to check.
   # 
-  # DIRS_QA: "${CI_PROJECT_DIR}"
+  # DIRS_QA: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   # 
   # Eslint / Stylelint files to test.
   # Space separated for multiple folders.
   # Default is to check files under all custom folders.
   # 
-  # DIRS_JS: "${CI_PROJECT_DIR}/**/custom/**/*.js"
-  # DIRS_CSS: "${CI_PROJECT_DIR}/**/custom/**/css/*.css"
+  # DIRS_JS: "${WEB_ROOT}/**/custom/**/*.js"
+  # DIRS_CSS: "${WEB_ROOT}/**/custom/**/css/*.css"
   # 
   # Twig files to test, recursive.
   # 
-  # DIRS_TWIG "${CI_PROJECT_DIR}"
+  # DIRS_TWIG: "${WEB_ROOT}/themes/custom"
   # 
   # Phpmetrics / Phpstats dirs to include.
   # Default is to check all dirs.
   # 
-  # DIRS_PHP: "${CI_PROJECT_DIR}"
+  # DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
   #
   # # ALL SKIP variables, uncomment and set to 1 to skip a job.
   # SKIP_BUILD: 1 # if not running any tests or deploy.
@@ -116,10 +126,6 @@ variables:
   # SKIP_TEST_FUNCTIONAL: 1
   # SKIP_TEST_FUNCTIONALJS: 1
   # SKIP_TEST_SECURITY: 1
-  #
-  # SKIP_TEST_NIGHTWATCH: 1 # Current default is to skip.
-  # SKIP_TEST_BEHAT: 1 # Current default is to skip.
-  # SKIP_TEST_PA11Y: 1 # Current default is to skip.
   #
   # SKIP_QA: 1
   #
@@ -139,5 +145,5 @@ variables:
 
 ################################################################################
 # Advanced usage with this file, see doc.
-# https://mog33.gitlab.io/docs-gitlab-ci-drupal/advanced-usage
+# https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage
 ################################################################################

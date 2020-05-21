@@ -7,12 +7,14 @@
   dependencies:
     - build
   before_script:
-    - robo ci:prepare
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
       fi
     - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
         composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
       fi
+    # Prepare ci (copy or symlink files in Docker image doc root).
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - robo ci:prepare
     # Avoid phpstan failing.
-    - cd /var/www/html
+    - cd ${DOC_ROOT}

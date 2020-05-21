@@ -48,7 +48,8 @@ phpqa:
     ignoredFiles: "Readme.md,style.css,print.css,*Test.php,RoboFile.php"
     report: true
     verbose: true
-    execution: parallel
+    # execution: parallel
+    execution: no-parallel
     extensions:
         - php
         - inc

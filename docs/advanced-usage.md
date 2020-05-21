@@ -4,21 +4,21 @@ Jobs are grouped by stages, to override stages, edit your `.gitlab-ci.yml` file.
 
 ### Available jobs
 
-| Name | Detail | Drupal install | Report |
-|---|---|---|:---:|
-| Build | If a project : `composer install`, can be used to add build steps (composer run-script, grunt, webpack, yarn...) | No | No |
-| Unit, kernel and coverage | Phpunit unit and kernel tests with coverage. Codecov.io support see [Codecov.io support](/advanced-usage/#codecovio-support-in-phpunit-code-coverage) | No | xml and html |
-| Functional | Phpunit functional test (Browser based tests) | No | xml and html |
-| Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | Yes (included) | xml and html |
-| Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | Yes (included) | text and html |
-| Security | Symfony security-checker, look at versions in composer.lock | No | text |
-| Behat tests | Support Behat tests from `behat_tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | Yes | html |
-| Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/) | Yes | text |
-| Code quality | Code sniffer with _Drupal standards_, _Drupal Best practice_s standard. Phpstan, Phpmd, Phpcpd | No | html |
-| Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | No | html |
-| Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules) | No | text |
-| Php metrics | Code metrics ans stats in a nice html report with phpmetrics, phploc, pdepend | No | html |
-| Deploy to... | Sample of deploy jobs with ssh to a host | No | No |
+Name | Detail | Drupal install | Report
+---|---|---|:---:
+Build | If a project : `composer install`, can be used to add build steps (composer run-script, grunt, webpack, yarn...) | No | No
+Unit, kernel and coverage | Phpunit unit and kernel tests with coverage. Codecov.io support see [Codecov.io support](/advanced-usage/#codecovio-support-in-phpunit-code-coverage) | No | xml and html
+Functional | Phpunit functional test (Browser based tests) | No | xml and html
+Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | Yes (included) | xml and html
+Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | Yes (included) | text and html
+Security | Symfony security-checker, look at versions in composer.lock | No | text
+Behat tests | Support Behat tests from `behat_tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | Yes | html
+Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/) | Yes | text
+Code quality | Code sniffer with _Drupal standards_, _Drupal Best practice_s standard. Phpstan, Phpmd, Phpcpd | No | html
+Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | No | html
+Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules) | No | text
+Php metrics | Code metrics ans stats in a nice html report with phpmetrics, phploc, pdepend | No | html
+Deploy to... | Sample of deploy jobs with ssh to a host | No | No
 
 ### CI image tools
 
@@ -75,10 +75,6 @@ You can use private repositories in your `composer.json` adding a ssh private ke
 
 See https://getcomposer.org/doc/05-repositories.md#using-private-repositories
 
-### Custom deploy
-
-You can take a look in `.gitlab-ci.yml` for the `Deploy samples` section as a first step of editing to match your project.
-
 ### Nightwatch.js
 
 Since Drupal 8.6, [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch) is included as a Javascript test framework.
@@ -92,10 +88,10 @@ The CI tests here include a patch to be able to install Drupal from a profile fo
 There is a variable in this project that you can set in Gitlab to select the
 tests Nightwatch will run:
 
-| Name | Value | Detail |
-|-|-|-|
-| NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag |
-| NIGHTWATCH_TESTS | --skiptags core | All tests except core. |
+Name | Value | Detail
+-|-|-
+NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag
+NIGHTWATCH_TESTS | --skiptags core | All tests except core.
 
 ### Behat tests
 
@@ -105,11 +101,20 @@ project.
 Copy this folder on the root of your project and adapt `behat_tests/features` to your
 tests.
 
+To choose the Drupal profile for installation, you can set the `BEHAT_INSTALL_PROFILE` variable.
+
+Name | Value
+-|-
+BEHAT_INSTALL_PROFILE | standard
+
 For Behat, Selenium is not needed thanks to the
 [Behat Chrome extension.](https://gitlab.com/DMore/behat-chrome-extension.git).
 
 Html output of the Behat report is done thanks to
 [Behat Html formatter plugin](https://github.com/dutchiexl/BehatHtmlFormatterPlugin).
+
+If you need different configuration for Behat, you can look and override variable
+`BEHAT_PARAMS` in `variables_test.yml`
 
 ### PHPunit tests
 
@@ -128,9 +133,9 @@ There is 2 set of tests location:
 
 There is a Gitlab variable to select the tests:
 
-| Name | Value |
-|-|-|
-| PHPUNIT_TESTS | custom |
+Name | Value
+-|-
+PHPUNIT_TESTS | custom
 
 Set this variable _empty_ to run all tests.
 
@@ -158,10 +163,10 @@ More options see:
 - [Phpqa configuration](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
 - [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
 
-| Name | Value | Detail |
-|-|-|-|
-| NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag |
-| NIGHTWATCH_TESTS | --skiptags core | All tests except core. |
+Name | Value | Detail
+-|-|-
+NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag
+NIGHTWATCH_TESTS | --skiptags core | All tests except core.
 
 Eslint is based on the official
 [Drupal 8/9 eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
@@ -191,9 +196,15 @@ For setting your urls to test, adapt the urls section:
 
 When a test failed, a screen capture is recorded in the reports.
 
+To choose the Drupal profile for installation, you can set the `PA11Y_INSTALL_PROFILE` variable.
+
+Name | Value
+-|-|
+PA11Y_INSTALL_PROFILE | standard
+
 ### Composer config
 
-In case you want to set a different url for packagist or set a Github oauth token, you can set variables:
+In case you want to set a different url for packagist or set a _Github oauth token_, you can set variables:
 
 Name | Detail | Default
 -|-|-
@@ -206,7 +217,7 @@ _Note_: The Github token must be a private variable.
 
 In case you want to set a different url for yarn registry, you can set variables:
 
-Name |  Default
+Name | Default
 -|-
 YARN_REGISTRY | https://registry.yarnpkg.com
 
