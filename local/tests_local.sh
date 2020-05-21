@@ -526,7 +526,7 @@ _install_drupal() {
   if [ $__skip_install = 1 ]; then
     printf "%s[SKIP]%s install\\n" "${_dim_blu}" "${_end}"
   else
-    printf "%s[NOTICE]%s install Drupal %s\\n"  "${_dim}" "${_end}" "${1}"
+    printf "%s[NOTICE]%s install Drupal %s\\n""${_dim}" "${_end}" "${1}"
     docker exec -it -w /var/www/html ci-drupal \
       robo drupal:install ${1}
   fi

@@ -14,11 +14,16 @@
     # Start Apache.
     - apache2-foreground&
     - robo ci:prepare
+    # Support composer mirrors and token.
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
       fi
     - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
-        composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
+        composer config -g github-oauth.github.com ${COMPOSER_GITHUB_OAUTH_TOKEN};
+      fi
+    # Support Yarn registry mirror.
+    - if [ ! -z "${YARN_REGISTRY}" ]; then
+        yarn config set registry ${YARN_REGISTRY};
       fi
     # Set permissions for tests.
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}

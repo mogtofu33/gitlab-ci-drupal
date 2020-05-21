@@ -76,7 +76,7 @@ To test against another Drupal version, you can edit `.gitlab-ci.yml` **OR** go 
 |-|-|-|
 | CI_DRUPAL_VERSION | 8.9 | 8.9 for 8.9-beta2 and 9.0 for 9.0-beta2 |
 
-This variable can be set when you run a pipeline directly from Gitlab  UI.
+This variable can be set when you run a pipeline directly from Gitlab UI.
 
 As an example you can check my project on a Drupal template:
 [Drupal project advanced template](https://gitlab.com/mog33/drupal-composer-advanced-template)

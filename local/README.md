@@ -10,14 +10,8 @@ Run a single PHPUnit test:
 
 One time
 ```bash
-local/tests_local.sh functional
+local/tests_local.sh test functional
 ```
-
-Then to run agains without building / prepare:
-```bash
-local/tests_local.sh functional_cmd
-```
-
 Then to run agains a unique test:
 
 ```bash

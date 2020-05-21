@@ -11,7 +11,7 @@
     - cp -r ./report-*/ ./dashboard/src/reports/
     - cd ./dashboard
     # Prepare data collection.
-    - chmod +x ./src/scripts/ci_vars.sh  && ./src/scripts/ci_vars.sh > src/data/data.json
+    - chmod +x ./src/scripts/ci_vars.sh && ./src/scripts/ci_vars.sh > src/data/data.json
     - yarn install
     - yarn build
   after_script:

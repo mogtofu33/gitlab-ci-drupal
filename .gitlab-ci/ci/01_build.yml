@@ -6,11 +6,16 @@
   stage: build
   extends: .variables_test
   before_script:
+    # Support composer mirrors and token.
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
       fi
     - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
         composer config -g github-oauth.github.com ${COMPOSER_GITHUB_OAUTH_TOKEN};
+      fi
+    # Support Yarn registry mirror.
+    - if [ ! -z "${YARN_REGISTRY}" ]; then
+        yarn config set registry ${YARN_REGISTRY};
       fi
     - |
       # Add a ssh build key if there is a variable CI_BUILD_KEY.

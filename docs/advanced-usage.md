@@ -157,10 +157,12 @@ More options see:
 
 - [Phpqa configuration](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
 - [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
+
 | Name | Value | Detail |
 |-|-|-|
 | NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag |
 | NIGHTWATCH_TESTS | --skiptags core | All tests except core. |
+
 Eslint is based on the official
 [Drupal 8/9 eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
 
@@ -191,14 +193,22 @@ When a test failed, a screen capture is recorded in the reports.
 
 ### Composer config
 
-In case you want to set a different url for packagist or set a Github oauth token, you can set variable:
+In case you want to set a different url for packagist or set a Github oauth token, you can set variables:
 
-Name |  Detail
--|-
-COMPOSER_REPO_PACKAGIST_URL | https://getcomposer.org/doc/01-basic-usage.md#packagist
+Name | Detail | Default
+-|-|-
+COMPOSER_REPO_PACKAGIST_URL | https://getcomposer.org/doc/01-basic-usage.md#packagist | https?://repo.packagist.org
 COMPOSER_GITHUB_OAUTH_TOKEN | https://getcomposer.org/doc/06-config.md#github-oauth |
 
 _Note_: The Github token must be a private variable.
+
+### Yarn config
+
+In case you want to set a different url for yarn registry, you can set variables:
+
+Name |  Default
+-|-
+YARN_REGISTRY | https://registry.yarnpkg.com
 
 ### Deploy
 
