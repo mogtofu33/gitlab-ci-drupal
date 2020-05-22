@@ -178,6 +178,9 @@ Stylelint is based on the official
 
 Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org), [Phploc](https://github.com/sebastianbergmann/phploc) and [Pdepend](https://pdepend.org/).
 
+Currently this project do not support analysing coverage for Pdepend and junit
+report from unit-kernel or functional or functionlajs tests for Phpmetrics.
+
 ### Accessibility with Pa11y
 
 Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in
@@ -220,6 +223,38 @@ In case you want to set a different url for yarn registry, you can set variables
 Name | Default
 -|-
 YARN_REGISTRY | https://registry.yarnpkg.com
+
+### All in one report
+
+[WIP]
+
+A report of all tests in one job can be used through a simple dashboard job.
+
+To test it, add this to your `.gitlab-ci.yml` file.
+
+```yaml
+stages:
+  - build
+  - tests
+  - metrics
+  - reports
+
+pages:
+  stage: reports
+  extends: .simple_dashboard
+  rules:
+    - when: always
+```
+
+### Release of code to Gitlab and Drupal.org
+
+[WIP]
+
+Gitlab release, waiting for:
+
+* https://gitlab.com/gitlab-org/release-cli/-/blob/master/docs/index.md#using-this-tool-in-gitlab-ci
+
+Drupal release based on semantic-release not yet implemented, wip in `.gitlab-ci/ci/06_release.yml`
 
 ### Deploy
 
