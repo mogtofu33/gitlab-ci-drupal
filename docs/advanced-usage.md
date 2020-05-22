@@ -246,6 +246,14 @@ pages:
     - when: always
 ```
 
+This report can include some status if you add a Gitlab token with `read_api`
+from your account as a variable in Gitlab UI:
+* Gitlab CI UI > settings > CI/CD
+
+Name |
+-
+MY_GITLAB_TOKEN |
+
 ### Release of code to Gitlab and Drupal.org
 
 [WIP]
