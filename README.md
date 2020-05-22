@@ -1,9 +1,5 @@
 # Gitlab CI with Drupal 8 / 9
 
-Drupal 8.8 | Drupal 8.9 | (WIP) Drupal 9.0
-:---:|:---:|:---:
-[![pipeline status 2.x-dev](https://gitlab.com/mog33/gitlab-ci-drupal/badges/2.x-dev/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/2.x-dev) | [![pipeline status 8.9](https://gitlab.com/mog33/gitlab-ci-drupal/badges/demo-8.9/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/demo-8.9) | [![pipeline status 9.0](https://gitlab.com/mog33/gitlab-ci-drupal/badges/demo-9.0/pipeline.svg)](https://gitlab.com/mog33/gitlab-ci-drupal/commits/demo-9.0)
-
 <img src="https://www.drupal.org/files/druplicon-small.png" width="175" style="margin-right:10%;">
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png" width="175">
 
@@ -51,6 +47,11 @@ accounts.
 
 - Create and push your branch, see the pipeline running for basic code standard and lint.
 
+External module demo: https://gitlab.com/mog33/demo-gitlab-ci-drupal-module
+
+Drupal 8.8 | Drupal 8.9
+:---:|:---:
+[![pipeline status master](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/master/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/master) | [![pipeline status 8.9](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/8.9/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/8.9)
 As an example you can check my module:
 [Content moderation edit notify](https://gitlab.com/mog33/content_moderation_edit_notify)
 
@@ -80,6 +81,12 @@ Name | Value | Detail
 CI_DRUPAL_VERSION | 8.9 | 8.9 for 8.9-beta2 and 9.0 for 9.0-beta2
 
 This variable can be set when you run a pipeline directly from Gitlab UI.
+
+External module demo: https://gitlab.com/mog33/demo-gitlab-ci-drupal-project
+
+Drupal 8.8 | Drupal 8.9 | (WIP) Drupal 9.0
+:---:|:---:|:---:
+[![pipeline status master](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/master/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/master) | [![pipeline status 8.9](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/8.9/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/8.9) | [![pipeline status 9.0](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/demo-9.0/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/demo-9.0)
 
 As an example you can check my project on a Drupal template:
 [Drupal project advanced template](https://gitlab.com/mog33/drupal-composer-advanced-template)
