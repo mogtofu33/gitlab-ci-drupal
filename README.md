@@ -52,6 +52,7 @@ External module demo: https://gitlab.com/mog33/demo-gitlab-ci-drupal-module
 Drupal 8.8 | Drupal 8.9
 :---:|:---:
 [![pipeline status master](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/master/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/master) | [![pipeline status 8.9](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/8.9/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/8.9)
+
 As an example you can check my module:
 [Content moderation edit notify](https://gitlab.com/mog33/content_moderation_edit_notify)
 
