@@ -23,7 +23,7 @@ include:
     ref: 2.x-dev
     file: '/.gitlab-ci/.gitlab-ci-template.yml'
   # If hosted on an other Gitlab instance.
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/raw/2.x-dev/.gitlab-ci-template.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
 
 ################################################################################
 # Gitlab-CI variables documentation:
