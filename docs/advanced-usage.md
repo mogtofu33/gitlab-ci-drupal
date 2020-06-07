@@ -46,6 +46,8 @@ quality and analysis tools:
   - [PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
   - [Pdepend](https://pdepend.org/)
   - [Phpmetrics](https://www.phpmetrics.org)
+  - [Phpstan](https://github.com/phpstan/phpstan)
+  - [Phpstan for Drupal code](https://github.com/mglaman/phpstan-drupal)
 
 ### Custom configuration
 
@@ -63,17 +65,60 @@ By default the configuration is to keep each job report **1 week**.
 
 ### Custom build
 
-To add some custom build steps for the `Build` job (ie: Yarn, Gulp, composer run, Bower, Webpack...)
+To add some custom build steps for the `Build` job (ie: Yarn, Gulp, Composer, Bower, Webpack...)
 you can copy the `.gitlab-ci\build.php` file and include any task.
 
 I use [Robo.li](https://robo.li/) with this [RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/RoboFile.php)
 for running some specific ci tasks and Drupal install.
+
+!!! caution "build.php syntax is not checked"
+    If your `build.php` contains error, it will make the `Build` job fail.
+
+Some examples of common tasks:
+
+```php
+$this->taskPack('build.zip')
+  ->add('vendor')
+  ->add('web')
+  ->run();
+
+// Run a gulp task.
+$this->taskGulpRun()
+  ->dir($this->webRoot . 'themes/my_theme_with_gulp_task')
+  ->run();
+
+// Add a module (in case of CY_TYPE="module") and your module
+// rely on other contrib modules.
+$this->taskComposerRequire()
+  ->noInteraction()
+  ->noAnsi()
+  ->workingDir($this->docRoot);
+  ->dependency('drupal/webform', '^5.13')
+  ->run();
+
+// Or shortcut method in the RoboFile.php with this project:
+$this->composerRequire()
+ ->dependency('drupal/webform', '^5.13')
+ ->run();
+```
 
 ### Build with private repositories
 
 You can use private repositories in your `composer.json` adding a ssh private key as a variable with name `CI_BUILD_KEY`
 
 See https://getcomposer.org/doc/05-repositories.md#using-private-repositories
+
+The `CI_BUILD_KEY` is an arbitrary named variable for this project to be able to have a private key during the ci job of build that identify the ci user when trying to access a remote address with ssh support.
+
+The CI will access the private module by `SSH` using a private key created from this variable `CI_BUILD_KEY`.
+
+The private key can not have a password so for obvious security reason you must create a key pair only for this task:
+
+1. Generate a ssh key, see [documentation](https://gitlab.com/help/ssh/README)
+2. On the *private* Gitlab project (Settings > Repository > Deploy keys) create a Deploy key and paste the __public__ key
+3. On the Gitlab where the CI is running (Settings > CI/CD > VARIABLES), add a variable with key `CI_BUILD_KEY` and for value the __private__ part of the key, set the *protect* option depending your use case, do not mask it will never appear in logs
+
+The CI will use this key for any external authentication.
 
 ### Nightwatch.js
 
@@ -150,11 +195,11 @@ After creating an account on [Codecov.io](https://codecov.io/), create from the
 **Gitlab UI** _> Settings > CI/CD > Variables_ a variable `CODECOV_TOKEN` with
 your token value.
 
-### Rules for linting / Code standards
+### Code Quality
 
-All rules match a [Drupal 8+](https://www.drupal.org) project.
+All rules try to match a [Drupal 8 / 9](https://www.drupal.org) project.
 
-To adapt some rules, first look at `.gitlab-ci/.phpqa.yml`, `.gitlab-ci/.phpmd.xml`.
+To adapt some rules, first look at `.gitlab-ci/.phpqa.yml`, `.gitlab-ci/.phpmd.xml`, `.gitlab-ci/phpstan.neon`.
 
 Copy those files in your project `.gitlab-ci` folder to override.
 
@@ -162,11 +207,28 @@ More options see:
 
 - [Phpqa configuration](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
 - [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
+- [Phpstan phpstan.neon](https://phpstan.org/config-reference)
+- [Phpmd phpmd.xml](https://phpmd.org/rules/index.html)
 
-Name | Value | Detail
--|-|-
-NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag
-NIGHTWATCH_TESTS | --skiptags core | All tests except core.
+#### Phpstan and autoloading
+
+Phpstan autoloading is based on the project autoloading for Drupal. Contrib modules or themes
+folders are not included in the Phpstan analysis. Above level 5, this will trigger a lot of
+unknown type hint from Phpstan.
+
+To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project to your `.gitlab-ci/` folder and add the parameter [autoload_directories or autoload_files](https://phpstan.org/config-reference#autoloading), with absolute path based on `/var/www/html/web` for example:
+
+```yaml
+includes:
+    - /var/www/html/vendor/mglaman/phpstan-drupal/extension.neon
+parameters:
+    drupal:
+        drupal_root: /var/www/html
+    autoload_directories:
+        - /var/www/html/web/modules/contrib/webform/
+```
+
+### Rules for linting
 
 Eslint is based on the official
 [Drupal 8/9 eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
@@ -174,12 +236,14 @@ Eslint is based on the official
 Stylelint is based on the official
 [Drupal 8/9 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
+_Note:_ As this project is meant for Drupal, there is no override for those files.
+
 ### Metrics jobs
 
 Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org), [Phploc](https://github.com/sebastianbergmann/phploc) and [Pdepend](https://pdepend.org/).
 
-Currently this project do not support analysing coverage for Pdepend and junit
-report from unit-kernel or functional or functionlajs tests for Phpmetrics.
+_Note:_ Currently this project do not support analyzing coverage for Pdepend and junit
+report from Phpunit tests for Phpmetrics.
 
 ### Accessibility with Pa11y
 
