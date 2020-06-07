@@ -41,11 +41,9 @@
   # Apache docroot of the image used to run the jobs.
   DOC_ROOT: "/var/www/html"
 
-  # Phpunit tests to run, only custom code or empty for all (included Drupal)
-  # see .gitlab-ci/phpunit.xml for settings.
-  # To use your own phpunit.xml file, simply copy it on your project in
-  # .gitlab-ci/ folder. Then you can adapt this variable to run your tests.
-  # Default 'custom' matches dir **/modules/custom/** and **/themes/custom/**
+  # Phpunit tests to run, default provide only custom code or if this variable
+  # is empty all tests (including Drupal core).
+  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
   PHPUNIT_TESTS: "custom"
 
   # Nightwatch.js tests to run.

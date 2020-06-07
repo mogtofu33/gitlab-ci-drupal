@@ -63,6 +63,11 @@ variables:
   # Default is '--skiptags core', add your tag.
   # NIGHTWATCH_TESTS: --tag my_module
 
+  # Phpunit tests to run, default provide only custom code or if this variable
+  # is empty all tests (including Drupal core).
+  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
+  PHPUNIT_TESTS: "custom"
+
   ##############################################################################
   # Override default variables for a module.
   #
