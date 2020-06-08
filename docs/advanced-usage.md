@@ -220,7 +220,7 @@ To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this proj
 
 ```yaml
 includes:
-    - /var/www/html/vendor/mglaman/phpstan-drupal/extension.neon
+    - /var/www/.composer/vendor/mglaman/phpstan-drupal/extension.neon
 parameters:
     drupal:
         drupal_root: /var/www/html
