@@ -71,6 +71,15 @@ you can copy the `.gitlab-ci\build.php` file and include any task.
 I use [Robo.li](https://robo.li/) with this [RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/.gitlab-ci/RoboFile.php)
 for running some specific ci tasks and Drupal install.
 
+For `CI_TYPE` **project**, this file is executed directly during the Build job
+script after the regular `composer install`.
+
+For `CI_TYPE` **module**, this file is executed on each `before_script` part of
+jobs.
+
+It's important to have any action relative to the `docRoot` or `webRoot` as we
+are not working from the `CI_PROJECT_DIR`.
+
 !!! caution "build.php syntax is not checked"
     If your `build.php` contains error, it will make the `Build` job fail.
 

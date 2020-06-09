@@ -272,7 +272,7 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Symlink our module/theme in the Drupal or the project.
+   * Mirror our module/theme in the Drupal or the project.
    */
   public function ciPrepare() {
     // Override phpunit.xml file if a custom one exist.
@@ -310,7 +310,7 @@ class RoboFile extends Tasks {
         }
         else {
           $this->ciLog("Project seems to have only custom code.");
-          // Root contain a web/ folder, we symlink each folders.
+          // Root contain a web/ folder, we mirror each folders.
           foreach (['modules', 'themes', 'profiles'] as $type) {
             $this->ciMirror(
               $this->ciProjectDir . '/web/' . $type . '/custom',
@@ -323,7 +323,10 @@ class RoboFile extends Tasks {
       case "module":
       case "theme":
       case "profile":
-        // Root contain the theme / module, we symlink with project name.
+        // If we have a custom build, run it now, see issue:
+        // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
+        $this->ciBuild();
+        // Root contain the theme / module, we mirror with project name.
         $this->ciMirror(
           $this->ciProjectDir,
           $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
@@ -575,32 +578,6 @@ class RoboFile extends Tasks {
    */
   private function ciNotice($message) {
     $this->say("[notice] $message");
-  }
-
-  /**
-   * Helper to symlink.
-   *
-   * @param string $src
-   *   Folder source.
-   * @param string $target
-   *   Symlink target.
-   * @param bool $remove_if_exist
-   *   (Optional) Flag to remove target if exist.
-   */
-  private function ciSymlink($src, $target, $remove_if_exist = TRUE) {
-    if (!file_exists($src)) {
-      $this->io()->warning("Missing src folder: $src");
-    }
-    else {
-      if (file_exists($target) && $remove_if_exist) {
-        $this->_deleteDir($target);
-      }
-
-      // Symlink our folder in the target.
-      $this->taskFilesystemStack()
-        ->symlink($src, $target)
-        ->run();
-    }
   }
 
   /**
