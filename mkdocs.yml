@@ -3,7 +3,7 @@ site_name: Gitlab CI for Drupal 8/9
 site_url:
 site_author: Jean Valverde
 site_description: >-
-  Gitlab CI integration for Drupal 8 project or module: 
+  Gitlab CI integration for Drupal 8/9 project or module: 
   unit tests, code quality, linting, metrics and deploy.
 
 repo_name: mog33/gitlab-ci-drupal

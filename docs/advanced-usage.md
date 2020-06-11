@@ -219,13 +219,27 @@ More options see:
 - [Phpstan phpstan.neon](https://phpstan.org/config-reference)
 - [Phpmd phpmd.xml](https://phpmd.org/rules/index.html)
 
-#### Phpstan and autoloading
+#### Phpstan
+
+As a starting point to adapt Phpstan rules for your code, copy the `.gitlab-ci/phpstan.neon` file from this project
+to your `.gitlab-ci/`.
+
+##### Ignore errors
+
+To ignore some errors as false positive for Drupal, uncomment the `ignoreErrors:` part of the phpstan.neon file.
+
+Ignore errors that are not in your code will still trigger errors because of unmatched, uncomment
+`reportUnmatchedIgnoredErrors: false` to ignore unmatched ignored errors.
+
+##### Autoloading
 
 Phpstan autoloading is based on the project autoloading for Drupal. Contrib modules or themes
 folders are not included in the Phpstan analysis. Above level 5, this will trigger a lot of
 unknown type hint from Phpstan.
 
-To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project to your `.gitlab-ci/` folder and add the parameter [autoload_directories or autoload_files](https://phpstan.org/config-reference#autoloading), with absolute path based on `/var/www/html/web` for example:
+To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project to your `.gitlab-ci/`
+folder and add the parameter [autoload_directories or autoload_files](https://phpstan.org/config-reference#autoloading),
+with absolute path based on `/var/www/html/web` for example:
 
 ```yaml
 includes:

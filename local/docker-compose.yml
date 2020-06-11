@@ -1,5 +1,5 @@
 ################################################################################
-# Docker Compose Drupal 8 CI stack.
+# Docker Compose Drupal 8 / 9 CI stack.
 #
 # This is an helper stack to run tests locally on *unix systems.
 #
