@@ -60,8 +60,7 @@
   # See Phpqa available tools:
   # https://github.com/EdgedesignCZ/phpqa#available-tools
   # ':0' is the number of errors allowed, default here is very strict.
-  # @TODO: phpcpd failing with "file not found" for a module.
-  TOOLS_QA: "phpcs:0,phpstan:0,phpmd:0,parallel-lint:0,phpcpd"
+  TOOLS_QA: "phpcs:0,phpmd:0,parallel-lint:0,phpstan:0,phpcpd"
   TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
   # Composer override to use packagist mirror.
