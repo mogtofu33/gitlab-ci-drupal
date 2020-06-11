@@ -54,11 +54,13 @@
       <exclude>
         <directory>../modules/custom/*/src/Tests</directory>
         <directory>../modules/custom/*/tests</directory>
+        <file>../modules/custom/*/RoboFile.php</file>
       </exclude>
       <directory>../themes/custom</directory>
       <exclude>
         <directory>../themes/custom/*/src/Tests</directory>
         <directory>../themes/custom/*/tests</directory>
+        <file>../themes/custom/*/RoboFile.php</file>
       </exclude>
     </whitelist>
   </filter>
