@@ -60,7 +60,6 @@
       <exclude>
         <directory>../themes/custom/*/src/Tests</directory>
         <directory>../themes/custom/*/tests</directory>
-        <file>../themes/custom/*/RoboFile.php</file>
       </exclude>
     </whitelist>
   </filter>
