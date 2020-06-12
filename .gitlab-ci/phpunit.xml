@@ -54,7 +54,6 @@
       <exclude>
         <directory>../modules/custom/*/src/Tests</directory>
         <directory>../modules/custom/*/tests</directory>
-        <file>../modules/custom/*/RoboFile.php</file>
       </exclude>
       <directory>../themes/custom</directory>
       <exclude>
