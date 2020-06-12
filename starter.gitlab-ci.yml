@@ -25,6 +25,11 @@ include:
   # If hosted on an other Gitlab instance.
   # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
 
+# If needed by your Gitlab-ci instance, you can set global tags for all jobs.
+# default:
+#   tags:
+#     - docker
+
 ################################################################################
 # Gitlab-CI variables documentation:
 # https://docs.gitlab.com/ee/ci/variables/
