@@ -49,9 +49,9 @@ accounts.
 
 External module demo: https://gitlab.com/mog33/demo-gitlab-ci-drupal-module
 
-Drupal 8.8 | Drupal 8.9
+Drupal 8.9 | Drupal 9.0
 :---:|:---:
-[![pipeline status master](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/master/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/master) | [![pipeline status 8.9](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/8.9/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/8.9)
+[![pipeline status master](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/master/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/master) | [![pipeline status 9.0](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/badges/9.0/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-module/commits/9.0)
 
 As an example you can check my module:
 [Content moderation edit notify](https://gitlab.com/mog33/content_moderation_edit_notify)
@@ -85,9 +85,9 @@ This variable can be set when you run a pipeline directly from Gitlab UI.
 
 External module demo: https://gitlab.com/mog33/demo-gitlab-ci-drupal-project
 
-Drupal 8.8 | Drupal 8.9 | (WIP) Drupal 9.0
-:---:|:---:|:---:
-[![pipeline status master](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/master/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/master) | [![pipeline status 8.9](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/8.9/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/8.9) | [![pipeline status 9.0](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/demo-9.0/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/demo-9.0)
+Drupal 8.9 | Drupal 9.0
+:---:|:---:
+[![pipeline status master](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/master/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/master) | [![pipeline status 9.0](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/badges/9.0/pipeline.svg)](https://gitlab.com/mog33/demo-gitlab-ci-drupal-project/commits/9.0)
 
 As an example you can check my project on a Drupal template:
 [Drupal project advanced template](https://gitlab.com/mog33/drupal-composer-advanced-template)
