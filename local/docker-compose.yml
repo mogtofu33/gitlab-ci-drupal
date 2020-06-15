@@ -1,5 +1,5 @@
 ################################################################################
-# Docker Compose Drupal 8 / 9 CI stack.
+# Docker Compose Drupal 8 CI stack.
 #
 # This is an helper stack to run tests locally on *unix systems.
 #
@@ -9,12 +9,13 @@
 #   http://dev-drupal.com/en/node/36
 ################################################################################
 version: '3'
+
 services:
   drupal:
     # Drupal included from official docker image + ci tools. Edit in .env file.
     # see https://gitlab.com/mog33/drupal8ci
-    image: mogtofu33/drupal8ci:${CI_REF}-${CI_DRUPAL_VERSION}
-    # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_REF}-${CI_DRUPAL_VERSION}
+    image: mogtofu33/drupal8ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
+    # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
     ports:
       - "88:80"
     expose:
@@ -27,40 +28,39 @@ services:
     volumes:
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../:${CI_PROJECT_DIR}
+      # - ../web/modules:/var/www/html/web/modules
+      # - ../:/var/www/html
       # [OPTIONAL] composer cache folder to speed up the process.
       - ${HOME}/.composer/cache:/var/www/.composer/cache
     working_dir: /builds
     container_name: ci-drupal
     env_file:
       - .env
-  # report:
-  #   image: alpine:latest
-  #   container_name: ci-report
-  #   volumes:
-  #     - ../:/app
-  #   command: tail -f /dev/null
-  #   working_dir: /app
-  #   env_file:
-  #     - .env
-  node:
-    image: node:alpine
-    container_name: ci-node
-    ports:
-      - 3000
-    volumes:
-      - ../:/home/node/app
-    command: tail -f /dev/null
-    working_dir: /home/node/app
-    user: "node"
-    env_file:
-      - .env
+
   mariadb:
     image: mariadb:latest
     expose:
       - "3306"
     volumes:
+      - database_data:/var/lib/mysql
       # Add my.cnf for better performance.
       - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
     container_name: ci-mariadb
     env_file:
       - .env
+
+  # node:
+  #   image: node:alpine
+  #   container_name: ci-node
+  #   ports:
+  #     - 3000
+  #   volumes:
+  #     - ../:/home/node/app
+  #   command: tail -f /dev/null
+  #   working_dir: /home/node/app
+  #   user: "node"
+  #   env_file:
+  #     - .env
+
+volumes:
+  database_data:
