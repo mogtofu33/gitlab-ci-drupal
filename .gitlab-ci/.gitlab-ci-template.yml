@@ -90,7 +90,7 @@ build:
           "bex/behat-screenshot:^1.2" \
           "dmore/behat-chrome-extension:^1.3" \
           "emuse/behat-html-formatter:0.1.*" \
-          "drupal/drupal-extension:~4.0"
+          "drupal/drupal-extension:~4.1"
       fi
     - |
       if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
@@ -181,13 +181,11 @@ nightwatchjs:
       when: never
     - when: on_success
   script:
-    # @TODO: remove when Drupal 8.7/8.8 is deprecated.
+    # @TODO: remove when Drupal 8.8 is deprecated.
     - |
       # Patch Drupal for Nightwatch profile support. https://drupal.org/node/3017176
       touch 3017176.patch
-      if [ ${CI_DRUPAL_VERSION} == "8.7" ]; then
-        curl -fsSL https://www.drupal.org/files/issues/2019-09-06/3017176-12.patch -o 3017176.patch || true
-      elif [ ${CI_DRUPAL_VERSION} == "8.8" ]; then
+      if [ ${CI_DRUPAL_VERSION} == "8.8" ]; then
         curl -fsSL https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch -o 3017176.patch || true
       fi
       patch -d ${WEB_ROOT} -N -p1 < 3017176.patch || true
@@ -204,7 +202,7 @@ nightwatchjs:
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     # Launch Nightwatch tests from core folder.
-    - yarn --cwd ${WEB_ROOT}/core test:nightwatch
+    - yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
   after_script:
     # Html report, install plugin and run from the xml report.
     - yarn --cwd ${WEB_ROOT}/core add nightwatch-html-reporter
@@ -242,13 +240,6 @@ behat:
       when: never
     - when: on_success
   script:
-    # @TODO, update when drupal/drupal-extension support Drupal 9
-    - |
-      # Test if Drupal < 9
-      if [ $(echo ${CI_DRUPAL_VERSION} | cut -d. -f1) == "9" ]; then
-        echo -e "\033[1;31mDrupal 9 not yet supported for Behat tests.\033[0;37m"
-        exit 1
-      fi
     - |
       # Test if we have a behat.yml file
       if [ ! -f "${CI_PROJECT_DIR}/behat_tests/behat.yml" ]; then

@@ -48,8 +48,8 @@ variables:
   # MUST be the same as include: ref: from above.
   CI_REF: 2.x-dev
 
-  # Set a version, default is Drupal 8.8, can be 8.9 or 9.0.
-  # CI_DRUPAL_VERSION: "8.8"
+  # Set a version, default is Drupal 8.9, can be 9.0.
+  # CI_DRUPAL_VERSION: "8.9"
 
   ##############################################################################
   # Tests disabled by default because need a specific setup / configuration.

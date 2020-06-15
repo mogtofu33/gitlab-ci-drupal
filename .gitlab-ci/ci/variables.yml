@@ -20,9 +20,9 @@
 
   # Minor Drupal version to work with, limited to tags on
   # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
-  # Current stable is 8.8.x, 8.9 and 9.0, you can choose
-  # "8.8", "8.9" or "9.0". Default is "8.8"
-  CI_DRUPAL_VERSION: "8.8"
+  # Current stable is 8.9 and 9.0, you can choose
+  # "8.9" or "9.0". Default is "8.9"
+  CI_DRUPAL_VERSION: "8.9"
 
   # Select what you are running CI on, options are:
   #   project
