@@ -238,7 +238,7 @@ folders are not included in the Phpstan analysis. Above level 5, this will trigg
 unknown type hint from Phpstan.
 
 To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project to your `.gitlab-ci/`
-folder and add the parameter [autoload_directories or autoload_files](https://phpstan.org/config-reference#autoloading),
+folder and add the parameter [scanDirectories or scanFiles](https://phpstan.org/user-guide/discovering-symbols#third-party-code-outside-of-composer-dependencies),
 with absolute path based on `/var/www/html/web` for example:
 
 ```yaml
@@ -247,7 +247,7 @@ includes:
 parameters:
     drupal:
         drupal_root: /var/www/html
-    autoload_directories:
+    scanDirectories:
         - /var/www/html/web/modules/contrib/webform/
 ```
 
