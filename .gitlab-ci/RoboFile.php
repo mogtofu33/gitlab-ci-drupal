@@ -277,8 +277,11 @@ class RoboFile extends Tasks {
 
   /**
    * Mirror our module/theme in the Drupal or the project.
+   *
+   * @param bool $getConfigFiles
+   *   (optional) Get config files in the process, default true.
    */
-  public function ciPrepare() {
+  public function ciPrepare($getConfigFiles = TRUE) {
     // Override phpunit.xml file if a custom one exist.
     if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests)) {
       $this->ciNotice('Override phpunit.xml file with: phpunit.xml.' . $this->phpunitTests);
@@ -338,7 +341,9 @@ class RoboFile extends Tasks {
         break;
     }
 
-    $this->ciGetConfigFiles();
+    if ($getConfigFiles) {
+      $this->ciGetConfigFiles();
+    }
   }
 
   /**
