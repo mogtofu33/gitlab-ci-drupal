@@ -8,7 +8,7 @@ parameters:
         - */tests/*
         - */Tests/*
     inferPrivatePropertyTypeFromConstructor: true
-	checkMissingIterableValueType: false
+    checkMissingIterableValueType: false
     ## Samples of common false positive for Drupal, adapt to your code.
     # reportUnmatchedIgnoredErrors: false
     # ignoreErrors:
