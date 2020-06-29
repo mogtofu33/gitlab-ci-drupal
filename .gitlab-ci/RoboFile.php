@@ -241,18 +241,19 @@ class RoboFile extends Tasks {
     foreach ($this->ciFiles['core'] as $filename) {
       // Use local file if exist.
       if (file_exists($src_dir . $filename)) {
+        $this->ciNotice("Use local core file: $src_dir" . "$filename");
         $this->taskFilesystemStack()
           ->copy($src_dir . $filename, $drupal_dir . $filename, TRUE)
           ->run();
       }
       else {
-        $this->ciNotice("Download remote file: $this->ciRemoteRef" . "$filename");
+        $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
         $remote_file = file_get_contents($this->ciRemoteRef . $filename);
         if ($remote_file) {
           file_put_contents($drupal_dir . $filename, $remote_file);
         }
         else {
-          $this->io()->warning("Failed to get remote file: $this->ciRemoteRef" . "$filename");
+          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . "$filename");
         }
       }
     }
@@ -264,9 +265,12 @@ class RoboFile extends Tasks {
     foreach ($this->ciFiles['ci'] as $filename) {
       // Use remote file if local do not exist.
       if (!file_exists($src_dir . $filename)) {
-        $this->ciNotice("Download remote file: $this->ciRemoteRef" . "$filename");
+        $this->ciNotice("Download remote ci file: $this->ciRemoteRef" . "$filename");
         $remote_file = file_get_contents($this->ciRemoteRef . $filename);
         file_put_contents($src_dir . $filename, $remote_file);
+      }
+      else {
+        $this->ciNotice("Use local ci file: $src_dir" . "$filename");
       }
     }
   }
