@@ -26,18 +26,22 @@
     <testsuite name="functional-javascript">
       <file>./tests/TestSuites/FunctionalJavascriptTestSuite.php</file>
     </testsuite>
-    <!-- Prefix with custom for only custom folders -->
+    <!-- Prefix with custom for only custom code with submodules -->
     <testsuite name="customunit">
       <directory>../**/custom/**/tests/src/Unit</directory>
+      <directory>../**/custom/**/**/**/tests/src/Unit</directory>
     </testsuite>
     <testsuite name="customkernel">
       <directory>../**/custom/**/tests/src/Kernel</directory>
+      <directory>../**/custom/**/**/**/tests/src/Kernel</directory>
     </testsuite>
     <testsuite name="customfunctional">
       <directory>../**/custom/**/tests/src/Functional</directory>
+      <directory>../**/custom/**/**/**/tests/src/Functional</directory>
     </testsuite>
     <testsuite name="customfunctional-javascript">
       <directory>../**/custom/**/tests/src/FunctionalJavascript</directory>
+      <directory>../**/custom/**/**/**/tests/src/FunctionalJavascript</directory>
     </testsuite>
   </testsuites>
   <listeners>
@@ -54,11 +58,15 @@
       <exclude>
         <directory>../modules/custom/*/src/Tests</directory>
         <directory>../modules/custom/*/tests</directory>
+        <directory>../modules/custom/*/modules/*/src/Tests</directory>
+        <directory>../modules/custom/*/modules/*/tests</directory>
       </exclude>
       <directory>../themes/custom</directory>
       <exclude>
         <directory>../themes/custom/*/src/Tests</directory>
         <directory>../themes/custom/*/tests</directory>
+        <directory>../themes/custom/*/modules/*/src/Tests</directory>
+        <directory>../themes/custom/*/modules/*/tests</directory>
       </exclude>
     </whitelist>
   </filter>
