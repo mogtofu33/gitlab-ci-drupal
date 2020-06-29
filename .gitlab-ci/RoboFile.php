@@ -7,14 +7,16 @@
  *
  * @class RoboFile
  *
- * @codeCoverageIgnore
  * @SuppressWarnings(PHPMD)
+ * phpcs:ignoreFile
  */
 
 use Robo\Tasks;
 
 /**
  * Robofile with tasks for CI.
+ *
+ * @codeCoverageIgnore
  */
 class RoboFile extends Tasks {
 
