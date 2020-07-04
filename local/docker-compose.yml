@@ -28,7 +28,9 @@ services:
     volumes:
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../:${CI_PROJECT_DIR}
+      # Mount the parent folder as a module, group of modules or project.
       # - ../web/modules:/var/www/html/web/modules
+      # - ../:/var/www/html/web/modules/my-module
       # - ../:/var/www/html
       # [OPTIONAL] composer cache folder to speed up the process.
       - ${HOME}/.composer/cache:/var/www/.composer/cache

@@ -26,11 +26,7 @@ _build_template() {
     docker exec -it -w /var/www/html ci-drupal robo ci:build
   fi
 
-  if [ $__skip_prepare = 1 ]; then
-    printf "%s[SKIP]%s ci:prepare\\n" "${_dim_blu}" "${_end}"
-  else
-    docker exec -it -w /var/www/html ci-drupal robo ci:prepare
-  fi
+  _do_ci_prepare
 
   # _create_artifacts
 }
@@ -112,8 +108,7 @@ _test_template() {
     # docker exec -d ci-drupal bash -c "apache2-foreground"
 
     _get_robo_file
-    docker exec -it -w /var/www/html ci-drupal \
-      robo ci:prepare
+    _do_ci_prepare
 
     docker exec -t ci-drupal bash -c \
       'mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output'
@@ -349,8 +344,7 @@ _qa_template() {
 
     # before_script
     _get_robo_file
-    docker exec -it -w /var/www/html ci-drupal \
-      robo ci:prepare
+    _do_ci_prepare
 
   fi
 }
@@ -377,8 +371,8 @@ _lint_template() {
 
     # before_script
     _get_robo_file
-    docker exec -it -w /var/www/html ci-drupal \
-      robo ci:prepare
+    _do_ci_prepare
+
     docker exec -it ci-drupal \
       yarn --cwd ${WEB_ROOT}/core install
   fi
@@ -441,8 +435,7 @@ _metrics_template() {
 
     # before_script
     _get_robo_file
-    docker exec -t -w /var/www/html ci-drupal \
-      robo ci:prepare
+    _do_ci_prepare
   fi
 }
 
@@ -531,10 +524,23 @@ _get_robo_file() {
   fi
 }
 
+_do_ci_prepare() {
+  if [ $__skip_prepare = 1 ]; then
+    printf "%s[SKIP]%s ci:prepare\\n" "${_dim_blu}" "${_end}"
+  else
+    if [ $__skip_config = 1 ]; then
+      printf "%s[SKIP]%s ci:get-config-files\\n" "${_dim_blu}" "${_end}"
+      docker exec -it -w /var/www/html ci-drupal robo ci:prepare 0
+    else
+      docker exec -it -w /var/www/html ci-drupal robo ci:prepare
+    fi
+  fi
+}
+
 _clean_robo_file() {
   printf "%s[NOTICE]%s Clean RoboFile\\n" "${_dim}" "${_end}"
   docker exec -t ci-drupal bash -c \
-    'rm -f RoboFile.php'
+    'rm -f /builds/RoboFile.php /var/www/html/RoboFile.php /var/www/html/web/*/custom/*/RoboFile.php'
 }
 
 _exist_file() {
@@ -1047,6 +1053,7 @@ _USE_DEBUG=0
 
 # Initialize additional expected option variables.
 __skip_prepare=0
+__skip_config=0
 __skip_build=0
 __skip_install=0
 __drupal_profile="minimal"
@@ -1066,6 +1073,11 @@ do
     -sp|--skip-prepare)
       printf "%s[NOTICE]%s skip prepare set\\n" "${_dim}" "${_end}"
       __skip_prepare=1
+      shift
+      ;;
+    -sc|--skip-config)
+      printf "%s[NOTICE]%s skip get ci config\\n" "${_dim}" "${_end}"
+      __skip_config=1
       shift
       ;;
     -sb|--skip-build)
