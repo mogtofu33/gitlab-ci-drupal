@@ -7,6 +7,26 @@ provide some script to run tests locally quickly.
 
 This is a **WIP** and there is no support on this for now.
 
+## Install
+
+Require at minimum:
+
+```bash
+.gitlab-ci/local/ci.sh
+.gitlab-ci/local/docker-compose.yml
+.gitlab-ci/local/my.cnf
+```
+
+Optional settings files:
+
+```bash
+.gitlab-ci/local/.gitignore
+.gitlab-ci/.phpqa.yml
+.gitlab-ci/.phpmd.xml
+.gitlab-ci/phpstan.neon
+.gitlab-ci/phpunit.xml
+```
+
 ## Ci type module
 
 Edit `.gitlab-ci/local/docker-compose.yml` and uncomment volume for a module:

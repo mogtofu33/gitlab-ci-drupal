@@ -16,8 +16,25 @@ _phpunit() {
     local __path=${WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}/${_ARGS}
   fi
 
+  if ! $(_exist_dir ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output); then
+    printf "%s[NOTICE]%s Create dir %s\\n" "${_dim}" "${_end}" "${BROWSERTEST_OUTPUT_DIRECTORY}"
+    _dkexec_bash "mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
+    _dkexec_bash "chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} && chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}"
+  fi
+
+  if ! $(_exist_file /var/www/html/web/core/phpunit.xml); then
+    if [ -f "$_DIR/../phpunit.xml" ]; then
+      printf "%s[NOTICE]%s Using .gitlab-ci/phpunit.xml\\n" "${_dim}" "${_end}"
+      _dkexec_bash "cp -u /builds/.gitlab-ci/phpunit.xml /var/www/html/web/core"
+    else
+      printf "%s[NOTICE]%s Get remote phpunit.xml\\n" "${_dim}" "${_end}"
+      curl -fsSL ${CI_REMOTE_FILES}/phpunit.xml -o "$_DIR/../phpunit.xml"
+      _dkexec_bash "cp -u /builds/.gitlab-ci/phpunit.xml /var/www/html/web/core"
+    fi
+  fi
+
   _dkexec \
-    ${DOC_ROOT}/vendor/bin/phpunit \
+    sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit \
         --configuration ${WEB_ROOT}/core \
         --verbose --debug \
         ${__path}
@@ -33,6 +50,19 @@ _qa() {
   fi
   if [ -z $__tools_qa ]; then
     local __tools_qa=${TOOLS_QA}
+  fi
+
+  if [ ! -f "$_DIR/../.phpmd.xml" ]; then
+    printf "%s[NOTICE]%s Get remote .phpmd.xml\\n" "${_dim}" "${_end}"
+    curl -fsSL ${CI_REMOTE_FILES}/.phpmd.xml -o "$_DIR/../.phpmd.xml"
+  fi
+  if [ ! -f "$_DIR/../.phpqa.yml" ]; then
+    printf "%s[NOTICE]%s Get remote .phpqa.yml\\n" "${_dim}" "${_end}"
+    curl -fsSL ${CI_REMOTE_FILES}/.phpqa.yml -o "$_DIR/../.phpqa.yml"
+  fi
+  if [ ! -f "$_DIR/../phpstan.neon" ]; then
+    printf "%s[NOTICE]%s Get remote phpstan.neon\\n" "${_dim}" "${_end}"
+    curl -fsSL ${CI_REMOTE_FILES}/phpstan.neon -o "$_DIR/../phpstan.neon"
   fi
 
   printf "%s[NOTICE]%s qa: %s %s\\n" "${_dim}" "${_end}" "${__tools_qa}" "${__local_path}"
@@ -710,7 +740,7 @@ _env() {
 
   echo "# This file is auto generated, do not edit." >> $__env
   echo "# To update launch:" >> $__env
-  echo "# ${_ME} run" >> $__env
+  echo "# ${_ME} env" >> $__env
 
   echo 'CI_PROJECT_NAME: my-project' >> $__env
   echo "CI_PROJECT_DIR: ${CI_PROJECT_DIR}" >> $__env
@@ -881,6 +911,10 @@ _pre_metrics() {
 _post_metrics() {
   printf "%s[NOTICE]%s _post_metrics\n" "${_dim}" "${_end}"
 }
+
+###############################################################################
+# Dispatch
+###############################################################################
 
 __dispatch() {
   local cmd="_${_CMD}"
