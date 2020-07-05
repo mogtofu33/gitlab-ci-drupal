@@ -5,6 +5,47 @@ set -e
 # environment with docker-compose.
 
 ###############################################################################
+# Local only tests, not included in Gtilab ci and more flexible.
+###############################################################################
+
+# Standalone Phpunit test for local tests, can set path as argument.
+_phpunit() {
+  local __path=${WEB_ROOT}
+
+  if [ $CI_TYPE == "module" ]; then
+    local __path=${WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}/${_ARGS}
+  fi
+
+  _dkexec \
+    ${DOC_ROOT}/vendor/bin/phpunit \
+        --configuration ${WEB_ROOT}/core \
+        --verbose --debug \
+        ${__path}
+}
+
+# Standalone qa test, can set path as argument and tools with option "-qa".
+_qa() {
+
+  if [ -z $__local_path ]; then
+    local __local_path=${DIRS_QA}
+  else
+    local __local_path=${WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}
+  fi
+  if [ -z $__tools_qa ]; then
+    local __tools_qa=${TOOLS_QA}
+  fi
+
+  printf "%s[NOTICE]%s qa: %s %s\\n" "${_dim}" "${_end}" "${__tools_qa}" "${__local_path}"
+
+  # script
+  docker exec -it -w ${DOC_ROOT} ci-drupal \
+    phpqa --tools ${__tools_qa} \
+        --config ${CI_PROJECT_DIR}/.gitlab-ci \
+        --buildDir ${CI_PROJECT_DIR}/report-qa \
+        --analyzedDirs ${__local_path}
+}
+
+###############################################################################
 # Replicate gitlab-ci for local tests
 ###############################################################################
 
@@ -143,7 +184,6 @@ _unit_kernel() {
   # if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
   #   bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/coverage.xml" || true;
   # fi
-
 }
 
 # Replicate test functional .gitlab-ci/.gitlab-ci-template.yml
@@ -516,8 +556,8 @@ _dkexec_core_bash() {
 
 _get_robo_file() {
   printf "%s[NOTICE]%s Get RoboFile\\n" "${_dim}" "${_end}"
-  if [ -f "$_DIR/../.gitlab-ci/RoboFile.php" ]; then
-    _dkexec_bash "cp -u /builds/.gitlab-ci/RoboFile.php /var/www/html/"
+  if [ -f "$_DIR/../RoboFile.php" ]; then
+    _dkexec_bash "cp -u /builds/RoboFile.php /var/www/html/"
   else
     _dkexec_bash "curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php"
     _dkexec_bash "cp -u RoboFile.php /var/www/html/"
@@ -574,9 +614,9 @@ _init_variables() {
 
   # Fixes post source, for a proper docker config.
 
-  if [ -f "$_DIR/../.gitlab-ci/ci/variables_test.yml" ]; then
+  if [ -f "$_DIR/../ci/variables_test.yml" ]; then
     debug "Use local variables_test.yml"
-    __yaml_variables_test="$_DIR/../.gitlab-ci/ci/variables_test.yml"
+    __yaml_variables_test="$_DIR/../ci/variables_test.yml"
   elif [ -f "$_DIR/variables_test.yml" ]; then
     debug "Use local downloaded variables_test.yml"
     __yaml_variables_test="$_DIR/variables_test.yml"
@@ -619,18 +659,18 @@ _clean_env() {
 
 _env() {
 
-  if [ -f "$_DIR/../starter.gitlab-ci.yml" ]; then
-    __yaml="$_DIR/../starter.gitlab-ci.yml"
-  elif [ -f "$_DIR/../.gitlab-ci.yml" ]; then
-    __yaml="$_DIR/../.gitlab-ci.yml"
+  if [ -f "$_DIR/../../starter.gitlab-ci.yml" ]; then
+    __yaml="$_DIR/../../starter.gitlab-ci.yml"
+  elif [ -f "$_DIR/../../.gitlab-ci.yml" ]; then
+    __yaml="$_DIR/../../.gitlab-ci.yml"
   else
-    printf "%s[ERROR]%s Missing .gitlab-ci.yml!\\n" "${_red}" "${_end}"
+    printf "%s[ERROR]%s Missing .gitlab-ci.yml or starter.gitlab-ci.yml!\\n" "${_red}" "${_end}"
     exit 1
   fi
 
-  if [ -f "$_DIR/../.gitlab-ci/ci/variables.yml" ]; then
+  if [ -f "$_DIR/../ci/variables.yml" ]; then
     debug "Use local variables.yml"
-    __yaml_variables="$_DIR/../.gitlab-ci/ci/variables.yml"
+    __yaml_variables="$_DIR/../ci/variables.yml"
   elif [ -f "$_DIR/variables.yml" ]; then
     debug "Use local downloaded variables.yml"
     __yaml_variables="$_DIR/variables.yml"
@@ -640,9 +680,9 @@ _env() {
     __yaml_variables="$_DIR/variables.yml"
   fi
 
-  if [ -f "$_DIR/../.gitlab-ci/ci/variables_test.yml" ]; then
+  if [ -f "$_DIR/../ci/variables_test.yml" ]; then
     debug "Use local variables_test.yml"
-    __yaml_variables_test="$_DIR/../.gitlab-ci/ci/variables_test.yml"
+    __yaml_variables_test="$_DIR/../ci/variables_test.yml"
   elif [ -f "$_DIR/variables_test.yml" ]; then
     debug "Use local downloaded variables_test.yml"
     __yaml_variables_test="$_DIR/variables_test.yml"
@@ -936,13 +976,12 @@ Most commands are executed in the ci-drupal container.
 Usage:
   ${_ME} all
 
+Arguments with option for ci:
+  test                            Run a test, ie: test unit_kernel
+  qa                              Run a QA, ie: test php_qa
+  lint                            Run a Lint, ie: lint lint_css
 
-Arguments with option:
-  test                Run a test, ie: test unit_kernel
-  qa                  Run a QA, ie: test php_qa
-  lint                Run a Lint, ie: lint lint_css
-
-  Standalone tests:
+  Standalone ci tests:
     security
     unit_kernel
     functional
@@ -950,19 +989,24 @@ Arguments with option:
     nightwatchjs
     behat
     pa11y
-
-  Standalone qa:
     php_qa
-
-  Standalone lint:
     lint_js
     lint_css
     lint_twig
+
+Standalone local tests (no reports, cli only):
+  phpunit                         Run a phpunit test.
+  qa                              Run a qa test.
+
+Standalone local options
+  -qa|--tools-qa                 Standalone local qa tools, default $TOOLS_QA.
+  -d|--dir                       Standalone local dir, default $DIRS_QA.
 
 Options
   -h|--help                       Print help.
   -sp|--skip-prepare              Skip prepare step (copy files, set folders).
   -sb|--skip-build                Skip build step (cache, perform build).
+  -sc|--skip-config               Skip config files step.
   -si|--skip-install              Skip Drupal install step (behat, pay11c).
   -sa|-skip-all                   Skip build, prepare and install.
   -sim|--simulate                 Robo simulate action.
@@ -1037,6 +1081,33 @@ debug() {
   _debug echo "${@}"
 }
 
+###############################################################################
+# PROGRAMS helpers
+###############################################################################
+
+###############################################################################
+# _require_argument()
+#
+# Usage:
+#   _require_argument <option> <argument>
+#
+# If <argument> is blank or another option, print an error message and  exit
+# with status 1.
+_require_argument() {
+  # Set local variables from arguments.
+  #
+  # NOTE: 'local' is a non-POSIX bash feature and keeps the variable local to
+  # the block of code, as defined by curly braces. It's easiest to just think
+  # of them as local to a function.
+  local _option="${1:-}"
+  local _argument="${2:-}"
+
+  if [[ -z "${_argument}" ]] || [[ "${_argument}" =~ ^- ]]
+  then
+    _die printf "Option requires a argument: %s\\n" "${_option}"
+  fi
+}
+
 # Program Options #############################################################
 
 _red=$'\e[1;31m'
@@ -1057,6 +1128,8 @@ __skip_config=0
 __skip_build=0
 __skip_install=0
 __drupal_profile="minimal"
+__tools_qa=""
+__local_path=""
 
 CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci"
 
@@ -1065,6 +1138,7 @@ _CMD=()
 while [[ ${#} -gt 0 ]]
 do
   __option="${1:-}"
+  __maybe_param="${2:-}"
   case "${__option}" in
     -h|--help)
       _PRINT_HELP=1
@@ -1088,6 +1162,16 @@ do
     -si|--skip-install)
       printf "%s[NOTICE]%s skip install set\\n" "${_dim}" "${_end}"
       __skip_install=1
+      shift
+      ;;
+    -qa|--tools-qa)
+      _require_argument "${__option}" "${__maybe_param}"
+      __tools_qa="${__maybe_param}"
+      shift
+      ;;
+    -d|--dir)
+      _require_argument "${__option}" "${__maybe_param}"
+      __local_path="${__maybe_param}"
       shift
       ;;
     --debug)
