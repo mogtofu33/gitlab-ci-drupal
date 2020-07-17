@@ -81,7 +81,13 @@
       <property name="maximum" description="The variable length reporting threshold" value="40"/>
     </properties>
   </rule>
-  <rule ref="rulesets/naming.xml/ShortMethodName"/>
+  <rule ref="rulesets/naming.xml/ShortMethodName">
+    <properties>
+      <property name="minimum" value="3"/>
+      <!-- Allow id method name. -->
+      <property name="exceptions" description="Comma-separated list of exceptions" value="id"/>
+    </properties>
+  </rule>
   <rule ref="rulesets/naming.xml/ConstructorWithNameAsEnclosingClass"/>
   <rule ref="rulesets/naming.xml/ConstantNamingConventions"/>
   <!-- <rule ref="rulesets/naming.xml/BooleanGetMethodName"/> -->
