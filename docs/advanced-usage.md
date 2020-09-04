@@ -381,8 +381,8 @@ For deploy samples, see examples in documentation:
 https://docs.gitlab.com/ee/ci/examples/README.html
 
 ```yaml
-Deploy to testing:
-  stage: deploy to testing
+Deploy ssh:
+  stage: deploy
   extends: .deploy_ssh
   environment:
     name: testing
