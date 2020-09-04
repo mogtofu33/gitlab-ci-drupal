@@ -408,7 +408,7 @@ Deploy to testing:
   script:
     # Create remote path and send build.
     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mkdir ${ENV_PATH}/_tmp"
-    - scp -P22 -r vendor web *.php ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
+    - scp -P22 -r vendor web ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
     # Replace Drupal with new build and keep previous version.
     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mv ${ENV_PATH}/current ${ENV_PATH}/_previous && mv ${ENV_PATH}/_tmp ${ENV_PATH}/current"
     # Run any personal deploy script (backup db, drush updb, drush cim...)

@@ -19,9 +19,9 @@
  *
  * $this->say("This will be run in Build script!");
  *
- * $this->taskPack('build.zip')
- *   ->add('vendor')
- *   ->add('web')
+ * $this->taskPack($this->ciProjectDir . '/build.zip')
+ *   ->add($this->ciProjectDir . '/vendor')
+ *   ->add($this->ciProjectDir . '/web')
  *   ->run();
  *
  * $this->taskGulpRun()
