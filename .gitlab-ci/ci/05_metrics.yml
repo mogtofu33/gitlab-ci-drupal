@@ -6,6 +6,8 @@
   extends: .artifacts_reports
   dependencies:
     - build
+  needs:
+    - build
   before_script:
     # Prepare ci (mirror files in Docker image doc root).
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
