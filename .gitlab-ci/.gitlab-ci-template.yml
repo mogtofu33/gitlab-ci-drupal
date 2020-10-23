@@ -364,7 +364,11 @@ lint_twig:
   script:
     - curl -4fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
     # Lint report, terminal only.
-    - php twig-lint lint "${DIRS_TWIG}" 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
+    - |
+      for dir in $(echo "${DIRS_TWIG}" | tr "," "\n")
+      do
+        php twig-lint lint $dir 2>&1 | tee -a ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
+      done
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
