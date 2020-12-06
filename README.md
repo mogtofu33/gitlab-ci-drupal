@@ -11,7 +11,7 @@ Include **Build**,
 
 For any **issue**, please use the [Gitlab-CI project page](https://gitlab.com/mog33/gitlab-ci-drupal/-/issues)
 
-Current branch **2.x-dev** is based on an include behavior, ie you don't have to copy all files from this project.
+Current branch **3.x-dev** is based on an include behavior, ie you don't have to copy all files from this project.
 
 For legacy (unmaintained) version see branch [8.x-1-dev](https://gitlab.com/mog33/gitlab-ci-drupal/-/tree/8.x-1-dev)
 
@@ -37,7 +37,7 @@ Push your module / theme to a Gitlab with CI and runners enabled.
 [Gitlab.com](https://gitlab.com) offer 2,000 CI pipeline minutes/month on free
 accounts.
 
-- Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/starter.gitlab-ci.yml) file as a `.gitlab-ci.yml` at the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
+- Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/starter.gitlab-ci.yml) file as a `.gitlab-ci.yml` at the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
 
 - If your project is not on [Gitlab.com](https://gitlab.com), edit the `include` section.
 
@@ -65,7 +65,7 @@ accounts.
 
 Assuming your project include a `composer.json` file from the [Drupal project](https://www.drupal.org/docs/develop/using-composer/using-composer-to-install-drupal-and-manage-dependencies).
 
-- Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/2.x-dev/starter.gitlab-ci.yml) file as a `.gitlab-ci.yml` in your project
+- Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/starter.gitlab-ci.yml) file as a `.gitlab-ci.yml` in your project
 
 - If you are using _Behat_ you must add your tests in a `behat_tests` folders at the root of your Drupal project (same level as `composer.json` file).
 

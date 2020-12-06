@@ -2,8 +2,7 @@
 
 $settings['hash_salt'] = 'CI_ONLY_HASH_SALT_NOT_SAFE_!!!!';
 
-$config_directories['sync'] = '/var/www/html/config/sync';
-$settings["config_sync_directory"] = '/var/www/html/config/sync';
+$settings["config_sync_directory"] = '/opt/drupal/config/sync';
 
 $databases['default']['default'] = [
   'database' => 'drupal',

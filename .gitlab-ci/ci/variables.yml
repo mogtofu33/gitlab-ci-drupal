@@ -16,7 +16,7 @@
 
   # Should be the same as 'include: ref:' from .gitlab-ci.yml. Default is last stable.
   # Use a specific tag to keep your CI consistent.
-  CI_REF: "2.x-dev"
+  CI_REF: "3.x-dev"
 
   # Minor Drupal version to work with, limited to tags on
   # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
@@ -35,11 +35,11 @@
   # Path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' on some
   # distributions.
-  WEB_ROOT: "/var/www/html/web"
+  WEB_ROOT: "/opt/drupal/web"
 
   # Path to the Drupal doc root.
   # Apache docroot of the image used to run the jobs.
-  DOC_ROOT: "/var/www/html"
+  DOC_ROOT: "/opt/drupal"
 
   # Phpunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).

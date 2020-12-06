@@ -32,7 +32,7 @@ Optional settings files:
 Edit `.gitlab-ci/local/docker-compose.yml` and uncomment volume for a module:
 
 ```yaml
-  - ../../:/var/www/html/web/modules/custom/${CI_PROJECT_NAME}
+  - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
 ```
 
 Create a `.local.yml` file in this directory:

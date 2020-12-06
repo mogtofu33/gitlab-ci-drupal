@@ -33,7 +33,7 @@ phpmetrics:
     # junit: /tmp/junit-functional.xml
     # junit: /tmp/junit-functionaljs.xml
     # Composer usage for a project can slow a lot Phpmetrics.
-    # composer: ../../../../var/www/html/
+    # composer: /opt/drupal
 
 phpstan:
     # https://phpstan.org/user-guide/rule-levels

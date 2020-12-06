@@ -20,10 +20,10 @@
 include:
   # If hosted on gitlab.com.
   - project: 'mog33/gitlab-ci-drupal'
-    ref: 2.x-dev
+    ref: 3.x-dev
     file: '/.gitlab-ci/.gitlab-ci-template.yml'
   # If hosted on an other Gitlab instance.
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
 
 # If needed by your Gitlab-ci instance, you can set global tags for all jobs.
 # default:
@@ -46,7 +46,7 @@ variables:
 
   # Global config remote files ref.
   # MUST be the same as include: ref: from above.
-  CI_REF: 2.x-dev
+  CI_REF: 3.x-dev
 
   # Set a version, default is Drupal 8.9, can be 9.0.
   # CI_DRUPAL_VERSION: "8.9"

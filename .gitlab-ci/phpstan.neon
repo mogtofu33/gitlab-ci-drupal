@@ -3,7 +3,7 @@ includes:
     - /var/www/.composer/vendor/phpstan/phpstan-deprecation-rules/rules.neon
 parameters:
     drupal:
-        drupal_root: /var/www/html
+        drupal_root: /opt/drupal
     excludes_analyse:
         - *RoboFile.php
         - */tests/*

@@ -22,19 +22,19 @@
 
 include:
   # Include in include must be as remote to work.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/variables.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/variables_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/artifacts.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/01_build.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/02_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/03_qa.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/04_lint.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/05_metrics.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/06_deploy.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables_test.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/artifacts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/01_build.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/02_test.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/03_qa.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/04_lint.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/05_metrics.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_deploy.yml'
   # [WIP] All reports in one page.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/06_report.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_report.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/2.x-dev/.gitlab-ci/ci/06_release.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_release.yml'
 
 # Variables must be used in your .gitlab-ci.yml:
 #

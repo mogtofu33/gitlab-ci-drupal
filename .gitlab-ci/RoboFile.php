@@ -46,7 +46,7 @@ class RoboFile extends Tasks {
    *   $DOC_ROOT environment variable.
    *   Default is to the ci image value.
    */
-  protected $docRoot = '/var/www/html';
+  protected $docRoot = '/opt/drupal';
 
   /**
    * Drupal webroot folder.
@@ -56,7 +56,7 @@ class RoboFile extends Tasks {
    *   $WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
-  protected $webRoot = '/var/www/html/web';
+  protected $webRoot = '/opt/drupal/web';
 
   /**
    * CI context type.
