@@ -80,17 +80,21 @@ build:
       fi
     # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
     - if [ ! -f "vendor/bin/phpunit" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        composer require --no-ansi -n "drupal/core-dev:^${CI_DRUPAL_VERSION}";
+        composer require --no-ansi -n "drupal/core-dev:~${CI_DRUPAL_VERSION}";
         vendor/bin/phpunit --version;
       fi
     # Install behat and plugins with maximum memory.
     - |
       if [ ! -f "vendor/bin/behat" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         COMPOSER_MEMORY_LIMIT=-1 composer require --no-ansi -n --no-suggest \
-          "bex/behat-screenshot:^1.2" \
-          "dmore/behat-chrome-extension:^1.3" \
-          "emuse/behat-html-formatter:0.1.*" \
           "drupal/drupal-extension:~4.1"
+      fi
+    - |
+      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+        COMPOSER_MEMORY_LIMIT=-1 composer require --no-ansi -n --no-suggest \
+          "dmore/behat-chrome-extension:^1.3" \
+          "bex/behat-screenshot:^2.1" \
+          "emuse/behat-html-formatter:0.2.*"
       fi
     - |
       if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then

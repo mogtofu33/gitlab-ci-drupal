@@ -154,10 +154,10 @@ __install_behat() {
   if ! $(_exist_file /opt/drupal/vendor/bin/behat); then
     printf "%s[NOTICE]%s Install Behat\\n" "${_dim_blu}" "${_end}"
     _dkexec composer require -d /opt/drupal --no-ansi -n --no-suggest \
-      "bex/behat-screenshot:^1.2" \
+      "drupal/drupal-extension:~4.1" \
       "dmore/behat-chrome-extension:^1.3" \
-      "emuse/behat-html-formatter:0.1.*" \
-      "drupal/drupal-extension:~4.1"
+      "bex/behat-screenshot:^2.1" \
+      "emuse/behat-html-formatter:0.2.*"
   else
     printf "%s[SKIP]%s Behat already installed\\n" "${_dim_blu}" "${_end}"
   fi
