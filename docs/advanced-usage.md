@@ -135,10 +135,6 @@ Since Drupal 8.6, [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascri
 
 For now it is not really ready to be used as a replacement for _functional Javascript_, but soon...
 
-The CI tests here include a patch to be able to install Drupal from a profile for Drupal < 8.9:
-
-- [Support install profile and language code params in drupalInstall Nightwatch command](https://drupal.org/node/3017176)
-
 There is a variable in this project that you can set in Gitlab to select the
 tests Nightwatch will run:
 

@@ -185,14 +185,6 @@ nightwatchjs:
       when: never
     - when: on_success
   script:
-    # @TODO: remove when Drupal 8.8 is deprecated.
-    - |
-      # Patch Drupal for Nightwatch profile support. https://drupal.org/node/3017176
-      touch 3017176.patch
-      if [ ${CI_DRUPAL_VERSION} == "8.8" ]; then
-        curl -fsSL https://www.drupal.org/files/issues/2019-11-11/3017176-16.patch -o 3017176.patch || true
-      fi
-      patch -d ${WEB_ROOT} -N -p1 < 3017176.patch || true
     # Install packages from Drupal.
     - yarn --cwd ${WEB_ROOT}/core install
     # Update chromedriver if needed, the ci image include the latest stable version of chrome.
