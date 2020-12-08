@@ -3,7 +3,7 @@
 ################################################################################
 
 .simple_dashboard:
-  image: node:alpine
+  image: node:lts-alpine
   script:
     - apk --no-cache add jq tree git curl
     - git clone https://gitlab.com/mog33/reports--gitlab-ci-drupal.git dashboard
