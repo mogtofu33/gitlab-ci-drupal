@@ -110,7 +110,7 @@ build:
 # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 ################################################################################
 
-phpunit_unit-kernel:
+phpunit_unit:
   stage: tests
   extends: .test_template
   rules:
@@ -141,7 +141,7 @@ phpunit_unit-kernel:
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
-phpunit_functional:
+phpunit_func:
   stage: tests
   extends: .test_template
   rules:
@@ -159,7 +159,7 @@ phpunit_functional:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
-phpunit_functionaljs:
+phpunit_funcjs:
   stage: tests
   extends: .test_template
   rules:
