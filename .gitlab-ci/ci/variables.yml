@@ -60,7 +60,7 @@
   # See Phpqa available tools:
   # https://github.com/EdgedesignCZ/phpqa#available-tools
   # ':0' is the number of errors allowed, default here is very strict.
-  TOOLS_QA: "phpcs:0,phpmd:0,parallel-lint:0,phpstan:0"
+  TOOLS_QA: "phpcs:0,phpmd:0,parallel-lint:0,phpcpd:0,phpstan"
   TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
   # Composer override to use packagist mirror.
