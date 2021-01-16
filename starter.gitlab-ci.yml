@@ -48,7 +48,7 @@ variables:
   # MUST be the same as include: ref: from above.
   CI_REF: 3.x-dev
 
-  # Set a version, default is Drupal 8.9, can be 9.0.
+  # Set a version, default is Drupal 8.9, can be 9.0 or 9.1.
   # CI_DRUPAL_VERSION: "8.9"
 
   ##############################################################################

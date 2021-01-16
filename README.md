@@ -79,7 +79,7 @@ To test against another Drupal version, you can edit `.gitlab-ci.yml` **OR** go 
 
 Name | Value | Detail
 -|-|-
-CI_DRUPAL_VERSION | 8.9 | 9.0 is supported
+CI_DRUPAL_VERSION | 8.9 | 9.0 | 9.1 are supported
 
 This variable can be set when you run a pipeline directly from Gitlab UI.
 
