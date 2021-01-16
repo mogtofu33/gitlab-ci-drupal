@@ -121,7 +121,7 @@ phpunit_unit-kernel:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
     # Run PHPunit tests for unit, kernel, with coverage report.
-    - ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+    - XDEBUG_MODE=coverage ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
         --configuration ${WEB_ROOT}/core
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-html
@@ -291,6 +291,7 @@ accessibility_pa11y:
 ################################################################################
 # Code quality jobs for Drupal 8+ based on PHPQA
 # https://github.com/EdgedesignCZ/phpqa
+# @TODO: codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
 ################################################################################
 
 php-qa:
