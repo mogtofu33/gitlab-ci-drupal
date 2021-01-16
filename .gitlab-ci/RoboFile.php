@@ -126,7 +126,7 @@ class RoboFile extends Tasks {
    *   The drupal version used, look at env values for. This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
-  protected $ciDrupalVersion = "8.8";
+  protected $ciDrupalVersion = "8.9";
 
   /**
    * CI_DRUPAL_SETTINGS context.
@@ -269,7 +269,12 @@ class RoboFile extends Tasks {
       if (!file_exists($src_dir . $filename)) {
         $this->ciNotice("Download remote ci file: $this->ciRemoteRef" . "$filename");
         $remote_file = file_get_contents($this->ciRemoteRef . $filename);
-        file_put_contents($src_dir . $filename, $remote_file);
+        if ($remote_file) {
+          file_put_contents($src_dir . $filename, $remote_file);
+        }
+        else {
+          $this->io()->warning("Failed to get remote ci file: $this->ciRemoteRef" . "$filename");
+        }
       }
       else {
         $this->ciNotice("Use local ci file: $src_dir" . "$filename");
@@ -494,7 +499,7 @@ class RoboFile extends Tasks {
 
       // When install from dump we need to be sure settings.php is correct.
       $settings = file_get_contents($this->ciDrupalSettings);
-      if (!file_exists($this->webRoot . '/sites/default/settings.local.php')) {
+      if ($settings && !file_exists($this->webRoot . '/sites/default/settings.local.php')) {
         file_put_contents($this->webRoot . '/sites/default/settings.local.php', $settings);
       }
 
