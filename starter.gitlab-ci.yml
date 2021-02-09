@@ -73,6 +73,9 @@ variables:
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
   PHPUNIT_TESTS: "custom"
 
+  # Specify a group of tests to run rather than all tests in the suite.
+  # PHPUNIT_GROUP: my_group_1,my_group_2
+
   ##############################################################################
   # Override default variables for a module.
   #
