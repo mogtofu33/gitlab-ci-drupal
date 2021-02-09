@@ -121,7 +121,8 @@ phpunit_unit:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
     # Run PHPunit tests for unit, kernel, with coverage report.
-    - XDEBUG_MODE=coverage ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+    - XDEBUG_MODE=coverage ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel" 
+        $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-html ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-html
@@ -150,7 +151,8 @@ phpunit_func:
     - when: on_success # Only for this project to generate documentation.
   script:
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional"
+    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional" 
+        $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functional.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
@@ -171,7 +173,8 @@ phpunit_funcjs:
     - /scripts/start-chromedriver.sh&
     - sleep 2s
     - curl -s http://localhost:9515/status | jq '.' || true
-    - ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript"
+    - ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript" 
+        $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
