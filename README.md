@@ -34,7 +34,7 @@ Documentation is currently being rewritten and is not yet fully accurate.
 
 Push your module / theme to a Gitlab with CI and runners enabled.
 
-[Gitlab.com](https://gitlab.com) offer 2,000 CI pipeline minutes/month on free
+[Gitlab.com](https://gitlab.com) offer some CI pipeline minutes/month on free
 accounts.
 
 - Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/starter.gitlab-ci.yml) file as a `.gitlab-ci.yml` at the root of your Drupal module or theme (same level as `my_module_or_theme.info.yml` file).
@@ -56,7 +56,7 @@ As an example you can check my module:
 
 Push your project to a Gitlab with CI and runners enabled.
 
-[Gitlab.com](https://gitlab.com) offer 2,000 CI pipeline minutes/month on free
+[Gitlab.com](https://gitlab.com) offer some CI pipeline minutes/month on free
 accounts.
 
 Assuming your project include a `composer.json` file from the [Drupal project](https://www.drupal.org/docs/develop/using-composer/using-composer-to-install-drupal-and-manage-dependencies).
