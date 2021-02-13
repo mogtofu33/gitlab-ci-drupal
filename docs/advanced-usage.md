@@ -63,21 +63,28 @@ By default the configuration is to keep each job report **1 week**.
 !!! bug "Artifacts override"
     There is currently no easy override for this until https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/1893.
 
-### Custom build
+### Custom build tasks
 
 To add some custom build steps for the `Build` job (ie: Yarn, Gulp, Composer, Bower, Webpack...)
-you can copy the `.gitlab-ci\build.php` file and include any task.
+before or after the regular build steps (composer install/require) you can copy
+the `.gitlab-ci\build.php` or `.gitlab-ci\before_build.php` file and include
+any task.
 
-I use [Robo.li](https://robo.li/) with this [RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/RoboFile.php)
+The `build` job is responsible to prepare the files used by the ci that will be
+accessible for all the jobs.
+
+File is included by [Robo.li](https://robo.li/) with this
+[RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/RoboFile.php)
 for running some specific ci tasks and Drupal install.
 
-For `CI_TYPE` **project**, this file is executed directly during the Build job
-script after the regular `composer install`.
+File `.gitlab-ci\build.php` is executed during the Build job script after the
+regular `composer install / require`.
 
-For `CI_TYPE` **module**, this file is executed on each `before_script` part of
-jobs.
+File `.gitlab-ci\before_build.php` is executed during the Build job before any
+`composer install / require`, it should not include a composer task but any
+other task before build.
 
-It's important to have any action relative to the `docRoot` or `webRoot` as we
+It's important to have any action relative to the `$this->docRoot` or `$this->webRoot` as we
 are not working from the `CI_PROJECT_DIR`.
 
 !!! caution "build.php syntax is not checked"
@@ -86,12 +93,28 @@ are not working from the `CI_PROJECT_DIR`.
 Some examples of common tasks:
 
 ```php
+// Download a remote file:
+$myFile = 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/README.md';
+if ($this->taskExec("curl -fsSL $myFile -o $this->docRoot . '/ReAdMe.md")->run()->wasSuccessful()) {
+  $this->say('File downloaded!');
+}
+
+// Compress folders to a file:
 $this->taskPack('build.zip')
-  ->add('vendor')
-  ->add('web')
+  ->add($this->docRoot . 'vendor')
+  ->add($this->docRoot . 'web')
   ->run();
 
-// Run a gulp task.
+// Rsync a folder:
+$rsync = $this->taskRsync()
+  ->fromPath($this->docRoot)
+  ->toPath('example.com:/var/www/html/app/')
+  ->archive()
+  ->excludeVcs()
+  ->progress()
+  ->stats();
+
+// Run a gulp task.:
 $this->taskGulpRun()
   ->dir($this->webRoot . 'themes/my_theme_with_gulp_task')
   ->run();

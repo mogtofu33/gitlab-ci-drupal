@@ -220,14 +220,19 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Check for any extra build.php file for the project.
+   * Check for any extra php file to execute during ci pre/post build step.
+   *
+   * @param string $name
+   *   (optional) The filename to execute from ./.gitlab-ci, default 'build'.
    */
-  public function ciBuild() {
-    if (file_exists($this->ciProjectDir . '/.gitlab-ci/build.php')) {
-      $this->ciLog('Build extra script detected.');
-      include_once $this->ciProjectDir . '/.gitlab-ci/build.php';
+  public function ciBuild($name = 'build') {
+    $filename = $this->ciProjectDir . '/.gitlab-ci/' . $name . '.php';
+    if (file_exists($filename)) {
+      $this->ciLog('Build extra script detected: ' . $filename);
+      include_once $filename;
       $this->ciLog('Build extra script executed.');
     }
+    $this->ciLog('No extra script found: ' . $filename);
   }
 
   /**
