@@ -1,6 +1,7 @@
 ### Variables
 
-First look in `.gitlab-ci/ci/variables.yml` and check the variables.
+First look in [.gitlab-ci/ci/variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/ci/variables.yml)
+and check the variables.
 This is all the variables you can override from global settings on Gitlab CI or
 when manually running a pipeline.
 

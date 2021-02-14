@@ -68,51 +68,31 @@ By default the configuration is to keep each job report **1 week**.
 To add some custom build steps for the `Build` job (ie: Yarn, Gulp, Composer, Bower, Webpack...)
 before or after the regular build steps (composer install/require) you can copy
 the `.gitlab-ci\build.php` or `.gitlab-ci\before_build.php` file and include
-any task.
-
-The `build` job is responsible to prepare the files used by the ci that will be
-accessible for all the jobs.
-
-File is included by [Robo.li](https://robo.li/) with this
-[RoboFile](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/RoboFile.php)
-for running some specific ci tasks and Drupal install.
+any task provided by [Robo.li](https://robo.li/tasks/Base/).
 
 File `.gitlab-ci\build.php` is executed during the Build job script after the
 regular `composer install / require`.
 
 File `.gitlab-ci\before_build.php` is executed during the Build job before any
 `composer install / require`, it should not include a composer task but any
-other task before build.
+other task you need before the build.
 
 It's important to have any action relative to the `$this->docRoot` or `$this->webRoot` as we
 are not working from the `CI_PROJECT_DIR`.
 
 !!! caution "build.php syntax is not checked"
-    If your `build.php` contains error, it will make the `Build` job fail.
+    If your `build.php` contains error, it will make the `Build` job fail!
 
 Some examples of common tasks:
 
 ```php
+<?php
+
 // Download a remote file:
 $myFile = 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/README.md';
 if ($this->taskExec("curl -fsSL $myFile -o $this->docRoot . '/ReAdMe.md")->run()->wasSuccessful()) {
   $this->say('File downloaded!');
 }
-
-// Compress folders to a file:
-$this->taskPack('build.zip')
-  ->add($this->docRoot . 'vendor')
-  ->add($this->docRoot . 'web')
-  ->run();
-
-// Rsync a folder:
-$rsync = $this->taskRsync()
-  ->fromPath($this->docRoot)
-  ->toPath('example.com:/var/www/html/app/')
-  ->archive()
-  ->excludeVcs()
-  ->progress()
-  ->stats();
 
 // Run a gulp task.:
 $this->taskGulpRun()
@@ -133,6 +113,8 @@ $this->composerRequire()
  ->dependency('drupal/webform', '^5.13')
  ->run();
 ```
+
+For more tasks options see [Robo.li documentation](https://robo.li/tasks/Base/).
 
 ### Build with private repositories
 
@@ -202,15 +184,17 @@ There is 2 set of tests location:
 
 - Custom modules and themes only, those are prefixed with `custom` in `phpunit.xml`, as `customunit, customkernel, customfunctional, customfunctional-javascript`
   - All `tests/` from `modules/custom/**` and `themes/custom/**`
-- Drupal core tests, will look in all folders, defined as `unit, kernel, functional, functional-javascript` are not really used and test coverage do not match this scenario.
+- Drupal core tests, will look in all folders, defined as `unit, kernel, functional, functional-javascript`
+are not really used and test coverage do not match this scenario.
 
-There is a Gitlab variable to select the tests:
+There is a Gitlab variable to select the tests and optional group:
 
 Name | Value
 -|-
 PHPUNIT_TESTS | custom
+PHPUNIT_GROUP | my_group_tests
 
-Set this variable _empty_ to run all tests.
+Set `PHPUNIT_TESTS` _empty_ to run all tests.
 
 To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/phpunit.xml) in your project
 and adapt for your tests.
@@ -278,14 +262,16 @@ Eslint is based on the official
 Stylelint is based on the official
 [Drupal 8/9 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
-_Note:_ As this project is meant for Drupal, there is no override for those files.
+_Note:_ As this project is meant for Drupal, there is no override for these files.
 
 ### Metrics jobs
 
-Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org), [Phploc](https://github.com/sebastianbergmann/phploc) and [Pdepend](https://pdepend.org/).
+Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org),
+[Phploc](https://github.com/sebastianbergmann/phploc) and
+[Pdepend](https://pdepend.org/).
 
-_Note:_ Currently this project do not support analyzing coverage for Pdepend and junit
-report from Phpunit tests for Phpmetrics.
+_Note:_ Currently this project do not support analyzing coverage for Pdepend
+and junit report from Phpunit tests for Phpmetrics.
 
 ### Accessibility with Pa11y
 
