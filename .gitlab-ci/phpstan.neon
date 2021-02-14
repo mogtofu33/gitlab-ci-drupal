@@ -2,6 +2,8 @@ includes:
     - /var/www/.composer/vendor/mglaman/phpstan-drupal/extension.neon
     - /var/www/.composer/vendor/phpstan/phpstan-deprecation-rules/rules.neon
 parameters:
+    # This level is overriden when using phpqa in .phpqa.yml
+    level: 5
     drupal:
         drupal_root: /opt/drupal
     excludes_analyse:
