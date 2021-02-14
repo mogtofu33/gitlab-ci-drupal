@@ -6,6 +6,7 @@
   stage: build
   extends: .variables_test
   before_script:
+    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     # Call any extra build script from ./.gitlab-ci/build.php
     - robo ci:build before_build
     # Support composer mirrors and token.
@@ -28,7 +29,6 @@
         chmod 400 ~/.ssh/id_rsa;
       fi
   after_script:
-    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     # Call any extra build script from ./.gitlab-ci/build.php
     - robo ci:build
     - robo ci:prepare
