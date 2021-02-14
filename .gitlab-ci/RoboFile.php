@@ -232,7 +232,9 @@ class RoboFile extends Tasks {
       include_once $filename;
       $this->ciLog('Build extra script executed.');
     }
-    $this->ciLog('No extra script found: ' . $filename);
+    else {
+      $this->ciLog('No extra script found: ' . $filename);
+    }
   }
 
   /**
