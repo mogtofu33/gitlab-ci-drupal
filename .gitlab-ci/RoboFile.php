@@ -126,7 +126,7 @@ class RoboFile extends Tasks {
    *   The drupal version used, look at env values for. This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
-  protected $ciDrupalVersion = "8.9";
+  protected $ciDrupalVersion = "9.0";
 
   /**
    * CI_DRUPAL_SETTINGS context.
@@ -135,7 +135,7 @@ class RoboFile extends Tasks {
    *   The drupal settings file, look at env values for. This can be
    *   overridden by specifying a $CI_DRUPAL_SETTINGS environment variable.
    */
-  protected $ciDrupalSettings = "https://gitlab.com/mog33/gitlab-ci-drupal/snippets/1892524/raw";
+  protected $ciDrupalSettings = "https://gitlab.com/mog33/gitlab-ci-drupal/-/snippets/1892524/raw/master/settings.local.php";
 
   /**
    * CI_REMOTE_FILES context.

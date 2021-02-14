@@ -19,9 +19,8 @@
   CI_REF: "3.x-dev"
 
   # Minor Drupal version to work with, limited to tags on
-  # https://cloud.docker.com/u/mogtofu33/repository/docker/mogtofu33/drupal8ci
-  # You can choose "8.9" #9.0" or "9.1".
-  CI_DRUPAL_VERSION: "8.9"
+  # https://hub.docker.com/r/mogtofu33/drupal8ci/tags?name=3.x
+  CI_DRUPAL_VERSION: "9.0"
 
   # Select what you are running CI on, options are:
   #   project
@@ -44,6 +43,9 @@
   # is empty all tests (including Drupal core).
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
   PHPUNIT_TESTS: "custom"
+
+  # Specify a group of tests to run rather than all tests in the suite.
+  # PHPUNIT_GROUP: my_group_1,my_group_2
 
   # Nightwatch.js tests to run.
   # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch

@@ -48,8 +48,9 @@ variables:
   # MUST be the same as include: ref: from above.
   CI_REF: 3.x-dev
 
-  # Set a version, default is Drupal 8.9, can be 9.0 or 9.1.
-  # CI_DRUPAL_VERSION: "8.9"
+  # Minor Drupal version to work with, limited to tags on
+  # https://hub.docker.com/r/mogtofu33/drupal8ci/tags?name=3.x
+  # CI_DRUPAL_VERSION: "9.0"
 
   ##############################################################################
   # Tests disabled by default because need a specific setup / configuration.
