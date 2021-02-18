@@ -119,7 +119,7 @@ _lint() {
 _security() {
   printf "\\n%s[INFO]%s Perform job 'Security report' (security_checker)\\n\\n" "${_blu}" "${_end}"
 
-  _dkexec security-checker security:check /opt/drupal/composer.lock --no-ansi
+  _dkexec security-checker --path=/opt/drupal/ -format markdown
 }
 
 _behat() {

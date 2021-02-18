@@ -31,7 +31,7 @@ Nothing could be done without a bunch of awesome humans building awesome tools.
 - [Stylelint](https://github.com/stylelint/stylelint)
 - [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
 - [PHPunit](https://phpunit.de)
-- [Security-checker](https://github.com/sensiolabs/security-checker)
+- [Security-checker](https://github.com/fabpot/local-php-security-checker)
 - [Behat](http://behat.org/en/latest)
 - [Pa11y](https://pa11y.org)
 
