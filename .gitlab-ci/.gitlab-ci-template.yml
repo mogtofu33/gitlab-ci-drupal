@@ -85,7 +85,7 @@ build:
       fi
     # Added phpspec, @see https://www.drupal.org/project/drupal/issues/3182653
     - |
-      if [ ${CI_DRUPAL_VERSION} == "9.1" ]; then
+      if [ ${CI_DRUPAL_VERSION} == "9.0" ] || [ ${CI_DRUPAL_VERSION} == "9.1" ]; then
         composer require --no-ansi -n "phpspec/prophecy-phpunit";
       fi
     # Install behat and plugins with maximum memory.
