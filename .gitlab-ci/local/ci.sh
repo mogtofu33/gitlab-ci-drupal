@@ -153,7 +153,7 @@ _behat() {
 __install_behat() {
   if ! $(_exist_file /opt/drupal/vendor/bin/behat); then
     printf "%s[NOTICE]%s Install Behat\\n" "${_dim_blu}" "${_end}"
-    _dkexec composer require -d /opt/drupal --no-ansi -n --no-suggest \
+    _dkexec composer require -d /opt/drupal --no-ansi -n \
       "drupal/drupal-extension:~4.1" \
       "dmore/behat-chrome-extension:^1.3" \
       "bex/behat-screenshot:^2.1" \
@@ -164,7 +164,7 @@ __install_behat() {
 
   if ! $(_exist_file /opt/drupal/vendor/bin/drush); then
     printf "%s[NOTICE]%s Install Drush\\n" "${_dim_blu}" "${_end}"
-    _dkexec composer require --no-ansi -n --no-suggest drush/drush
+    _dkexec composer require --no-ansi -n drush/drush
   else
     printf "%s[SKIP]%s Drush already installed\\n" "${_dim_blu}" "${_end}"
   fi
