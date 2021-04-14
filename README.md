@@ -12,7 +12,7 @@ For any **issue**, please use the [Gitlab-CI project page](https://gitlab.com/mo
 
 Current branch **3.x-dev** is based on an include behavior, ie you don't have to copy all files from this project.
 
-> Drupal 9.1 support is currently partial, some phpqa tools are not working yet.
+> Drupal 9.1 support is currently partial, some phpqa tools are not working yet (phpcpd), `lintjs` `behat` and `pa11y` jobs are failing.
 
 ## Prerequisites
 
