@@ -331,7 +331,6 @@ lint_js:
     # --format junit --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-unit.xml"
     - ${WEB_ROOT}/core/node_modules/.bin/eslint
         --config ${WEB_ROOT}/core/.eslintrc.passing.json
-        --resolve-plugins-relative-to ${WEB_ROOT}/core/node_modules
         --format html --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html"
         "${DIRS_JS}"
 
