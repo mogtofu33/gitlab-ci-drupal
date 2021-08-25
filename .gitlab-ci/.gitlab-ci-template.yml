@@ -83,9 +83,9 @@ build:
         composer require --no-ansi -n "drupal/core-dev:~${CI_DRUPAL_VERSION}";
         vendor/bin/phpunit --version;
       fi
-    # Added phpspec, @see https://www.drupal.org/project/drupal/issues/3182653
+    # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
     - |
-      if [ ${CI_DRUPAL_VERSION} == "9.0" ] || [ ${CI_DRUPAL_VERSION} == "9.1" ]; then
+      if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
         composer require --no-ansi -n "phpspec/prophecy-phpunit";
       fi
     # Install behat and plugins with maximum memory.
