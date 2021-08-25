@@ -7,7 +7,7 @@ set -e
 ###############################################################################
 # Local only tests, not included in Gtilab ci and more flexible.
 ###############################################################################
-__build_phpunit() {
+__install_phpunit() {
   if ! eval "_exist_file /opt/drupal/vendor/bin/phpunit"; then
     if [ "${CI_TYPE}" == "project" ]; then
       if eval "_exist_file /opt/drupal/composer.json"; then
@@ -30,7 +30,7 @@ __build_phpunit() {
 # Usage:
 #   phpunit web/core/modules/action/tests/src/Unit
 _phpunit() {
-  __build_phpunit
+  __install_phpunit
   local __path
 
   if [[ $CI_TYPE == "module" ]]; then
@@ -81,21 +81,21 @@ _qa() {
     __path=${WEB_ROOT}/modules/custom
   fi
 
-  if [ -z $__tools_qa ]; then
+  if [ -z "${__tools_qa}" ]; then
     local __tools_qa=${TOOLS_QA}
   fi
 
   if [ ! -f "$_DIR/../.phpmd.xml" ]; then
     printf "%s[NOTICE]%s Get remote .phpmd.xml\\n" "${_dim}" "${_end}"
-    curl -fsSL ${CI_REMOTE_FILES}/.phpmd.xml -o "$_DIR/../.phpmd.xml"
+    curl -fsSL "$CI_REMOTE_FILES/.phpmd.xml" -o "$_DIR/../.phpmd.xml"
   fi
   if [ ! -f "$_DIR/../.phpqa.yml" ]; then
     printf "%s[NOTICE]%s Get remote .phpqa.yml\\n" "${_dim}" "${_end}"
-    curl -fsSL ${CI_REMOTE_FILES}/.phpqa.yml -o "$_DIR/../.phpqa.yml"
+    curl -fsSL "$CI_REMOTE_FILES/.phpqa.yml" -o "$_DIR/../.phpqa.yml"
   fi
   if [ ! -f "$_DIR/../phpstan.neon" ]; then
     printf "%s[NOTICE]%s Get remote phpstan.neon\\n" "${_dim}" "${_end}"
-    curl -fsSL ${CI_REMOTE_FILES}/phpstan.neon -o "$_DIR/../phpstan.neon"
+    curl -fsSL "$CI_REMOTE_FILES/phpstan.neon" -o "$_DIR/../phpstan.neon"
   fi
 
   printf "%s[NOTICE]%s qa: %s %s\\n" "${_dim}" "${_end}" "${__tools_qa}" "${__path}"
@@ -118,6 +118,7 @@ _lint() {
   docker exec -it -w ${WEB_ROOT}/core ci-drupal \
     ${WEB_ROOT}/core/node_modules/.bin/eslint \
       --config ${WEB_ROOT}/core/.eslintrc.passing.json \
+      --resolve-plugins-relative-to ${WEB_ROOT}/core/node_modules \
       ${DIRS_JS}
 
   printf "\\n%s[INFO]%s Stylelint\\n\\n" "${_blu}" "${_end}"
@@ -127,7 +128,7 @@ _lint() {
       --formatter verbose \
       ${DIRS_CSS}
 
-  if ! $(_exist_file /opt/drupal/twig-lint); then
+  if ! eval "_exist_file /opt/drupal/twig-lint"; then
     printf "%s[NOTICE]%s Install twig-lint\\n" "${_dim_blu}" "${_end}"
     docker exec -it ci-drupal \
       curl -fsSL https://asm89.github.io/d/twig-lint.phar -o /opt/drupal/twig-lint
@@ -176,7 +177,7 @@ _behat() {
 }
 
 __install_behat() {
-  if ! $(_exist_file /opt/drupal/vendor/bin/behat); then
+  if ! eval "_exist_file /opt/drupal/vendor/bin/behat"; then
     printf "%s[NOTICE]%s Install Behat\\n" "${_dim_blu}" "${_end}"
     _dkexec composer require -d /opt/drupal --no-ansi -n \
       "drupal/drupal-extension:~4.1" \
@@ -187,7 +188,7 @@ __install_behat() {
     printf "%s[SKIP]%s Behat already installed\\n" "${_dim_blu}" "${_end}"
   fi
 
-  if ! $(_exist_file /opt/drupal/vendor/bin/drush); then
+  if ! eval "_exist_file /opt/drupal/vendor/bin/drush"; then
     printf "%s[NOTICE]%s Install Drush\\n" "${_dim_blu}" "${_end}"
     _dkexec composer require --no-ansi -n drush/drush
   else
