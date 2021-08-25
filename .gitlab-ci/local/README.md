@@ -27,6 +27,12 @@ Optional settings files:
 .gitlab-ci/phpunit.xml
 ```
 
+Optional variable override for this script:
+
+```bash
+.gitlab-ci/local/.local.yml
+```
+
 ## Ci type module
 
 Edit `.gitlab-ci/local/docker-compose.yml` and uncomment volume for a module:

@@ -28,8 +28,10 @@ services:
     volumes:
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../../:${CI_PROJECT_DIR}
+      # - ../../../demo-gitlab-ci-drupal-project:${CI_PROJECT_DIR}
       # Mount the parent folder as a module.
-      - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
+      # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
+      # - ../../../demo-gitlab-ci-drupal-module:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
       # Mount the parent folder as a group of modules or project.
       # - ../../:/opt/drupal
       # [OPTIONAL] composer cache folder to speed up the process.

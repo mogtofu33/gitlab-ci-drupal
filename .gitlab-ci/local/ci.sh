@@ -7,35 +7,57 @@ set -e
 ###############################################################################
 # Local only tests, not included in Gtilab ci and more flexible.
 ###############################################################################
+__build_phpunit() {
+  if ! eval "_exist_file /opt/drupal/vendor/bin/phpunit"; then
+    if [ "${CI_TYPE}" == "project" ]; then
+      if eval "_exist_file /opt/drupal/composer.json"; then
+        composer require --no-ansi -n -d /opt/drupal --dev "drupal/core-dev:~${CI_DRUPAL_VERSION}";
+      fi
+    fi
+  fi
+  _dkexec ${DOC_ROOT}/vendor/bin/phpunit --version
+
+  # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
+  if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
+    if ! eval "_exist_file /opt/drupal/vendor/phpspec/prophecy-phpunit/src/ProphecyTrait.php"; then
+      printf "%s[NOTICE]%s Install phpspec/prophecy-phpunit\\n" "${_dim}" "${_end}"
+      _dkexec composer require --no-ansi -n -d /opt/drupal --dev "phpspec/prophecy-phpunit:^2"
+    fi
+  fi
+}
 
 # Standalone Phpunit test for local tests, can set path as argument.
+# Usage:
+#   phpunit web/core/modules/action/tests/src/Unit
 _phpunit() {
+  __build_phpunit
+  local __path
 
-  local __path=${WEB_ROOT}
-
-  if [ $CI_TYPE == "module" ]; then
-    local __path=${WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}/${_ARGS}
+  if [[ $CI_TYPE == "module" ]]; then
+    __path=${WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}/${_ARGS}
+  else
+    __path=${DOC_ROOT}/${_ARGS}
   fi
 
-  if ! $(_exist_dir ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output); then
+  if ! eval "_exist_dir ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"; then
     printf "%s[NOTICE]%s Create dir %s\\n" "${_dim}" "${_end}" "${BROWSERTEST_OUTPUT_DIRECTORY}"
     _dkexec_bash "mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
     _dkexec_bash "chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} && chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}"
   fi
 
-  if ! $(_exist_file /opt/drupal/web/core/phpunit.xml); then
+  if ! eval "_exist_file /opt/drupal/web/core/phpunit.xml"; then
     if [ -f "$_DIR/../phpunit.xml" ]; then
       printf "%s[NOTICE]%s Using .gitlab-ci/phpunit.xml\\n" "${_dim}" "${_end}"
       _dkexec_bash "cp -u /builds/.gitlab-ci/phpunit.xml /opt/drupal/web/core"
     else
       printf "%s[NOTICE]%s Get remote phpunit.xml\\n" "${_dim}" "${_end}"
-      curl -fsSL ${CI_REMOTE_FILES}/phpunit.xml -o "$_DIR/../phpunit.xml"
+      curl -fsSL "${CI_REMOTE_FILES}/phpunit.xml" -o "$_DIR/../phpunit.xml"
       _dkexec_bash "cp -u /builds/.gitlab-ci/phpunit.xml /opt/drupal/web/core"
     fi
   fi
 
-  if [[ $(docker exec ci-drupal ps | grep chromedriver) ]]; then
-    printf "%s[NOTICE]%s Chromedriver already running\\n" "${_dim}" "${_end}"
+  if docker exec ci-drupal ps | grep chromedriver; then
+    printf "%s[NOTICE]%s Chromedriver running\\n" "${_dim}" "${_end}"
   else
     printf "%s[NOTICE]%s Start Chromedriver\\n" "${_dim}" "${_end}"
     docker exec -d ci-drupal /scripts/start-chromedriver.sh
@@ -51,11 +73,14 @@ _phpunit() {
 # Standalone qa test, can set path as argument and tools with option "-qa".
 _qa() {
 
-  if [ -z $__local_path ]; then
-    local __local_path=${DIRS_QA}
+  local __path
+
+  if [[ -n ${_ARGS} ]]; then
+    __path=${DOC_ROOT}/${_ARGS}
   else
-    local __local_path=${WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}
+    __path=${WEB_ROOT}/modules/custom
   fi
+
   if [ -z $__tools_qa ]; then
     local __tools_qa=${TOOLS_QA}
   fi
@@ -73,11 +98,11 @@ _qa() {
     curl -fsSL ${CI_REMOTE_FILES}/phpstan.neon -o "$_DIR/../phpstan.neon"
   fi
 
-  printf "%s[NOTICE]%s qa: %s %s\\n" "${_dim}" "${_end}" "${__tools_qa}" "${__local_path}"
+  printf "%s[NOTICE]%s qa: %s %s\\n" "${_dim}" "${_end}" "${__tools_qa}" "${__path}"
 
   _dkexec phpqa --tools ${__tools_qa} \
         --config ${CI_PROJECT_DIR}/.gitlab-ci \
-        --analyzedDirs ${__local_path}
+        --analyzedDirs ${__path}
 }
 
 _lint() {
@@ -184,7 +209,7 @@ _nightwatch() {
       "yarn --cwd ${WEB_ROOT}/core upgrade chromedriver@$__version"
   fi
 
-  # Log versions.
+  # Log versions.night
   _dkexec_bash \
     "${WEB_ROOT}/core/node_modules/.bin/nightwatch --version"
   _dkexec_bash \
@@ -299,13 +324,19 @@ _exist_file() {
   [ $(docker exec -t ci-drupal sh -c "[ -f ${1} ] && echo true") ]
 }
 
+_exist_dir() {
+  [ $(docker exec -t ci-drupal sh -c "[ -d ${1} ] && echo true") ]
+}
+
 _init_variables() {
   _env
+
+  # Remove quotes on NIGHTWATCH_TESTS.
+  sed -i 's#NIGHTWATCH_TESTS="\(.*\)"#NIGHTWATCH_TESTS=\1#g' $__env
 
   source $__env
 
   # Fixes post source, for a proper docker config.
-
   if [ -f "$_DIR/../ci/variables_test.yml" ]; then
     debug "Use local variables_test.yml"
     __yaml_variables_test="$_DIR/../ci/variables_test.yml"
@@ -321,9 +352,6 @@ _init_variables() {
   # CHROME_OPTS needs no quotes so cannot be sourced.
   CHROME_OPTS=$(yq r $__yaml_variables_test "[.variables_test].variables.CHROME_OPTS")
   echo "CHROME_OPTS=${CHROME_OPTS}" >> $__env
-
-  # Remove quotes on NIGHTWATCH_TESTS.
-  sed -i 's#NIGHTWATCH_TESTS="\(.*\)"#NIGHTWATCH_TESTS=\1#g' $__env
 
   _clean_env
 }
@@ -484,7 +512,8 @@ _down() {
 
 _check_yq() {
   if ! [ -x "$(command -v yq)" ]; then
-    curl -fsSL https://github.com/mikefarah/yq/releases/download/2.4.1/yq_linux_amd64 -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+    printf "%s[INFO]%s Install missing yq.\\n" "${_dim}" "${_end}"
+    curl -fSL https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -o ${HOME}/.local/bin/yq && chmod +x ${HOME}/.local/bin/yq
   fi
 }
 
@@ -594,7 +623,6 @@ _print_help() {
 
   Standalone local options
     -qa|--tools-qa                  Standalone local qa tools, default $TOOLS_QA.
-    -d|--dir                        Standalone local dir, default $DIRS_QA.
     --skip-install                  Skip install steps (Behat, Lint).
 
   Options
@@ -716,10 +744,8 @@ _PRINT_HELP=0
 _USE_DEBUG=0
 
 # Initialize additional expected option variables.
-__drupal_profile="minimal"
 __skip_install=0
 __tools_qa=""
-__local_path=""
 
 CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci"
 
@@ -747,10 +773,6 @@ do
       ;;
     -qa|--tools-qa)
       __tools_qa="$(__get_option_value "${__arg}" "${__val:-}")"
-      shift
-      ;;
-    -d|--dir)
-      __local_path="$(__get_option_value "${__arg}" "${__val:-}")"
       shift
       ;;
     --endopts)
