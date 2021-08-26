@@ -3,7 +3,7 @@
 # Simple basic script for CI to install Drupal from a DB dump or with Drush.
 
 function install() {
-  local profile=${1:-"standard"}
+  local profile=${1:-"minimal"}
 
   local files="${WEB_ROOT}/sites/default/files"
   local filename="${CI_PROJECT_DIR}/dump/dump-${CI_DRUPAL_VERSION}_${profile}.sql"
@@ -28,7 +28,7 @@ function install() {
     cp ${WEB_ROOT}/sites/default/default.settings.php ${WEB_ROOT}/sites/default/settings.php
     echo 'include $app_root . "/" . $site_path . "/settings.local.php";' >> ${WEB_ROOT}/sites/default/settings.php
   else
-    echo -e "\033[1;36mNo dump found for $filename, tryning to install Drupal with Drush.\033[1;37m"
+    echo -e "\033[1;36mNo dump found for $filename, install Drupal with Drush.\033[1;37m"
     if [ ! -f "${DOC_ROOT}/vendor/bin/drush" ]; then
       composer require --no-ansi -n --dev drush/drush
     fi
@@ -40,4 +40,4 @@ function install() {
   fi
 }
 
-install ${@}
+install "${@}"

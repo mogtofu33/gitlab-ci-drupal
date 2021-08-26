@@ -54,9 +54,9 @@
   NIGHTWATCH_TESTS: "--skiptags core"
   # NIGHTWATCH_TESTS: "--tag custom"
 
-  # Select install profile for Behat and Pa11y tests.
-  BEHAT_INSTALL_PROFILE: "standard"
-  PA11Y_INSTALL_PROFILE: "standard"
+  # If not using a db dump, select install profile for Behat and Pa11y tests.
+  BEHAT_INSTALL_PROFILE: "minimal"
+  PA11Y_INSTALL_PROFILE: "minimal"
 
   # See Phpqa available tools:
   # https://github.com/EdgedesignCZ/phpqa#available-tools
