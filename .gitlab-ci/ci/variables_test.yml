@@ -30,6 +30,6 @@
         },
         "http://localhost:9515"
       ]
-    # https://chromedriver.chromium.org/capabilities
-    # e.g. `--verbose --whitelisted-ips=0.0.0.0 --log-path=chromedriver.log`.
-    CHROME_OPTS: "--disable-gpu --headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222"
+    # Chrome headless options.
+    # https://source.chromium.org/chromium/chromium/src/+/master:headless/app/headless_shell_switches.cc
+    CHROME_OPTS: "--headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --disable-crash-reporter --disable-software-rasterizer"
