@@ -156,11 +156,19 @@ project.
 Copy this folder on the root of your project and adapt `behat_tests/features` to your
 tests.
 
+#### Drupal installation
+
+To install Drupal from a db dump, you need a dump file located in a dump folder at the root of your project.
+
+This dump file must follow a naming convention: `dump-DRUPAL_VERSION_PROFILE.sql`, where:
+- `DRUPAL_VERSION` is your drupal version, eg: 8.9 or 9.2
+- `PROFILE` is your profile name set as `BEHAT_INSTALL_PROFILE`
+
 To choose the Drupal profile for installation, you can set the `BEHAT_INSTALL_PROFILE` variable.
 
 Name | Value
 -|-
-BEHAT_INSTALL_PROFILE | standard
+BEHAT_INSTALL_PROFILE | minimal
 
 For Behat, Selenium is not needed thanks to the
 [Behat Chrome extension.](https://gitlab.com/DMore/behat-chrome-extension.git).
@@ -291,11 +299,19 @@ For setting your urls to test, adapt the urls section:
 
 When a test failed, a screen capture is recorded in the reports.
 
+#### Drupal installation
+
+To install Drupal from a db dump, you need a dump file located in a dump folder at the root of your project.
+
+This dump file must follow a naming convention: `dump-DRUPAL_VERSION_PROFILE.sql`, where:
+- `DRUPAL_VERSION` is your drupal version, eg: 8.9 or 9.2
+- `PROFILE` is your profile name set as `PA11Y_INSTALL_PROFILE`
+
 To choose the Drupal profile for installation, you can set the `PA11Y_INSTALL_PROFILE` variable.
 
 Name | Value
 -|-|
-PA11Y_INSTALL_PROFILE | standard
+PA11Y_INSTALL_PROFILE | minimal
 
 ### Composer config
 
