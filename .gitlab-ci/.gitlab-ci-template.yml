@@ -175,7 +175,7 @@ phpunit_funcjs:
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml
         --testdox-html report-${CI_JOB_NAME}/phpunit.html
-        --verbose --debug
+        --verbose
   after_script:
     - mkdir -p report-${CI_JOB_NAME}/browser_output
     - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
@@ -248,14 +248,13 @@ behat:
       fi
     # Starting Chrome, we are not using Chromedriver.
     - /scripts/start-chrome.sh&
-    - cd ${WEB_ROOT}
     # Install Drupal with the selected profile.
     - chmod +x ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh
     - ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh ${BEHAT_INSTALL_PROFILE}
     # Test Chrome is running properly.
     - curl -s http://localhost:9222/json/version | jq '.' || true
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
-    - ../vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+    - vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
           --format progress
           --out std
           --format junit
@@ -276,7 +275,6 @@ accessibility_pa11y:
       when: never
     - when: on_success
   script:
-    - cd ${WEB_ROOT}
     # Install Drupal with the selected profile.
     - chmod +x ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh
     - ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh ${PA11Y_INSTALL_PROFILE}
