@@ -26,15 +26,17 @@ services:
     links:
       - mariadb
     volumes:
-      # Mount current module in /builds, theme or project, mimic Gitlab-ci.
-      - ../../:${CI_PROJECT_DIR}
       # Mount the parent folder as a module.
       # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
-      # Mount the parent folder as a group of modules or project.
-      # - ../../:/opt/drupal
+      # Mount the parent folder as a group of modules or project for local test.
+      - ../../:${DOC_ROOT}
+      # Mount current module in /builds, theme or project, mimic Gitlab-ci.
+      # - ../../:${CI_PROJECT_DIR}
       # [OPTIONAL] composer cache folder to speed up the process.
       - ${HOME}/.cache/composer:/var/www/.composer/cache
-    working_dir: /builds
+    working_dir: ${DOC_ROOT}
+    # Mimic Gitlab-ci.
+    # working_dir: /builds
     container_name: ci-drupal
     env_file:
       - .env

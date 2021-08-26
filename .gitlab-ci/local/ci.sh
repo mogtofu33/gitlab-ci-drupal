@@ -350,9 +350,15 @@ _init_variables() {
     __yaml_variables_test="$_DIR/variables_test.yml"
   fi
 
-  # CHROME_OPTS needs no quotes so cannot be sourced.
-  CHROME_OPTS=$(yq r $__yaml_variables_test "[.variables_test].variables.CHROME_OPTS")
-  echo "CHROME_OPTS=${CHROME_OPTS}" >> $__env
+  # CHROME_OPTS can be local and needs no quotes so cannot be sourced.
+  local __chrome_opts
+  if [ -f $__yaml_local ]; then
+    __chrome_opts=$(yq r $__yaml_local "CHROME_OPTS")
+  fi
+  if [[ -z ${__chrome_opts} ]]; then
+    __chrome_opts=$(yq r $__yaml_variables_test "[.variables_test].variables.CHROME_OPTS")
+  fi
+  echo "CHROME_OPTS=${__chrome_opts}" >> $__env
 
   _clean_env
 }
@@ -453,16 +459,9 @@ _env() {
   yq r $__yaml "variables" >> $__env
   sed -i '/^extends:/d' $__env
 
-  echo '# Local variables' >> $__env
   if [ -f $__yaml_local ]; then
+    echo '# Local variables' >> $__env
     yq r $__yaml_local >> $__env
-    # Fix BEHAT_PARAMS, remove spaces and escape \.
-    sed -i '/BEHAT_PARAMS/d' $__env
-    BEHAT_PARAMS=$(yq r $__yaml_local "BEHAT_PARAMS")
-    BEHAT_PARAMS="$(echo -e "${BEHAT_PARAMS}" | tr -d '[:space:]')"
-    BEHAT_PARAMS=$(sed 's#\\#\\\\#g' <<< $BEHAT_PARAMS)
-    echo '# Fixed local BEHAT_PARAMS' >> $__env
-    echo 'BEHAT_PARAMS='${BEHAT_PARAMS} >> $__env
   fi
 
   # Replace some variables by their values.
@@ -509,6 +508,11 @@ _down() {
     printf "%s[ERROR]%s Missing $_DIR/docker-compose.yml file.\\n" "${_red}" "${_end}"
     exit 1
   fi
+}
+
+_reboot() {
+  _down
+  _up
 }
 
 _check_yq() {
