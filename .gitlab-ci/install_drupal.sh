@@ -30,7 +30,7 @@ function install() {
   else
     echo -e "\033[1;36mNo dump found for $filename, install Drupal with Drush.\033[1;37m"
     if [ ! -f "${DOC_ROOT}/vendor/bin/drush" ]; then
-      composer require --no-ansi -n --dev drush/drush
+      composer require -d /opt/drupal --no-ansi -n drush/drush
     fi
     ${DOC_ROOT}/vendor/bin/drush site:install $profile --yes --db-url=${SIMPLETEST_DB}
   fi
