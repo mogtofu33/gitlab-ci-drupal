@@ -32,10 +32,4 @@
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} &&
       chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} &&
       chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
-    # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
-    # @todo: remove when 8.9 is deprecated.
-    - |
-      if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
-        composer require --no-ansi -n "phpspec/prophecy-phpunit";
-      fi
     - echo -e "\e[0Ksection_end:`date +%s`:test_ci_prepare\r\e[0K"

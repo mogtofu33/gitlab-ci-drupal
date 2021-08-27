@@ -93,6 +93,14 @@ build:
           "emuse/behat-html-formatter:0.2.*";
         echo -e "\e[0Ksection_end:`date +%s`:dev_install\r\e[0K";
       fi
+    # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
+    # @todo: remove when 8.9 is deprecated.
+    - |
+      if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
+        echo -e "\e[0Ksection_start:`date +%s`:prophecy_install[collapsed=true]\r\e[0K\e[1;34mInstall prophecy-phpunit\e[0m";
+        composer require --no-ansi -n "phpspec/prophecy-phpunit";
+        echo -e "\e[0Ksection_end:`date +%s`:prophecy_install\r\e[0K";
+      fi
 
 ################################################################################
 # Drupal tests.
