@@ -105,7 +105,6 @@ class RoboFile extends Tasks {
       '.phpqa.yml',
       'pa11y-ci.json',
       'phpstan.neon',
-      'install_drupal.sh',
       'settings.local.php',
     ],
   ];
@@ -127,15 +126,6 @@ class RoboFile extends Tasks {
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
   protected $ciDrupalVersion = "9.2";
-
-  /**
-   * CI_DRUPAL_SETTINGS context.
-   *
-   * @var string
-   *   The drupal settings file, look at env values for. This can be
-   *   overridden by specifying a $CI_DRUPAL_SETTINGS environment variable.
-   */
-  protected $ciDrupalSettings = "https://gitlab.com/mog33/gitlab-ci-drupal/-/snippets/1892524/raw/master/settings.local.php";
 
   /**
    * CI_REMOTE_FILES context.
@@ -181,9 +171,6 @@ class RoboFile extends Tasks {
     }
     if (getenv('CI_DRUPAL_VERSION')) {
       $this->ciDrupalVersion = getenv('CI_DRUPAL_VERSION');
-    }
-    if (getenv('CI_DRUPAL_SETTINGS')) {
-      $this->ciDrupalSettings = getenv('CI_DRUPAL_SETTINGS');
     }
     if (getenv('CI_REMOTE_FILES')) {
       $this->ciRemoteRef = getenv('CI_REMOTE_FILES');
@@ -318,7 +305,6 @@ class RoboFile extends Tasks {
 
     // Handle CI Type value.
     switch ($this->ciType) {
-      case "demo":
       case "project":
         // We have a composer.json file.
         if (file_exists($this->ciProjectDir . '/composer.json')) {
@@ -491,7 +477,7 @@ class RoboFile extends Tasks {
       ->chmod($dir, 0777, 0000, TRUE)
       ->run();
 
-    $this->ciNotice("Installing Drupal with profile $profile...");
+    $this->ciNotice("Installing Drupal with profile $profile, check if dump file exist...");
 
     $filename = $this->ciProjectDir . '/dump/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql';
 
@@ -505,9 +491,11 @@ class RoboFile extends Tasks {
       $this->_exec('mysql -hmariadb -uroot drupal < ' . $filename . ';');
 
       // When install from dump we need to be sure settings.php is correct.
-      $settings = file_get_contents($this->ciDrupalSettings);
-      if ($settings && !file_exists($this->webRoot . '/sites/default/settings.local.php')) {
-        file_put_contents($this->webRoot . '/sites/default/settings.local.php', $settings);
+      $settings = file_get_contents($this->ciProjectDir . '/.gitlab-ci/settings.local.php');
+      if (!file_exists($this->webRoot . '/sites/default/settings.local.php')) {
+        $this->taskFilesystemStack()
+          ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->webRoot . '/sites/default/settings.local.php', TRUE)
+          ->run();
       }
 
       $this->taskFilesystemStack()
@@ -521,7 +509,6 @@ class RoboFile extends Tasks {
     else {
       $this->ciLog("No dump found $filename, installing Drupal with Drush.");
       $this->drupalSetup($profile);
-      $this->drupalDump($profile);
     }
 
     $this->drupalCheck();
