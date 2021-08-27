@@ -7,10 +7,9 @@ parameters:
     drupal:
         drupal_root: /opt/drupal
     excludePaths:
-        analyseAndScan:
-            - *RoboFile.php
-            - */tests/*
-            - */Tests/*
+        - *RoboFile.php
+        - */tests/*
+        - */Tests/*
     inferPrivatePropertyTypeFromConstructor: true
     checkMissingIterableValueType: false
     ## Samples of common false positive for Drupal, adapt to your code.
