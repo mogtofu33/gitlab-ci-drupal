@@ -15,6 +15,7 @@
     - apache2-foreground&
     # Prepare ci (mirror files in Docker image doc root).
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - echo -e "\e[0Ksection_start:`date +%s`:test_ci_prepare[collapsed=true]\r\e[0K\e[1;34mRobo ci:prepare, set tools registries"
     - robo ci:prepare
     # Support composer mirrors and token.
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
@@ -28,5 +29,7 @@
         yarn config set registry ${YARN_REGISTRY};
       fi
     # Set permissions for tests.
-    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}
-    - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} && chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} &&
+      chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} &&
+      chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}
+    - echo -e "\e[0Ksection_end:`date +%s`:test_ci_prepare\r\e[0K"

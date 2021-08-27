@@ -5,6 +5,7 @@
 .simple_dashboard:
   image: node:lts-alpine
   script:
+    - echo -e "\e[0Ksection_start:`date +%s`:report_prepare[collapsed=true]\r\e[0K\e[1;34mPrepare report"
     - apk --no-cache add jq tree git curl
     - git clone https://gitlab.com/mog33/reports--gitlab-ci-drupal.git dashboard
     - mkdir -p dashboard/src/reports/
@@ -13,6 +14,7 @@
     # Prepare data collection.
     - chmod +x ./src/scripts/ci_vars.sh && ./src/scripts/ci_vars.sh > src/data/data.json
     - yarn install
+    - echo -e "\e[0Ksection_end:`date +%s`:report_prepare\r\e[0K"
     - yarn build
   after_script:
     - cp -r dashboard/public .

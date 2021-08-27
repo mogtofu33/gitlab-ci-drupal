@@ -76,30 +76,27 @@ build:
       fi
     # Install the project.
     - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+        echo -e "\e[0Ksection_start:`date +%s`:build_install[collapsed=true]\r\e[0K\e[1;34mComposer install\e[0m";
         composer install --no-ansi -n --prefer-dist;
+        echo -e "\e[0Ksection_end:`date +%s`:build_install\r\e[0K";
       fi
-    # Ensure we have Drupal Dev third party for next jobs, mostly PHPUnit.
-    - if [ ! -f "vendor/bin/phpunit" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        composer require --no-ansi -n "drupal/core-dev:~${CI_DRUPAL_VERSION}";
-        vendor/bin/phpunit --version;
+    # Ensure we have Drupal Dev third party for next jobs.
+    - |
+      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+        echo -e "\e[0Ksection_start:`date +%s`:dev_install[collapsed=true]\r\e[0K\e[1;34mComposer require dev\e[0m";
+        COMPOSER_MEMORY_LIMIT=-1 composer require --no-ansi -n \
+          "drupal/core-dev:~${CI_DRUPAL_VERSION}" \
+          "drush/drush" \
+          "drupal/drupal-extension:~4.1" \
+          "dmore/behat-chrome-extension:^1.3" \
+          "bex/behat-screenshot:^2.1" \
+          "emuse/behat-html-formatter:0.2.*";
+        echo -e "\e[0Ksection_end:`date +%s`:dev_install\r\e[0K";
       fi
     # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
     - |
       if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
         composer require --no-ansi -n "phpspec/prophecy-phpunit";
-      fi
-    # Install behat and plugins with maximum memory.
-    - |
-      if [ ! -f "vendor/bin/behat" ] && [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        COMPOSER_MEMORY_LIMIT=-1 composer require --no-ansi -n \
-          "drupal/drupal-extension:~4.1"
-      fi
-    - |
-      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        COMPOSER_MEMORY_LIMIT=-1 composer require --no-ansi -n \
-          "dmore/behat-chrome-extension:^1.3" \
-          "bex/behat-screenshot:^2.1" \
-          "emuse/behat-html-formatter:0.2.*"
       fi
 
 ################################################################################
@@ -189,6 +186,7 @@ nightwatchjs:
       when: never
     - when: on_success
   script:
+    - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34mInstall NightwatchJs"
     # Install packages from Drupal.
     - yarn --cwd ${WEB_ROOT}/core install
     # Update chromedriver if needed, the ci image include the latest stable version of chrome.
@@ -201,11 +199,14 @@ nightwatchjs:
       /usr/bin/google-chrome --version
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
+    - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Launch Nightwatch tests from core folder.
     - yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
   after_script:
+    - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install_reporter[collapsed=true]\r\e[0K\e[1;34mInstall NightwatchJs reporter"
     # Html report, install plugin and run from the xml report.
     - yarn --cwd ${WEB_ROOT}/core add nightwatch-html-reporter
+    - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install_reporter\r\e[0K"
     - ${WEB_ROOT}/core/node_modules/.bin/nightwatch-html-reporter
         --report-dir /tmp/report-${CI_JOB_NAME}
         --output nightwatch.html
@@ -248,13 +249,15 @@ behat:
       fi
     # Starting Chrome, we are not using Chromedriver.
     - /scripts/start-chrome.sh&
+    - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34mInstall drupal ${BEHAT_INSTALL_PROFILE}"
     # Install Drupal with the selected profile.
-    - chmod +x ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh
-    - ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh ${BEHAT_INSTALL_PROFILE}
+    - robo drupal:install ${BEHAT_INSTALL_PROFILE}
+    - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
     - curl -s http://localhost:9222/json/version | jq '.' || true
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
-    - vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+    - cd ${WEB_ROOT}
+    - ${DOC_ROOT}/vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
           --format progress
           --out std
           --format junit
@@ -266,7 +269,6 @@ behat:
 # Accessibility jobs for Drupal 8+
 ################################################################################
 
-# @TODO: xml / html or text report ?
 accessibility_pa11y:
   stage: tests
   extends: .test_template
@@ -275,15 +277,28 @@ accessibility_pa11y:
       when: never
     - when: on_success
   script:
+    - |
+      # Test if we have a pa11y config file
+      if [ ! -f "${CI_PROJECT_DIR}/${PA11Y_TESTS}" ]; then
+        echo -e "\033[1;31mPa11y tests file ${CI_PROJECT_DIR}/${PA11Y_TESTS} not found in this project.\033[0;37m"
+        exit 1
+      fi
     # Install Drupal with the selected profile.
-    - chmod +x ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh
-    - ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh ${PA11Y_INSTALL_PROFILE}
+    - echo -e "\e[0Ksection_start:`date +%s`:pa11y_install[collapsed=true]\r\e[0K\e[1;34mInstall drupal ${PA11Y_INSTALL_PROFILE} and packages"
+    - robo drupal:install ${PA11Y_INSTALL_PROFILE}
     # Install Pa11y-ci for tests with yarn.
-    - yarn --cwd ${WEB_ROOT}/core add pa11y-ci
+    - yarn --cwd ${WEB_ROOT}/core add pa11y-ci pa11y-ci-reporter-html
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
+    - echo -e "\e[0Ksection_end:`date +%s`:pa11y_install\r\e[0K"
     # Run pa11y tests using ./gitlab-ci/pa11y-ci.json file definition.
-    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci --config ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y.txt
+    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci
+          --config ${CI_PROJECT_DIR}/${PA11Y_TESTS}
+          --json
+          2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y-results.json
   after_script:
+    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci-reporter-html
+          -s ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y-results.json
+          -d ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/
     - cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
 
 ################################################################################
@@ -300,6 +315,8 @@ php-qa:
       when: never
     - when: on_success
   script:
+    # Avoid phpstan failing.
+    - cd ${DOC_ROOT}
     # Check variable TOOLS_QA to select tools.
     - phpqa --tools ${TOOLS_QA}
         --config ${CI_PROJECT_DIR}/.gitlab-ci

@@ -7,6 +7,7 @@
   dependencies:
     - build
   before_script:
+    - echo -e "\e[0Ksection_start:`date +%s`:qa_prepare[collapsed=true]\r\e[0K\e[1;34mRobo ci:prepare, set tools registries"
     - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
       fi
@@ -16,5 +17,4 @@
     # Prepare ci (mirror files in Docker image doc root).
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare
-    # Avoid phpstan failing.
-    - cd ${DOC_ROOT}
+    - echo -e "\e[0Ksection_end:`date +%s`:qa_prepare\r\e[0K"
