@@ -96,15 +96,9 @@ build:
     # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
     # @todo: remove when 8.9 is deprecated and add as default in ci images.
     - |
-      if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
+      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ] && [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
         echo -e "\e[0Ksection_start:`date +%s`:prophecy_install[collapsed=true]\r\e[0K\e[1;34mInstall prophecy-phpunit for Drupal 9+\e[0m";
-        if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-          echo "\e[1;34mProject install\e[0m";
-          composer require --no-ansi -n "phpspec/prophecy-phpunit";
-        elif [ ${CI_TYPE} == "module" ]; then
-          echo "\e[1;34mModule install\e[0m";
-          composer require --no-ansi -n -d /opt/drupal "phpspec/prophecy-phpunit";
-        fi
+        composer require --no-ansi -n "phpspec/prophecy-phpunit";
         echo -e "\e[0Ksection_end:`date +%s`:prophecy_install\r\e[0K";
       fi
 
