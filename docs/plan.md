@@ -4,16 +4,14 @@ You want to help me make this better? Good! just PR / MR!
 
 I would like to:
 
-- Add a one page report that can be published to Gitlab pages
-  
+- Add a one page report that can be published to Gitlab pages (WIP).
+
 - Add release sample
  - Release to Gitlab when https://gitlab.com/gitlab-org/release-cli/-/blob/master/docs/index.md#using-this-tool-in-gitlab-ci
  - Release to Drupal.org
 
-- Add a variable for artifacts expire_in value, when this is merged:  
+- Add a variable for artifacts expire_in value, when this is merged:
 https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/1893
-
-- Add Nightwatch [visual regression testing](https://github.com/Crunch-io/nightwatch-vrt)
 
 - Add a matrix option like Travis to test against multiple Php versions and
 databases when [Gitlab-Ci support it](https://gitlab.com/gitlab-org/gitlab/issues/23405)

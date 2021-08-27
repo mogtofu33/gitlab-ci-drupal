@@ -12,11 +12,11 @@
 # - Buy me a coffee: https://bit.ly/34jPKcE
 # - Hire me as a freelance for any Drupal related work
 # - Promote me to any company looking for any Drupal related work
-# - Help me with testing / documentation / grammar fixes / use cases
+# - Help me with testing / documentation / grammar fixes / use cases...
 #
 ################################################################################
 
-# The ref is relative to the version of the project to use, best to use a tag.
+# The ref is relative to the version of the project to use.
 include:
   # If hosted on gitlab.com.
   - project: 'mog33/gitlab-ci-drupal'
@@ -45,7 +45,7 @@ variables:
   extends: .default_variables
 
   # Global config remote files ref.
-  # MUST be the same as include: ref: from above.
+  # SHOULD be the same as 'include: ref:' from above.
   CI_REF: 3.x-dev
 
   # Minor Drupal version to work with, limited to tags on
@@ -58,10 +58,14 @@ variables:
   # Only needed if you have Behat tests, comment or set to 0 to enable.
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#behat-tests
   SKIP_TEST_BEHAT: 1
+  # Can use a profile setup or a dump file in dump/
+  BEHAT_INSTALL_PROFILE: "minimal"
 
-  # Accessibility tests, need a profile and setup.
+  # Accessibility tests.
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#accessibility-with-pa11y
   SKIP_TEST_PA11Y: 1
+  # Can use a profile setup or a dump file in dump/
+  PA11Y_INSTALL_PROFILE: "minimal"
 
   # Only if you have Nightwatch tests in your code.
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
