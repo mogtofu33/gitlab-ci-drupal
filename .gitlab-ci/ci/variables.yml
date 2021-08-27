@@ -57,6 +57,8 @@
   # If not using a db dump, select install profile for Behat and Pa11y tests.
   BEHAT_INSTALL_PROFILE: "minimal"
   PA11Y_INSTALL_PROFILE: "minimal"
+  # Pa11y test file, relatiove to the root of this project.
+  PA11Y_TESTS: ".gitlab-ci/pa11y-ci.json"
 
   # See Phpqa available tools:
   # https://github.com/EdgedesignCZ/phpqa#available-tools
