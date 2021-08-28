@@ -118,7 +118,8 @@ phpunit_unit:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
     # Run PHPunit tests for unit, kernel, with coverage report.
-    - XDEBUG_MODE=coverage ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel" 
+    - XDEBUG_MODE=coverage ${DOC_ROOT}/vendor/bin/phpunit
+        --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
@@ -148,7 +149,8 @@ phpunit_func:
     - when: on_success # Only for this project to generate documentation.
   script:
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional" 
+    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
+        --testsuite "${PHPUNIT_TESTS}functional"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functional.xml
@@ -170,7 +172,8 @@ phpunit_funcjs:
     - /scripts/start-chromedriver.sh&
     - sleep 2s
     - curl -s http://localhost:9515/status | jq '.' || true
-    - ${DOC_ROOT}/vendor/bin/phpunit --testsuite "${PHPUNIT_TESTS}functional-javascript" 
+    - ${DOC_ROOT}/vendor/bin/phpunit
+        --testsuite "${PHPUNIT_TESTS}functional-javascript"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml
@@ -190,27 +193,28 @@ nightwatchjs:
     - when: on_success
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34mInstall NightwatchJs"
+    - cd ${WEB_ROOT}/core
     # Install packages from Drupal.
-    - yarn --cwd ${WEB_ROOT}/core install
+    - yarn install
     # Update chromedriver if needed, the ci image include the latest stable version of chrome.
     # Drupal package.json can be late on chromedriver version.
-    - yarn --cwd ${WEB_ROOT}/core upgrade chromedriver@$(google-chrome --product-version | cut -d. -f1)
+    - yarn upgrade chromedriver@$(google-chrome --product-version | cut -d. -f1)
     # Log versions.
     - |
-      ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
-      ${WEB_ROOT}/core/node_modules/.bin/chromedriver --version
+      node_modules/.bin/nightwatch --version
+      node_modules/.bin/chromedriver --version
       /usr/bin/google-chrome --version
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Launch Nightwatch tests from core folder.
-    - yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
+    - yarn test:nightwatch ${NIGHTWATCH_TESTS}
   after_script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install_reporter[collapsed=true]\r\e[0K\e[1;34mInstall NightwatchJs reporter"
     # Html report, install plugin and run from the xml report.
-    - yarn --cwd ${WEB_ROOT}/core add nightwatch-html-reporter
+    - yarn add nightwatch-html-reporter
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install_reporter\r\e[0K"
-    - ${WEB_ROOT}/core/node_modules/.bin/nightwatch-html-reporter
+    - node_modules/.bin/nightwatch-html-reporter
         --report-dir /tmp/report-${CI_JOB_NAME}
         --output nightwatch.html
         --browser false
@@ -235,7 +239,7 @@ security:
   # Allow failure to produce report and warning when we have an error.
   allow_failure: true
 
-# Behat tests from tests/ folder.
+# Behat tests from behat_tests/ folder at the root of your project.
 behat:
   stage: tests
   extends: .test_template
@@ -260,13 +264,14 @@ behat:
     - curl -s http://localhost:9222/json/version | jq '.' || true
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
     - cd ${WEB_ROOT}
-    - ${DOC_ROOT}/vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
-          --format progress
-          --out std
-          --format junit
-          --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
-          --format html
-          --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+    - ${DOC_ROOT}/vendor/bin/behat
+        --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+        --format progress
+        --out std
+        --format junit
+        --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+        --format html
+        --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
 
 ################################################################################
 # Accessibility jobs for Drupal 8+
@@ -289,19 +294,20 @@ accessibility_pa11y:
     # Install Drupal with the selected profile.
     - echo -e "\e[0Ksection_start:`date +%s`:pa11y_install[collapsed=true]\r\e[0K\e[1;34mInstall drupal ${PA11Y_INSTALL_PROFILE} and packages"
     - robo drupal:install ${PA11Y_INSTALL_PROFILE}
-    # Install Pa11y-ci for tests with yarn.
-    - yarn --cwd ${WEB_ROOT}/core add pa11y-ci pa11y-ci-reporter-html
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
+    - cd ${WEB_ROOT}/core
+    # Install Pa11y-ci for tests with yarn.
+    - yarn add pa11y-ci pa11y-ci-reporter-html
     - echo -e "\e[0Ksection_end:`date +%s`:pa11y_install\r\e[0K"
     # Run pa11y tests using ./gitlab-ci/pa11y-ci.json file definition.
-    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci
-          --config ${CI_PROJECT_DIR}/${PA11Y_TESTS}
-          --json
-          2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y-results.json
+    - node_modules/.bin/pa11y-ci
+        --config ${CI_PROJECT_DIR}/${PA11Y_TESTS}
+        --json
+        2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y-results.json
   after_script:
-    - ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci-reporter-html
-          -s ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y-results.json
-          -d ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/
+    - node_modules/.bin/pa11y-ci-reporter-html
+        -s ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/pa11y-results.json
+        -d ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/
     - cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
 
 ################################################################################
@@ -329,10 +335,10 @@ php-qa:
   allow_failure: true
 
 ################################################################################
-# Code lint jobs for Drupal 8+
+# Code lint jobs for Drupal 8/9
 ################################################################################
 
-# This is a eslint report based on Drupal 8.x standards.
+# This is a eslint report based on Drupal 8/9 standards.
 # https://www.drupal.org/docs/develop/standards/javascript
 # @TODO: junit report.
 lint_js:
@@ -343,16 +349,22 @@ lint_js:
       when: never
     - when: always
   script:
-    # Start from the core folder to access node_modules.
-    - cd ${WEB_ROOT}/core
+    # Added eslint option for Drupal 9.0+.
+    # @todo: move as default option when 8.9 is deprecated.
+    - |
+      if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
+        ESLINT_RESOLVE_FIX="--resolve-plugins-relative-to ${WEB_ROOT}/core"
+      fi
     # Run the eslint command to generate an html report.
     # --format junit --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-unit.xml"
-    - ${WEB_ROOT}/core/node_modules/.bin/eslint
-        --config ${WEB_ROOT}/core/.eslintrc.passing.json
-        --format html --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html"
+    - cd ${WEB_ROOT}/core && node_modules/.bin/eslint
+        --config .eslintrc.passing.json
+        ${ESLINT_RESOLVE_FIX}
+        --format html
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html"
         "${DIRS_JS}"
 
-# Drupal 8.x rules used here for stylelint to check css.
+# Drupal 8/9 rules used here for stylelint to check css.
 # https://www.drupal.org/docs/develop/standards/css
 # @TODO: stylelint html & junit report. + sass / scss support?
 # https://www.npmjs.com/package/stylelint-junit-formatter
@@ -364,11 +376,9 @@ lint_css:
       when: never
     - when: always
   script:
-    # Start from the core folder to access node_modules.
-    - cd ${WEB_ROOT}/core
-    # Css report, terminal only for now.
-    - ${WEB_ROOT}/core/node_modules/.bin/stylelint
-        --config ${WEB_ROOT}/core/.stylelintrc.json
+    # Css report, terminal only.
+    - cd ${WEB_ROOT}/core && node_modules/.bin/stylelint
+        --config .stylelintrc.json
         --formatter verbose
         "${DIRS_CSS}"
         2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_css.txt
