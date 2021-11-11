@@ -6,7 +6,7 @@
   image: node:lts-alpine
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:report_prepare[collapsed=true]\r\e[0K\e[1;34mPrepare report"
-    - apk --no-cache add jq tree git curl python
+    - apk --no-cache add jq tree git curl
     - git clone https://gitlab.com/mog33/reports--gitlab-ci-drupal.git dashboard
     - mkdir -p dashboard/src/reports/
     - cp -r ./report-*/ ./dashboard/src/reports/
