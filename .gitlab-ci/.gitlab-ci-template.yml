@@ -158,7 +158,7 @@ phpunit_func:
         --verbose --debug
   after_script:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
+    - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
 phpunit_funcjs:
   stage: tests
@@ -181,7 +181,7 @@ phpunit_funcjs:
         --verbose
   after_script:
     - mkdir -p report-${CI_JOB_NAME}/browser_output
-    - cp ${WEB_ROOT}/sites/simpletest/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
+    - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 nightwatchjs:
