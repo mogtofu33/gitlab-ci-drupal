@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<phpunit bootstrap="tests/bootstrap.php" colors="true"
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
+         bootstrap="tests/bootstrap.php" colors="true"
          beStrictAboutTestsThatDoNotTestAnything="true"
          beStrictAboutOutputDuringTests="true"
          beStrictAboutChangesToGlobalState="true"
-         printerClass="\Drupal\Tests\Listeners\HtmlOutputPrinter">
+         failOnWarning="true"
+         printerClass="\Drupal\Tests\Listeners\HtmlOutputPrinter"
+         cacheResult="false">
   <php>
     <!-- Set error reporting to E_ALL. -->
     <ini name="error_reporting" value="32767"/>
@@ -47,27 +50,22 @@
   <listeners>
     <listener class="\Drupal\Tests\Listeners\DrupalListener">
     </listener>
-    <!-- The Symfony deprecation listener has to come after the Drupal listener -->
-    <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener">
-    </listener>
   </listeners>
   <!-- Filter for coverage reports. -->
-  <filter>
-    <whitelist>
+  <coverage>
+    <include>
       <directory>../modules/custom</directory>
-      <exclude>
-        <directory>../modules/custom/*/src/Tests</directory>
-        <directory>../modules/custom/*/tests</directory>
-        <directory>../modules/custom/*/modules/*/src/Tests</directory>
-        <directory>../modules/custom/*/modules/*/tests</directory>
-      </exclude>
       <directory>../themes/custom</directory>
-      <exclude>
-        <directory>../themes/custom/*/src/Tests</directory>
-        <directory>../themes/custom/*/tests</directory>
-        <directory>../themes/custom/*/modules/*/src/Tests</directory>
-        <directory>../themes/custom/*/modules/*/tests</directory>
-      </exclude>
-    </whitelist>
-  </filter>
+    </include>
+    <exclude>
+      <directory>../modules/custom/*/src/Tests</directory>
+      <directory>../modules/custom/*/tests</directory>
+      <directory>../modules/custom/*/modules/*/src/Tests</directory>
+      <directory>../modules/custom/*/modules/*/tests</directory>
+      <directory>../themes/custom/*/src/Tests</directory>
+      <directory>../themes/custom/*/tests</directory>
+      <directory>../themes/custom/*/modules/*/src/Tests</directory>
+      <directory>../themes/custom/*/modules/*/tests</directory>
+    </exclude>
+  </coverage>
 </phpunit>
