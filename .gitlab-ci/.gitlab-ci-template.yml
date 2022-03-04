@@ -75,14 +75,10 @@ build:
         composer validate --no-check-all --no-check-publish -n --no-ansi;
       fi
     # Install the project.
+    - ls -lAh
     - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         echo -e "\e[0Ksection_start:`date +%s`:build_install[collapsed=true]\r\e[0K\e[1;34mComposer install\e[0m";
-        composer install --no-ansi --no-interaction --optimize-autoloader;
-      fi
-    - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        echo -e "\e[0Ksection_start:`date +%s`:build_install2[collapsed=true]\r\e[0K\e[1;34mComposer install\e[0m";
         composer install --no-ansi --no-interaction -a;
-        echo -e "\e[0Ksection_end:`date +%s`:build_install2\r\e[0K";
       fi
     # Ensure we have Drupal Dev third party for next jobs.
     - |
