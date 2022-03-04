@@ -77,7 +77,7 @@ build:
     # Install the project.
     - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         echo -e "\e[0Ksection_start:`date +%s`:build_install[collapsed=true]\r\e[0K\e[1;34mComposer install\e[0m";
-        composer install --no-ansi --no-interaction --prefer-dist --working-dir ${CI_PROJECT_DIR};
+        composer install --no-ansi --no-interaction --optimize-autoloader --working-dir ${CI_PROJECT_DIR};
         echo -e "\e[0Ksection_end:`date +%s`:build_install\r\e[0K";
       fi
     # Ensure we have Drupal Dev third party for next jobs.
