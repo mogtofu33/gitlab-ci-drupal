@@ -6,24 +6,25 @@ set -e
 
 ###############################################################################
 # Local only tests, not included in Gtilab ci and more flexible.
-###############################################################################
+#############################################################################&##
 __install_phpunit() {
   if ! eval "_exist_file /opt/drupal/vendor/bin/phpunit"; then
     if [ "${CI_TYPE}" == "project" ]; then
       if eval "_exist_file /opt/drupal/composer.json"; then
-        composer require --no-ansi -n -d /opt/drupal --dev "drupal/core-dev:~${CI_DRUPAL_VERSION}";
+        _dkexec_bash "composer require --no-ansi -n -d /opt/drupal --dev 'drupal/core-dev:~${CI_DRUPAL_VERSION}';"
       fi
     fi
   fi
-  _dkexec ${DOC_ROOT}/vendor/bin/phpunit --version
 
-  # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
-  if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
-    if ! eval "_exist_file /opt/drupal/vendor/phpspec/prophecy-phpunit/src/ProphecyTrait.php"; then
-      printf "%s[NOTICE]%s Install phpspec/prophecy-phpunit\\n" "${_dim}" "${_end}"
-      _dkexec composer require --no-ansi -n -d /opt/drupal --dev "phpspec/prophecy-phpunit:^2"
+  if ! eval "_exist_dir /opt/drupal/vendor/phpspec/prophecy-phpunit"; then
+    if [ "${CI_TYPE}" == "project" ]; then
+      if eval "_exist_file /opt/drupal/composer.json"; then
+        _dkexec_bash "composer require --no-ansi -n -d /opt/drupal --dev 'phpspec/prophecy-phpunit:^2';"
+      fi
     fi
   fi
+
+  _dkexec ${DOC_ROOT}/vendor/bin/phpunit --version
 }
 
 # Standalone Phpunit test for local tests, can set path as argument.
@@ -170,10 +171,10 @@ _behat() {
 
   __install_behat
 
-  _dkexec \
-    ${DOC_ROOT}/vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml \
-      --format progress \
-      --out std
+  # _dkexec \
+  #   ${DOC_ROOT}/vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml \
+  #     --format progress \
+  #     --out std
 }
 
 __install_behat() {
@@ -226,8 +227,8 @@ _nightwatch() {
   docker cp "$_DIR/../.env" ci-drupal:/opt/drupal/web/core/.env
 
   # Running tests
-  docker exec -it -u root -w ${CI_PROJECT_DIR} ci-drupal \
-    yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
+  # docker exec -it -u root -w ${CI_PROJECT_DIR} ci-drupal \
+  #   yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
 
 }
 
@@ -306,14 +307,16 @@ _nightwatch() {
 _dkexec() {
   if ! [ -f "/.dockerenv" ]; then
     if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
-    docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
+    # docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
+    docker exec -it ci-drupal "$@" || true
   fi
 }
 
 _dkexec_bash() {
   if ! [ -f "/.dockerenv" ]; then
     if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
-    docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
+    # docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
+    docker exec -it ci-drupal bash -c "$@"
   fi
 }
 
@@ -493,7 +496,7 @@ _yml_to_env_fixes() {
 
 _up() {
   if [ -f "$_DIR/docker-compose.yml" ]; then
-    docker-compose --project-directory $_DIR -f $_DIR/docker-compose.yml up -d
+    docker compose --project-directory $_DIR -f $_DIR/docker-compose.yml up -d
   else
     printf "%s[ERROR]%s Missing $_DIR/docker-compose.yml file.\\n" "${_red}" "${_end}"
     exit 1
@@ -503,7 +506,7 @@ _up() {
 
 _down() {
   if [ -f "$_DIR/docker-compose.yml" ]; then
-    docker-compose --project-directory $_DIR -f $_DIR/docker-compose.yml down
+    docker compose --project-directory $_DIR -f $_DIR/docker-compose.yml down
   else
     printf "%s[ERROR]%s Missing $_DIR/docker-compose.yml file.\\n" "${_red}" "${_end}"
     exit 1
@@ -511,6 +514,11 @@ _down() {
 }
 
 _reboot() {
+  _down
+  _up
+}
+
+_restart() {
   _down
   _up
 }
