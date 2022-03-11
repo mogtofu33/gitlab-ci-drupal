@@ -33,7 +33,8 @@
   # Path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' on some
   # distributions.
-  WEB_ROOT: "/opt/drupal/web"
+  DRUPAL_WEB_ROOT: web
+  WEB_ROOT: "/opt/drupal/${DRUPAL_WEB_ROOT}"
 
   # Path to the Drupal doc root.
   # Apache docroot of the image used to run the jobs.
@@ -57,7 +58,7 @@
   # If not using a db dump, select install profile for Behat and Pa11y tests.
   BEHAT_INSTALL_PROFILE: "minimal"
   PA11Y_INSTALL_PROFILE: "minimal"
-  # Pa11y test file, relatiove to the root of this project.
+  # Pa11y test file, relative to the root of this project.
   PA11Y_TESTS: ".gitlab-ci/pa11y-ci.json"
 
   # See Phpqa available tools:

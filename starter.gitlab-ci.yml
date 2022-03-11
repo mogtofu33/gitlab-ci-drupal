@@ -42,15 +42,19 @@ include:
 
 variables:
   # This is mandatory to get default variables.
+  # For list of variables see
+  # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables.yml
   extends: .default_variables
-
-  # Global config remote files ref.
-  # SHOULD be the same as 'include: ref:' from above.
-  CI_REF: 3.x-dev
 
   # Minor Drupal version to work with, limited to tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags
-  # CI_DRUPAL_VERSION: "9.3"
+  CI_DRUPAL_VERSION:
+    value: "9.3"
+    description: The version of Drupal to use for this Pipeline.
+
+  # For a project based on Drupal this is 'web'. Can be 'docroot' on some
+  # distributions like 'varbase'.
+  DRUPAL_WEB_ROOT: web
 
   ##############################################################################
   # Tests disabled by default because need a specific setup / configuration.
