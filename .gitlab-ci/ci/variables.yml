@@ -20,18 +20,14 @@
 
   # Minor Drupal version to work with, limited to tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags?name=3.x
-  CI_DRUPAL_VERSION:
-    value: "9.3"
-    description: The version of Drupal to use for this Pipeline.
+  CI_DRUPAL_VERSION: "9.3"
 
   # Select what you are running CI on, options are:
   #   project
   #     A full Drupal project with a composer.json file at the root.
   #   module
   #     A single Drupal module or theme at the root.
-  CI_TYPE:
-    value: "project"
-    description: The type of code, project (full Drupal), or module.
+  CI_TYPE: "project"
   # CI_TYPE: "module"
 
   # Path to the Drupal web root.
@@ -46,9 +42,7 @@
   # Phpunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
-  PHPUNIT_TESTS:
-    value: "custom"
-    description: Run tests for custom code as defined in phpunit.xml
+  PHPUNIT_TESTS: "custom"
 
   # Specify a group of tests to run rather than all tests in the suite.
   # PHPUNIT_GROUP: my_group_1,my_group_2

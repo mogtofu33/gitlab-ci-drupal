@@ -50,7 +50,9 @@ variables:
 
   # Minor Drupal version to work with, limited to tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags
-  # CI_DRUPAL_VERSION: "9.3"
+  CI_DRUPAL_VERSION:
+    value: "9.3"
+    description: The version of Drupal to use for this Pipeline.
 
   ##############################################################################
   # Tests disabled by default because need a specific setup / configuration.
@@ -76,7 +78,9 @@ variables:
   # Phpunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
-  PHPUNIT_TESTS: "custom"
+  PHPUNIT_TESTS:
+    value: "custom"
+    description: Run tests for custom code as defined in phpunit.xml
 
   # Specify a group of tests to run rather than all tests in the suite.
   # PHPUNIT_GROUP: my_group_1,my_group_2
