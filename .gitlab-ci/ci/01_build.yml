@@ -42,12 +42,14 @@
     paths:
       - vendor
       - web
+      - docroot
   artifacts:
     expire_in: 1 week
     paths:
       # Build files for next steps and deploy/release.
       - vendor
       - web
+      - docroot
       - composer.json
       - composer.lock
       # Files from this project.
