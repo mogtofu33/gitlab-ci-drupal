@@ -125,7 +125,7 @@ class RoboFile extends Tasks {
    *   The drupal version used, look at env values for. This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
-  protected $ciDrupalVersion = "9.2";
+  protected $ciDrupalVersion = "9.3";
 
   /**
    * CI_REMOTE_FILES context.

@@ -161,7 +161,7 @@ tests.
 To install Drupal from a db dump, you need a dump file located in a dump folder at the root of your project.
 
 This dump file must follow a naming convention: `dump-DRUPAL_VERSION_PROFILE.sql`, where:
-- `DRUPAL_VERSION` is your drupal version, eg: 8.9 or 9.2
+- `DRUPAL_VERSION` is your drupal version, eg: 9.2 or 9.3
 - `PROFILE` is your profile name set as `BEHAT_INSTALL_PROFILE`
 
 To choose the Drupal profile for installation, you can set the `BEHAT_INSTALL_PROFILE` variable.
@@ -304,7 +304,7 @@ When a test failed, a screen capture is recorded in the reports.
 To install Drupal from a db dump, you need a dump file located in a dump folder at the root of your project.
 
 This dump file must follow a naming convention: `dump-DRUPAL_VERSION_PROFILE.sql`, where:
-- `DRUPAL_VERSION` is your drupal version, eg: 8.9 or 9.2
+- `DRUPAL_VERSION` is your drupal version, eg: 9.2 or 9.3
 - `PROFILE` is your profile name set as `PA11Y_INSTALL_PROFILE`
 
 To choose the Drupal profile for installation, you can set the `PA11Y_INSTALL_PROFILE` variable.
