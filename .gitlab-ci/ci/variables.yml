@@ -33,7 +33,8 @@
   # Path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' on some
   # distributions.
-  WEB_ROOT: "/opt/drupal/web"
+  DRUPAL_WEB_ROOT: web
+  WEB_ROOT: "/opt/drupal/${DRUPAL_WEB_ROOT}"
 
   # Path to the Drupal doc root.
   # Apache docroot of the image used to run the jobs.

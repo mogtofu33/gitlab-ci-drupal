@@ -53,6 +53,16 @@ class RoboFile extends Tasks {
    *
    * @var string
    *   The webroot folder of Drupal. This can be overridden by specifying a
+   *   $DRUPAL_WEB_ROOT environment variable.
+   *   Default is to the ci image value.
+   */
+  protected $drupalWebRoot = 'web';
+
+  /**
+   * Drupal webroot folder.
+   *
+   * @var string
+   *   The webroot folder of Drupal. This can be overridden by specifying a
    *   $WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
@@ -189,9 +199,16 @@ class RoboFile extends Tasks {
     if (getenv('DOC_ROOT')) {
       $this->docRoot = getenv('DOC_ROOT');
     }
+    // Pull a DRUPAL_WEB_ROOT from the environment, if it exists.
+    if (getenv('DRUPAL_WEB_ROOT')) {
+      $this->drupalWebRoot = getenv('DRUPAL_WEB_ROOT');
+    }
     // Pull a WEB_ROOT from the environment, if it exists.
     if (getenv('WEB_ROOT')) {
       $this->webRoot = getenv('WEB_ROOT');
+    }
+    else {
+      $this->webRoot = $this->docRoot . '/' . $this->drupalWebRoot;
     }
 
     // Pull a NIGHTWATCH_TESTS from the environment, if it exists.
@@ -320,7 +337,7 @@ class RoboFile extends Tasks {
           // Root contain a web/ folder, we mirror each folders.
           foreach (['modules', 'themes', 'profiles'] as $type) {
             $this->ciMirror(
-              $this->ciProjectDir . '/web/' . $type . '/custom',
+              $this->ciProjectDir . '/' . $this->drupalWebRoot . '/' . $type . '/custom',
               $this->webRoot . '/' . $type . '/custom'
             );
           }

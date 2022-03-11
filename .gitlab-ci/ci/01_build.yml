@@ -41,21 +41,20 @@
     key: "drupal-${CI_COMMIT_REF_NAME}"
     paths:
       - vendor
-      - web
-      - docroot
+      - ${DRUPAL_WEB_ROOT}
   artifacts:
     expire_in: 1 week
     paths:
       # Build files for next steps and deploy/release.
       - vendor
-      - web
-      - docroot
+      - ${DRUPAL_WEB_ROOT}
       - composer.json
       - composer.lock
       # Files from this project.
       - RoboFile.php
       - .gitlab-ci
-      # Deprecated Drupal composer project template.
+      # Load environment strategy, if used.
+      - load.environment.php
+      # Legacy Drupal composer project template.
       - drush
       - scripts
-      - load.environment.php
