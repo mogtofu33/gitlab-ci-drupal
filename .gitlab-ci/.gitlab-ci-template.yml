@@ -12,7 +12,7 @@
 # - Buy me a coffee: https://bit.ly/34jPKcE
 # - Hire me as a freelance for any Drupal related work
 # - Promote me to any company looking for any Drupal related work
-# - Help me with testing / Documentation / Use cases
+# - Help me with Testing / Documentation / Use cases
 #
 # For Gitlab CI help on this file see: https://docs.gitlab.com/ee/ci/yaml
 #
@@ -22,24 +22,19 @@
 
 include:
   # Include in include must be as remote to work.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/variables.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/variables_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/artifacts.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/01_build.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/02_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/03_qa.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/04_lint.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/05_metrics.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/06_deploy.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables_test.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/artifacts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/01_build.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/02_test.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/03_qa.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/04_lint.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/05_metrics.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_deploy.yml'
   # [WIP] All reports in one page.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/06_report.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_report.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/test/.gitlab-ci/ci/06_release.yml'
-
-# Variables must be used in your .gitlab-ci.yml:
-#
-# variables:
-#   extends: .default_variables
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_release.yml'
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
@@ -51,7 +46,7 @@ stages:
   - build
   - tests
   - metrics
-  # [DEPLOY] All deploy jobs can be set here.phpspec/prophecy-phpunit
+  # [DEPLOY] All deploy jobs can be set here.
   # Sample of a deploy workflow:
   # - deploy to testing
   # - deploy to production
@@ -93,8 +88,9 @@ build:
           "emuse/behat-html-formatter:0.2.*";
         echo -e "\e[0Ksection_end:`date +%s`:dev_install\r\e[0K";
       fi
-    # Added phpspec for Drupal 9.0+, @see https://www.drupal.org/project/drupal/issues/3182653
-    # @todo: remove when 8.9 is deprecated and add as default in ci images.
+    # Added phpspec/prophecy-phpunit for Drupal 9.0+
+    # @see https://www.drupal.org/project/drupal/issues/3182653
+    # @todo remove when 8.9 is deprecated and add as default in ci images.
     - |
       if [ ${CI_TYPE} == "project" ] && [ -f composer.json ] && [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
         echo -e "\e[0Ksection_start:`date +%s`:prophecy_install[collapsed=true]\r\e[0K\e[1;34mInstall prophecy-phpunit for Drupal 9+\e[0m";
@@ -313,7 +309,7 @@ accessibility_pa11y:
 ################################################################################
 # Code quality jobs for Drupal 8+ based on PHPQA
 # https://github.com/EdgedesignCZ/phpqa
-# @TODO: codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
+# @todo codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
 ################################################################################
 
 php-qa:
@@ -340,7 +336,7 @@ php-qa:
 
 # This is a eslint report based on Drupal 8/9 standards.
 # https://www.drupal.org/docs/develop/standards/javascript
-# @TODO: junit report.
+# @todo junit report.
 lint_js:
   stage: tests
   extends: .lint_template
@@ -350,7 +346,7 @@ lint_js:
     - when: always
   script:
     # Added eslint option for Drupal 9.0+.
-    # @todo: move as default option when 8.9 is deprecated.
+    # @todo move as default option when 8.9 is deprecated.
     - |
       if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
         ESLINT_RESOLVE_FIX="--resolve-plugins-relative-to ${WEB_ROOT}/core"
@@ -366,7 +362,7 @@ lint_js:
 
 # Drupal 8/9 rules used here for stylelint to check css.
 # https://www.drupal.org/docs/develop/standards/css
-# @TODO: stylelint html & junit report. + sass / scss support?
+# @todo stylelint html & junit report. + sass / scss support?
 # https://www.npmjs.com/package/stylelint-junit-formatter
 lint_css:
   stage: tests
@@ -400,7 +396,7 @@ lint_twig:
 ################################################################################
 
 # Phpmetrics, Phploc, Pdepend report, no pass or failure as it's just informative.
-# @TODO phpmetrics with junit report from code-coverage
+# @todo phpmetrics with junit report from code-coverage
 metrics:
   stage: metrics
   extends: .metrics_template
