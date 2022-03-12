@@ -11,7 +11,8 @@
     # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
     SIMPLETEST_BASE_URL: "http://localhost"
     SIMPLETEST_DB: "mysql://root@mariadb/drupal"
-    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/default/files/simpletest"
+    BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+    # BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/default/files/simpletest"
     SYMFONY_DEPRECATIONS_HELPER: "disabled"
     MINK_DRIVER_ARGS_WEBDRIVER: >
       [
