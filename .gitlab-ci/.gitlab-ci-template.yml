@@ -336,7 +336,6 @@ php-qa:
 
 # This is a eslint report based on Drupal 8/9 standards.
 # https://www.drupal.org/docs/develop/standards/javascript
-# @todo junit report.
 lint_js:
   stage: tests
   extends: .lint_template
@@ -345,25 +344,16 @@ lint_js:
       when: never
     - when: always
   script:
-    # Added eslint option for Drupal 9.0+.
-    # @todo move as default option when 8.9 is deprecated.
-    - |
-      if [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
-        ESLINT_RESOLVE_FIX="--resolve-plugins-relative-to ${WEB_ROOT}/core"
-      fi
-    # Run the eslint command to generate an html report.
-    # --format junit --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-unit.xml"
-    - cd ${WEB_ROOT}/core && node_modules/.bin/eslint
+    - cd ${WEB_ROOT}/core
+    - npx eslint
         --config .eslintrc.passing.json
-        ${ESLINT_RESOLVE_FIX}
+        --resolve-plugins-relative-to ${WEB_ROOT}/core
         --format html
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html"
         "${DIRS_JS}"
 
-# Drupal 8/9 rules used here for stylelint to check css.
+# Drupal 9 rules used here for stylelint to check css.
 # https://www.drupal.org/docs/develop/standards/css
-# @todo stylelint html & junit report. + sass / scss support?
-# https://www.npmjs.com/package/stylelint-junit-formatter
 lint_css:
   stage: tests
   extends: .lint_template
@@ -372,12 +362,13 @@ lint_css:
       when: never
     - when: always
   script:
-    # Css report, terminal only.
-    - cd ${WEB_ROOT}/core && node_modules/.bin/stylelint
+    - cd ${WEB_ROOT}/core
+    - yarn add stylelint-html-formatter
+    - npx stylelint
         --config .stylelintrc.json
-        --formatter verbose
+        --custom-formatter node_modules/stylelint-html-formatter
+        --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint.html
         "${DIRS_CSS}"
-        2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_css.txt
 
 lint_twig:
   stage: tests

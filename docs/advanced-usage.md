@@ -270,7 +270,11 @@ Eslint is based on the official
 Stylelint is based on the official
 [Drupal 8/9 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
+Both provide a html report that you can browse from within Gitlab CI.
+
 _Note:_ As this project is meant for Drupal, there is no override for these files.
+To setup your own rules for your css and js file you need to override these jobs
+and include your own config file.
 
 ### Metrics jobs
 
