@@ -15,7 +15,7 @@
     # Prepare ci (mirror files in Docker image doc root).
     - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
     - robo ci:prepare
-    - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+    - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} && chmod 777 ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
     # Install packages from core/package.json
     - yarn --cwd ${WEB_ROOT}/core install
     - echo -e "\e[0Ksection_end:`date +%s`:lint_prepare\r\e[0K"
