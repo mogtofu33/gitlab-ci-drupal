@@ -177,7 +177,7 @@ phpunit_funcjs:
     - /scripts/start-chromedriver.sh&
     - sleep 2s
     - curl -s http://localhost:9515/status | jq '.' || true
-    - ${DOC_ROOT}/vendor/bin/phpunit
+    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
         --testsuite "${PHPUNIT_TESTS}functional-javascript"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
