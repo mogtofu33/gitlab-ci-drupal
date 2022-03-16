@@ -21,3 +21,7 @@
     - echo -e "\e[0Ksection_end:`date +%s`:lint_prepare\r\e[0K"
   # Allow failure to produce report and warning, not a critical job.
   allow_failure: true
+  cache:
+    key: "drupal-node_modules-${CI_COMMIT_REF_NAME}"
+    paths:
+      - ${WEB_ROOT}/core/node_modules
