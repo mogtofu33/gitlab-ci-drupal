@@ -570,7 +570,8 @@ class RoboFile extends Tasks {
   private function ciDrush() {
     if (!file_exists($this->docRoot . '/vendor/bin/drush')) {
       $task = $this->composerRequire()
-        ->dependency('drush/drush', '^10')
+        ->dependency('drush/drush', '>10')
+        ->dev()
         ->run();
     }
 
