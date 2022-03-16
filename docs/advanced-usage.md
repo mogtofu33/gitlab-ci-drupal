@@ -237,10 +237,37 @@ to your `.gitlab-ci/`.
 
 ##### Ignore errors
 
-To ignore some errors as false positive for Drupal, uncomment the `ignoreErrors:` part of the phpstan.neon file.
+To ignore some errors as false positive for Drupal, create a `ignoreErrors:` section in your phpstan.neon file.
 
 Ignore errors that are not in your code will still trigger errors because of unmatched, uncomment
 `reportUnmatchedIgnoredErrors: false` to ignore unmatched ignored errors.
+
+Sample of common errors to ignore:
+
+```yaml
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        - '#Function t not found.#'
+        - '#Function node_is_page not found.#'
+        - '#Function theme_get_setting not found.#'
+        - '#Function file_prepare_directory not found.#'
+        - '#Function file_unmanaged_save_data not found.#'
+        - '#Function batch_set not found.#'
+        - '#Function _locale_parse_js_file not found.#'
+        - '#Constant FILE_CREATE_DIRECTORY not found.#'
+        - '#Constant FILE_EXISTS_RENAME not found.#'
+        - '#Constant FILE_STATUS_PERMANENT not found.#'
+        - '#Constant SAVED_NEW not found.#'
+        - '#Constant SAVED_UPDATED not found.#'
+        - '#Cannot call method toLink\(\) on Drupal\\node\\NodeInterface\|null.#'
+        - '#Unsafe usage of new static\(\).#'
+        - '#Access to an undefined property Drupal\\Core\\Field\\FieldItemListInterface\:\:\$entity.#'
+        - '#Access to an undefined property Drupal\\Core\\Field\\FieldItemListInterface\:\:\$value.#'
+        - '#Access to an undefined property Drupal\\Core\\Field\\FieldItemListInterface\:\:\$title.#'
+        - '#Call to an undefined method Drupal\\Core\\Database\\Query\\AlterableInterface\:\:execute\(\).#'
+        - '#Call to an undefined method Drupal\\Core\\Database\\Query\\AlterableInterface\:\:count\(\).#'
+        - '#Call to an undefined method Drupal\\Core\\Access\\AccessResultInterface\:\:setCacheMaxAge\(\).#'
+```
 
 ##### Autoloading
 
@@ -253,11 +280,7 @@ folder and add the parameter [scanDirectories or scanFiles](https://phpstan.org/
 with absolute path based on `/opt/drupal/web` for example:
 
 ```yaml
-includes:
-    - /var/www/.composer/vendor/mglaman/phpstan-drupal/extension.neon
 parameters:
-    drupal:
-        drupal_root: /opt/drupal
     scanDirectories:
         - /opt/drupal/web/modules/contrib/webform/
 ```
@@ -406,7 +429,7 @@ For deploy samples, see examples in documentation:
 https://docs.gitlab.com/ee/ci/examples/README.html
 
 ```yaml
-Deploy ssh:
+deploy ssh:
   stage: deploy
   extends: .deploy_ssh
   environment:
@@ -431,11 +454,45 @@ Deploy ssh:
   # Drupal project.
   ##############################################################################
   script:
+    # Clean dev modules from Drupal
+    - composer --no-dev update
     # Create remote path and send build.
     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mkdir ${ENV_PATH}/_tmp"
+    # Send files to remote server
     - scp -P22 -r vendor web ${ENV_USER}@${ENV_HOST}:${ENV_PATH}/_tmp
     # Replace Drupal with new build and keep previous version.
     - ssh -p22 ${ENV_USER}@${ENV_HOST} "mv ${ENV_PATH}/current ${ENV_PATH}/_previous && mv ${ENV_PATH}/_tmp ${ENV_PATH}/current"
     # Run any personal deploy script (backup db, drush updb, drush cim...)
     - ssh -p22 ${ENV_USER}@${ENV_HOST} "${ENV_PATH}/scripts/deploy.sh --env=testing"
+```
+
+#### Deploy Docker image sample
+
+```yaml
+deploy image:
+  stage: deploy
+  image: docker:20
+  services:
+    - docker:20-dind
+  variables:
+    IMAGE_NAME: "${IMAGE_NAME:-"drupal"}"
+    IMAGE_TAG: "${CI_COMMIT_SHORT_SHA}"
+    RELEASE_REGISTRY: docker.io
+    RELEASE_IMAGE: index.docker.io/$RELEASE_USER
+    # Docker in Docker variables.
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_BUILDKIT: 1
+  before_script:
+    # Clean dev modules from Drupal
+    - composer --no-dev update
+    - docker --version
+  script:
+    # Create docker image and include our Drupal code.
+    - docker build --compress --tag $- docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG ./.gitlab-ci
+    - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME
+    # Sample to push to Docker Hub.
+    - docker tag $CI_REGISTRY_IMAGE/$IMAGE_NAME $RELEASE_IMAGE/$IMAGE_NAME
+    - echo "$RELEASE_PASSWORD" | docker login $RELEASE_REGISTRY --username $RELEASE_USER --password-stdin
+    - docker push $RELEASE_IMAGE/$IMAGE_NAME
 ```
