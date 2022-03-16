@@ -65,12 +65,6 @@ variables:
   # Can use a profile setup or a dump file in dump/
   BEHAT_INSTALL_PROFILE: "minimal"
 
-  # Accessibility tests.
-  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#accessibility-with-pa11y
-  SKIP_TEST_PA11Y: 1
-  # Can use a profile setup or a dump file in dump/
-  PA11Y_INSTALL_PROFILE: "minimal"
-
   # Only if you have Nightwatch tests in your code.
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
   SKIP_TEST_NIGHTWATCH: 1

@@ -232,37 +232,6 @@ _nightwatch() {
 
 }
 
-# Replicate test pa11y .gitlab-ci/.gitlab-ci-template.yml
-# _pa11y() {
-#   printf "\\n%s[INFO]%s Perform job 'Pa11y' (pa11y)\\n\\n" "${_blu}" "${_end}"
-#   local CI_JOB_NAME="accessibility_pa11y"
-
-#   # script
-#   # _dkexec_bash \
-#     # ${CI_PROJECT_DIR}/.gitlab-ci/install_drupal.sh ${PA11Y_INSTALL_PROFILE}
-#   if [ $__skip_install = 1 ]; then
-#     printf "%s[SKIP]%s install\\n" "${_dim_blu}" "${_end}"
-#   else
-#     printf "%s[NOTICE]%s install Drupal %s\\n""${_dim}" "${_end}" "${1}"
-#     _dkexec \
-#       ${DOC_ROOT}/vendor/bin/drush --root="${WEB_ROOT}" si -y ${PA11Y_INSTALL_PROFILE} --db-url="${SIMPLETEST_DB}"
-#   fi
-
-#   if [ $__skip_build = 1 ]; then
-#     printf "%s[SKIP]%s build (yarn add pa11y-ci) \\n" "${_dim_blu}" "${_end}"
-#   else
-#     docker exec -it -w ${WEB_ROOT} ci-drupal \
-#       yarn --cwd ${WEB_ROOT}/core add pa11y-ci
-#   fi
-
-#   docker exec -it -w ${WEB_ROOT} ci-drupal \
-#     ${WEB_ROOT}/core/node_modules/.bin/pa11y-ci --config ${CI_PROJECT_DIR}/.gitlab-ci/pa11y-ci.json
-
-#   # after_script:
-#   _dkexec \
-#     mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}" && cp pa11y*.png "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
-# }
-
 ####### Metrics jobs
 
 # _metrics_template() {

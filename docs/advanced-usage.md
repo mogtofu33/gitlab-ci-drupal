@@ -13,7 +13,6 @@ Functional Js | Phpunit functional javascript test (Browser with javascript base
 Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | Yes (included) | text and html
 Security | Symfony security-checker, look at versions in composer.lock | No | text
 Behat tests | Support Behat tests from `behat_tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | Yes | html
-Pa11y | Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in [.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/) | Yes | text
 Code quality | Code sniffer with _Drupal standards_, _Drupal Best practice_s standard. Phpstan, Phpmd, Phpcpd | No | html
 Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | No | html
 Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules) | No | text
@@ -33,7 +32,6 @@ Nothing could be done without a bunch of awesome humans building awesome tools.
 - [PHPunit](https://phpunit.de)
 - [Security-checker](https://github.com/fabpot/local-php-security-checker)
 - [Behat](http://behat.org/en/latest)
-- [Pa11y](https://pa11y.org)
 
 Code quality is done using the wonderful Phpqa, a tool that integrate other Php
 quality and analysis tools:
@@ -307,22 +305,6 @@ Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org),
 
 _Note:_ Currently this project do not support analyzing coverage for Pdepend
 and junit report from Phpunit tests for Phpmetrics.
-
-### Accessibility with Pa11y
-
-Accessibility tests with [Pa11y](https://pa11y.org/), tests are defined in
-[.gitlab-ci/pa11y-ci.json](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/pa11y-ci.json)
-
-For setting your urls to test, adapt the urls section:
-
-```json
-  "urls": [
-    {
-      "url": "http://localhost",
-      "screenCapture": "pa11y-home.png"
-    }
-  ]
-```
 
 When a test failed, a screen capture is recorded in the reports.
 

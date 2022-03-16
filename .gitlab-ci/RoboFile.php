@@ -113,7 +113,6 @@ class RoboFile extends Tasks {
     'ci' => [
       '.phpmd.xml',
       '.phpqa.yml',
-      'pa11y-ci.json',
       'phpstan.neon',
       'settings.local.php',
     ],
