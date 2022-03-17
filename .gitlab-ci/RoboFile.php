@@ -363,33 +363,6 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Download Drupal from a composer.json file.
-   *
-   * @param string|null $dir
-   *   (optional) Working dir for this task.
-   */
-  public function composerInstall($dir = NULL) {
-    if (!$dir) {
-      $dir = $this->docRoot;
-    }
-
-    $task = $this->taskComposerInstall()
-      ->workingDir($dir)
-      ->preferDist()
-      ->noInteraction()
-      ->noAnsi()
-      ->ignorePlatformRequirements()
-      ->option('no-suggest');
-    if ($this->verbose) {
-      $task->arg('--verbose');
-    }
-    else {
-      $task->arg('--quiet');
-    }
-    $task->run();
-  }
-
-  /**
    * Helper for preparing a composer require task.
    *
    * @param string|null $dir
@@ -418,36 +391,6 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Updates Composer dependencies.
-   *
-   * @param string|null $dir
-   *   (optional) Working dir for this task.
-   */
-  public function composerUpdate($dir = NULL) {
-    if (!$dir) {
-      $dir = $this->docRoot;
-    }
-
-    // The git checkout includes a composer.lock, and running Composer update
-    // on it fails for the first time.
-    $this->taskFilesystemStack()->remove('composer.lock')->run();
-    $task = $this->taskComposerUpdate()
-      ->workingDir($dir)
-      ->optimizeAutoloader()
-      ->noInteraction()
-      ->noAnsi()
-      ->ignorePlatformRequirements()
-      ->option('no-suggest');
-    if ($this->verbose) {
-      $task->arg('--verbose');
-    }
-    else {
-      $task->arg('--quiet');
-    }
-    $task->run();
-  }
-
-  /**
    * Check Drupal.
    *
    * @return string
@@ -457,23 +400,6 @@ class RoboFile extends Tasks {
     return $this->ciDrush()
       ->args('status')
       ->option('fields', 'bootstrap', '=')
-      ->run();
-  }
-
-  /**
-   * Dump Drupal DB with Drush.
-   *
-   * @param string $profile
-   *   The profile to install.
-   */
-  public function drupalDump($profile) {
-    if (!file_exists($this->ciProjectDir . '/dump')) {
-      $this->_mkdir($this->ciProjectDir . '/dump');
-    }
-    $this->ciDrush()
-      ->args('sql:dump')
-      ->option('result-file', $this->ciProjectDir . '/dump/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql', '=')
-      ->option('gzip')
       ->run();
   }
 
