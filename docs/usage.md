@@ -1,6 +1,6 @@
 ### Variables
 
-First look in [.gitlab-ci/ci/variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/ci/variables.yml)
+First look in [.gitlab-ci/ci/variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/ci/variables.yml)
 and check the variables.
 This is all the variables you can override from global settings on Gitlab CI or
 when manually running a pipeline.
@@ -23,7 +23,7 @@ You can set variables values on your `.gitlab-ci.yml` or in the Gitlab CI UI
 under _Settings > CI/CD > Variables_
 
 With variables you can disable some tests without editing any file, available
-skip variables are described in [variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/ci/variables.yml)
+skip variables are described in [variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/ci/variables.yml)
 
 ### Workflow of jobs
 

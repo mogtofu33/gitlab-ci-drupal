@@ -87,7 +87,7 @@ Some examples of common tasks:
 <?php
 
 // Download a remote file:
-$myFile = 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/README.md';
+$myFile = 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/README.md';
 if ($this->taskExec("curl -fsSL $myFile -o $this->docRoot . '/ReAdMe.md")->run()->wasSuccessful()) {
   $this->say('File downloaded!');
 }
@@ -184,7 +184,7 @@ The pipeline in this project support Unit, Kernel, Functional,
 tests in Drupal 8/9, see
 [Type of tests in Drupal 8/9](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
-The tests configuration is defined in [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/phpunit.xml).
+The tests configuration is defined in [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml).
 
 There is 2 set of tests location:
 
@@ -202,7 +202,7 @@ PHPUNIT_GROUP | my_group_tests
 
 Set `PHPUNIT_TESTS` _empty_ to run all tests.
 
-To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/3.x-dev/.gitlab-ci/phpunit.xml) in your project
+To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml) in your project
 and adapt for your tests.
 
 ### Codecov.io support
