@@ -9,6 +9,6 @@
   before_script:
     - echo -e "\e[0Ksection_start:`date +%s`:metrics_prepare[collapsed=true]\r\e[0K\e[1;34mRobo ci:prepare"
     # Prepare ci (mirror files in Docker image doc root).
-    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     - robo ci:prepare
     - echo -e "\e[0Ksection_end:`date +%s`:metrics_prepare\r\e[0K"

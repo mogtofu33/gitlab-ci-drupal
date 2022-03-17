@@ -20,10 +20,10 @@
 include:
   # If hosted on gitlab.com.
   - project: 'mog33/gitlab-ci-drupal'
-    ref: 3.x-dev
+    ref: 4.x-dev
     file: '/.gitlab-ci/.gitlab-ci-template.yml'
   # If hosted on an other Gitlab instance.
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
 
 # If needed by your Gitlab-ci instance, you can set global tags for all jobs.
 # default:
@@ -43,7 +43,7 @@ include:
 variables:
   # This is mandatory to get default variables.
   # For list of variables see
-  # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables.yml
+  # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/variables.yml
   extends: .default_variables
 
   # Minor Drupal version to work with, limited to tags on
@@ -55,6 +55,14 @@ variables:
   # For a project based on Drupal this is 'web'. Can be 'docroot' on some
   # distributions like 'varbase'.
   DRUPAL_WEB_ROOT: web
+
+  # Phpunit tests to run, default provide only custom code or if this variable
+  # is empty all tests (including Drupal core).
+  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
+  PHPUNIT_TESTS: "custom"
+
+  # Specify a group of tests to run rather than all tests in the suite.
+  # PHPUNIT_GROUP: my_group_1,my_group_2
 
   ##############################################################################
   # Tests disabled by default because need a specific setup / configuration.
@@ -70,14 +78,6 @@ variables:
   SKIP_TEST_NIGHTWATCH: 1
   # Default is '--skiptags core', add your tag.
   # NIGHTWATCH_TESTS: --tag my_module
-
-  # Phpunit tests to run, default provide only custom code or if this variable
-  # is empty all tests (including Drupal core).
-  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
-  PHPUNIT_TESTS: "custom"
-
-  # Specify a group of tests to run rather than all tests in the suite.
-  # PHPUNIT_GROUP: my_group_1,my_group_2
 
   ##############################################################################
   # Override default variables for a module.
@@ -142,6 +142,8 @@ variables:
   # SKIP_TEST_FUNCTIONAL: 1
   # SKIP_TEST_FUNCTIONALJS: 1
   # SKIP_TEST_SECURITY: 1
+  # SKIP_TEST_BEHAT: 1
+  # SKIP_TEST_NIGHTWATCH: 1
   #
   # SKIP_QA: 1
   #

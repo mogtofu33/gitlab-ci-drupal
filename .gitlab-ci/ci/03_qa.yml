@@ -15,6 +15,6 @@
         composer config -g github-oauth.github.com  ${COMPOSER_GITHUB_OAUTH_TOKEN};
       fi
     # Prepare ci (mirror files in Docker image doc root).
-    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     - robo ci:prepare
     - echo -e "\e[0Ksection_end:`date +%s`:qa_prepare\r\e[0K"

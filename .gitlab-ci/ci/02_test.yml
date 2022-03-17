@@ -4,17 +4,14 @@
 
 .test_template:
   extends:
-    - .variables_test
     - .artifacts_reports
   dependencies:
     - build
-  services:
-    - mariadb:latest
   before_script:
     # Start Apache.
     - apache2-foreground&
     # Prepare ci (mirror files in Docker image doc root).
-    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     - echo -e "\e[0Ksection_start:`date +%s`:test_ci_prepare[collapsed=true]\r\e[0K\e[1;34mRobo ci:prepare, set tools registries"
     - robo ci:prepare
     # Support composer mirrors and token.

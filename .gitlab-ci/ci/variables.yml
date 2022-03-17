@@ -16,7 +16,7 @@
 
   # Should be the same as 'include: ref:' from .gitlab-ci.yml. Default is last stable.
   # Use a specific tag to keep your CI consistent.
-  CI_REF: "3.x-dev"
+  CI_REF: "4.x-dev"
 
   # Minor Drupal version to work with, limited to tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags?name=3.x
@@ -154,10 +154,53 @@
   ##############################################################################
   # Other variables for CI only that do not need editing in normal usage.
   #
-  # Any argument to pass to chromedriver, used by functional Javascript tests.
-  # https://chromedriver.chromium.org/capabilities
-  # e.g. `--verbose --whitelisted-ips=0.0.0.0 --log-path=chromedriver.log`.
-  CHROMEDRIVER_OPTS: ''
+  # Required by service:mysql.
+  MYSQL_DATABASE: "drupal"
+  MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+  #
+  # Required by Drupal tests with PHPunit.
+  # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
+  SIMPLETEST_BASE_URL: "http://build"
+  SIMPLETEST_DB: "mysql://root@mariadb/drupal"
+  BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+  SYMFONY_DEPRECATIONS_HELPER: "disabled"
+  #
+  # Functional Javascript tests.
+  MINK_DRIVER_ARGS_WEBDRIVER: >
+    [
+      "chrome",
+      {
+        "browserName":"chrome",
+        "chromeOptions":{
+          "w3c":false,
+          "args":[
+            "--whitelisted-ips",
+            "--allowed-origins=chrome",
+            "--disable-gpu",
+            "--headless",
+            "--no-sandbox"
+          ]
+        }
+      },
+      "http://chrome:9515"
+    ]
+  #
+  DRUPAL_TEST_BASE_URL: "http://build"
+  DRUPAL_TEST_WEBSERVER_USER: www-data
+  #
+  # MariaDB and PostgreSQL are ~30% faster than SQLite.
+  DRUPAL_TEST_DB_URL: mysql://root@mariadb/drupal
+  # DRUPAL_TEST_DB_URL=pgsql://drupal:drupal@pgsql/drupal
+  # DRUPAL_TEST_DB_URL=sqlite://localhost/sites/default/files/db.sqlite
+  #
+  # NightwatchJS tests.
+  DRUPAL_TEST_WEBDRIVER_HOSTNAME: chrome
+  DRUPAL_TEST_WEBDRIVER_PORT: 9515
+  DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--whitelisted-ips --allowed-origins=chrome --disable-gpu --headless --no-sandbox --window-size=1920,1080"
+  #
+  DRUPAL_NIGHTWATCH_OUTPUT: /tmp/report-nightwatchjs
+  DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: ../
+  DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: node_modules,vendor,.*,sites/*/files,sites/*/private,sites/simpletest,sites/default/files/simpletest
   #
   # Settings for Behat with DrupalExtension and ScreenshotExtensions, match the
   # tests on behat_tests included in this project.
@@ -166,11 +209,6 @@
   BEHAT_PARAMS: >
     {
       "extensions" : {
-        "Bex\\Behat\\ScreenshotExtension" : {
-          "image_drivers" : {
-            "local" : { "screenshot_directory" : "report-behat" }
-          }
-        },
         "Drupal\\DrupalExtension" : {
           "drupal" : {
             "drupal_root" : "${WEB_ROOT}"

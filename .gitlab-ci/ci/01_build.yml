@@ -4,9 +4,8 @@
 
 .build_template:
   stage: build
-  extends: .variables_test
   before_script:
-    - curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php
+    - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     # Call any extra build script from ./.gitlab-ci/build.php
     - robo ci:build before_build
     - echo -e "\e[0Ksection_start:`date +%s`:build_before[collapsed=true]\r\e[0K\e[1;34mCi build before"

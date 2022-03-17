@@ -22,19 +22,18 @@
 
 include:
   # Include in include must be as remote to work.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/variables_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/artifacts.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/01_build.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/02_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/03_qa.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/04_lint.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/05_metrics.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_deploy.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/variables.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/artifacts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/01_build.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/02_test.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/03_qa.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/04_lint.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/05_metrics.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_deploy.yml'
   # [WIP] All reports in one page.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_report.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_report.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci/ci/06_release.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_release.yml'
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
@@ -43,7 +42,7 @@ include:
 ################################################################################
 
 stages:
-  - build
+  # - build
   - tests
   - metrics
   # [DEPLOY] All deploy jobs can be set here.
@@ -70,41 +69,16 @@ build:
     - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n;
       fi
-    # Install the project.
+    # Install the project with core-dev and Drush.
     - |
       if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        echo -e "\e[0Ksection_start:`date +%s`:build_install[collapsed=true]\r\e[0K\e[1;34mComposer install\e[0m";
+        echo -e "\e[0Ksection_start:`date +%s`:install[collapsed=true]\r\e[0K\e[1;34m Composer install\e[0m";
         composer install -n --prefer-dist;
-        echo -e "\e[0Ksection_end:`date +%s`:build_install\r\e[0K";
-      fi
-    # Ensure we have Drupal Dev third party for next jobs.
-    - |
-      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
-        echo -e "\e[0Ksection_start:`date +%s`:dev_install[collapsed=true]\r\e[0K\e[1;34mComposer require dev\e[0m";
         COMPOSER_MEMORY_LIMIT=-1 composer require -n --dev \
           "drupal/core-dev:~${CI_DRUPAL_VERSION}" \
-          "drush/drush";
-        echo -e "\e[0Ksection_end:`date +%s`:dev_install\r\e[0K";
-      fi
-    # Install behat if needed.
-    - |
-      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ] && [ $SKIP_TEST_BEHAT == 0 ]; then
-        echo -e "\e[0Ksection_start:`date +%s`:dev_install_behat[collapsed=true]\r\e[0K\e[1;34mComposer require behat\e[0m";
-        COMPOSER_MEMORY_LIMIT=-1 composer require -n --dev \
-          "drupal/drupal-extension:~4.1" \
-          "dmore/behat-chrome-extension:^1.3" \
-          "bex/behat-screenshot:^2.1" \
-          "emuse/behat-html-formatter:0.2.*";
-        echo -e "\e[0Ksection_end:`date +%s`:dev_install_behat\r\e[0K";
-      fi
-    # Added phpspec/prophecy-phpunit for Drupal 9.0+
-    # @see https://www.drupal.org/project/drupal/issues/3182653
-    # @todo remove when 8.9 is deprecated and add as default in ci images.
-    - |
-      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ] && [ 1 -eq "$(echo "${CI_DRUPAL_VERSION} >= 9.0" | bc)" ]; then
-        echo -e "\e[0Ksection_start:`date +%s`:prophecy_install[collapsed=true]\r\e[0K\e[1;34mInstall prophecy-phpunit for Drupal 9+\e[0m";
-        composer require -n --dev "phpspec/prophecy-phpunit";
-        echo -e "\e[0Ksection_end:`date +%s`:prophecy_install\r\e[0K";
+          "drush/drush" \
+          "phpspec/prophecy-phpunit:^2";
+        echo -e "\e[0Ksection_end:`date +%s`:install\r\e[0K";
       fi
 
 ################################################################################
@@ -151,7 +125,10 @@ phpunit_func:
   rules:
     - if: '$SKIP_TESTS == "1" || $SKIP_TEST_FUNCTIONAL == "1"'
       when: never
-    - when: on_success # Only for this project to generate documentation.
+    - when: on_success
+  services:
+    - name: mariadb:latest
+      alias: mariadb
   script:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
@@ -172,11 +149,14 @@ phpunit_funcjs:
     - if: '$SKIP_TESTS == "1" || $SKIP_TEST_FUNCTIONALJS == "1"'
       when: never
     - when: on_success
+  services:
+    - name: mariadb:latest
+      alias: mariadb
+    - name: drupalci/webdriver-chromedriver:production
+      alias: chrome
   script:
-    # Launch Chromedriver.
-    - /scripts/start-chromedriver.sh&
-    - sleep 2s
-    - curl -s http://localhost:9515/status | jq '.' || true
+    # Check Chromedriver.
+    - curl -s http://chrome:9515/status | jq '.' || true
     - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
         --testsuite "${PHPUNIT_TESTS}functional-javascript"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
@@ -196,26 +176,25 @@ nightwatchjs:
     - if: '$SKIP_TESTS == "1" || $SKIP_TEST_NIGHTWATCH == "1"'
       when: never
     - when: on_success
+  services:
+    - name: drupalci/webdriver-chromedriver:production
+      alias: chrome
   script:
-    - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34mInstall NightwatchJs"
+    - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
     - cd ${WEB_ROOT}/core
     # Install packages from Drupal.
     - yarn install
-    # Update chromedriver if needed, the ci image include the latest stable version of chrome.
-    # Drupal package.json can be late on chromedriver version.
-    - yarn upgrade chromedriver@$(google-chrome --product-version | cut -d. -f1)
     # Log versions.
-    - |
-      npx nightwatch --version
-      npx chromedriver --version
-      /usr/bin/google-chrome --version
+    - npx nightwatch --version
+    # Ensure chromedriver is running.
+    - curl -s http://chrome:9515/status | jq '.'
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Launch Nightwatch tests from core folder.
     - yarn test:nightwatch ${NIGHTWATCH_TESTS}
   after_script:
-    - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install_reporter[collapsed=true]\r\e[0K\e[1;34mInstall NightwatchJs reporter"
+    - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install_reporter[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs reporter"
     # Html report, install plugin and run from the xml report.
     - yarn add nightwatch-html-reporter
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install_reporter\r\e[0K"
@@ -252,6 +231,11 @@ behat:
     - if: '$SKIP_TESTS == "1" || $SKIP_TEST_BEHAT == "1"'
       when: never
     - when: on_success
+  services:
+    - name: mariadb:latest
+      alias: mariadb
+    - name: browserless/chrome:latest
+      alias: chrome
   script:
     - |
       # Test if we have a behat.yml file
@@ -259,14 +243,20 @@ behat:
         echo -e "\033[1;31mNo behat tests found in behat_tests/behat.yml.\033[0;37m";
         exit 1
       fi
-    # Starting Chrome, we are not using Chromedriver.
-    - /scripts/start-chrome.sh&
-    - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34mInstall drupal ${BEHAT_INSTALL_PROFILE}"
+    - |
+        echo -e "\e[0Ksection_start:`date +%s`:dev_install_behat[collapsed=true]\r\e[0K\e[1;34m Composer require behat\e[0m";
+        COMPOSER_MEMORY_LIMIT=-1 composer require -n --dev \
+          "drupal/drupal-extension:~4.1" \
+          "dmore/behat-chrome-extension:^1.3" \
+          "emuse/behat-html-formatter:0.2.*" \
+          "friends-of-behat/mink-extension:^2.6";
+        echo -e "\e[0Ksection_end:`date +%s`:dev_install_behat\r\e[0K";
+    - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal ${BEHAT_INSTALL_PROFILE}"
     # Install Drupal with the selected profile.
     - robo drupal:install ${BEHAT_INSTALL_PROFILE}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
-    - curl -s http://localhost:9222/json/version | jq '.' || true
+    # - curl -s http://chrome:9222/json/version | jq '.' || true
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
     - cd ${WEB_ROOT}
     - ${DOC_ROOT}/vendor/bin/behat
