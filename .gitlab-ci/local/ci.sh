@@ -729,7 +729,7 @@ _USE_DEBUG=0
 __skip_install=0
 __tools_qa=""
 
-CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/3.x-dev/.gitlab-ci"
+CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci"
 
 _CMD=()
 
