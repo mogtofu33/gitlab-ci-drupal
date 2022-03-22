@@ -3,7 +3,6 @@
 ################################################################################
 
 .build_template:
-  stage: build
   before_script:
     - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     # Call any extra build script from ./.gitlab-ci/build.php

@@ -42,7 +42,7 @@ include:
 ################################################################################
 
 stages:
-  # - build
+  - build
   - tests
   - metrics
   # [DEPLOY] All deploy jobs can be set here.
@@ -58,6 +58,7 @@ stages:
 # For a theme this can be used with a specific script to build something
 # (grunt, webpack, yarn...).
 build:
+  stage: build
   extends: .build_template
   rules:
     - if: '$SKIP_BUILD == "1"'
