@@ -71,6 +71,7 @@ build:
         composer validate --no-check-all --no-check-publish -n;
       fi
     # Install the project with core-dev and Drush.
+    # @todo remove phpspec/prophecy-phpunit when Drupal 9 is eol.
     - |
       if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         echo -e "\e[0Ksection_start:`date +%s`:install[collapsed=true]\r\e[0K\e[1;34m Composer install\e[0m";
@@ -94,6 +95,9 @@ phpunit_unit:
     - if: '$SKIP_TESTS == "1" || $SKIP_TEST_UNITKERNEL == "1"'
       when: never
     - when: on_success
+  services:
+    - name: ${SERVICE_DATABASE}
+      alias: db
   script:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
@@ -128,8 +132,8 @@ phpunit_func:
       when: never
     - when: on_success
   services:
-    - name: mariadb:latest
-      alias: mariadb
+    - name: ${SERVICE_DATABASE}
+      alias: db
   script:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
@@ -151,9 +155,9 @@ phpunit_funcjs:
       when: never
     - when: on_success
   services:
-    - name: mariadb:latest
-      alias: mariadb
-    - name: drupalci/webdriver-chromedriver:production
+    - name: ${SERVICE_DATABASE}
+      alias: db
+    - name: ${SERVICE_CHROMEDRIVER}
       alias: chrome
   script:
     # Check Chromedriver.
@@ -178,13 +182,13 @@ nightwatchjs:
       when: never
     - when: on_success
   services:
-    - name: drupalci/webdriver-chromedriver:production
+    - name: ${SERVICE_CHROMEDRIVER}
       alias: chrome
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
     - cd ${WEB_ROOT}/core
     # Install packages from Drupal.
-    - yarn install
+    - yarn --cwd ${WEB_ROOT}/core install
     # Log versions.
     - npx nightwatch --version
     # Ensure chromedriver is running.
@@ -233,9 +237,9 @@ behat:
       when: never
     - when: on_success
   services:
-    - name: mariadb:latest
-      alias: mariadb
-    - name: browserless/chrome:latest
+    - name: ${SERVICE_DATABASE}
+      alias: db
+    - name: ${SERVICE_CHROME}
       alias: chrome
   script:
     - |
@@ -257,7 +261,7 @@ behat:
     - robo drupal:install ${BEHAT_INSTALL_PROFILE}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
-    # - curl -s http://chrome:9222/json/version | jq '.' || true
+    - curl -s http://chrome:3000/json/version | jq '.' || true
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
     - cd ${WEB_ROOT}
     - ${DOC_ROOT}/vendor/bin/behat

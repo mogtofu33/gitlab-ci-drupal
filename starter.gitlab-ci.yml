@@ -46,6 +46,9 @@ variables:
   # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/variables.yml
   extends: .default_variables
 
+  # Docker image used for ci, should be the same as include above.
+  CI_REF: "4.x-dev"
+
   # Minor Drupal version to work with, limited to tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags
   CI_DRUPAL_VERSION:

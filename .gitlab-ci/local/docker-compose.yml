@@ -18,18 +18,13 @@ services:
     # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
     ports:
       - "88:80"
-    expose:
-      # Chromedriver port for Functional js.
-      - "9515"
-      # Behat Chrome remote debugging port.
-      - "9222"
     links:
-      - mariadb
+      - db
     volumes:
       # Mount the parent folder as a module.
       # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
       # Mount the parent folder as a group of modules or project for local test.
-      - ../../:${DOC_ROOT}
+      # - ../../:${DOC_ROOT}
       # - ../../:/opt/drupal
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../../:${CI_PROJECT_DIR}
@@ -43,14 +38,30 @@ services:
       - .env
 
   mariadb:
-    image: mariadb:latest
+    image: ${SERVICE_DATABASE}
     expose:
       - "3306"
     volumes:
       - database_data:/var/lib/mysql
       # Add my.cnf for better performance.
       - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
-    container_name: ci-mariadb
+    container_name: ci-db
+    env_file:
+      - .env
+
+  chromedriver:
+    image: ${SERVICE_CHROMEDRIVER}
+    expose:
+      - "9515"
+    container_name: ci-chromedriver
+    env_file:
+      - .env
+
+  chrome:
+    image: ${SERVICE_CHROME}
+    expose:
+      - "3000"
+    container_name: ci-chrome
     env_file:
       - .env
 

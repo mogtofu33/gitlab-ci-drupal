@@ -34,9 +34,9 @@ class RoboFile extends Tasks {
    * @var string
    *   The database URL. This can be overridden by specifying a $DB_URL or a
    *   $SIMPLETEST_DB environment variable.
-   *   Default is to the ci variables used with mariadb service.
+   *   Default is to the ci variables used with db service.
    */
-  protected $dbUrl = 'mysql://drupal:drupal@mariadb/drupal';
+  protected $dbUrl = 'mysql://drupal:drupal@db/drupal';
 
   /**
    * Web server docroot folder.
@@ -107,7 +107,7 @@ class RoboFile extends Tasks {
     'core' => [
       '.eslintignore',
       '.stylelintignore',
-      '.env',
+      // '.env',
       'phpunit.xml',
     ],
     'ci' => [
@@ -161,8 +161,8 @@ class RoboFile extends Tasks {
     // Treat this command like bash -e and exit as soon as there's a failure.
     $this->stopOnFail();
 
-    if (getenv('VERBOSE')) {
-      $this->verbose = getenv('VERBOSE');
+    if (getenv('CI_VERBOSE')) {
+      $this->verbose = getenv('CI_VERBOSE');
     }
 
     // Pull CI variables from the environment, if it exists.
@@ -241,166 +241,20 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Get local or remote config files for the CI project.
-   */
-  public function ciGetConfigFiles() {
-    $this->ciLog("Prepare config files for CI");
-
-    $src_dir = $this->ciProjectDir . '/.gitlab-ci/';
-    $drupal_dir = $this->webRoot . '/core/';
-
-    // Manage files for drupal_root/core folder.
-    foreach ($this->ciFiles['core'] as $filename) {
-      // Use local file if exist.
-      if (file_exists($src_dir . $filename)) {
-        $this->ciNotice("Use local core file: $src_dir" . "$filename");
-        $this->taskFilesystemStack()
-          ->copy($src_dir . $filename, $drupal_dir . $filename, TRUE)
-          ->run();
-      }
-      else {
-        $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
-        if ($remote_file) {
-          file_put_contents($drupal_dir . $filename, $remote_file);
-        }
-        else {
-          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . "$filename");
-        }
-      }
-    }
-
-    // Create directory if do not exist.
-    $this->_mkdir($src_dir);
-
-    // Manage ci configuration files for .gitlab-ci folder.
-    foreach ($this->ciFiles['ci'] as $filename) {
-      // Use remote file if local do not exist.
-      if (!file_exists($src_dir . $filename)) {
-        $this->ciNotice("Download remote ci file: $this->ciRemoteRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
-        if ($remote_file) {
-          file_put_contents($src_dir . $filename, $remote_file);
-        }
-        else {
-          $this->io()->warning("Failed to get remote ci file: $this->ciRemoteRef" . "$filename");
-        }
-      }
-      else {
-        $this->ciNotice("Use local ci file: $src_dir" . "$filename");
-      }
-    }
-  }
-
-  /**
    * Mirror our module/theme in the Drupal or the project.
    *
    * @param bool $getConfigFiles
    *   (optional) Get config files in the process, default true.
    */
   public function ciPrepare($getConfigFiles = TRUE) {
-    // Override phpunit.xml file if a custom one exist.
-    if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests)) {
-      $this->ciNotice('Override phpunit.xml file with: phpunit.xml.' . $this->phpunitTests);
-      if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml')) {
-        unlink($this->ciProjectDir . '/.gitlab-ci/phpunit.xml');
-      }
-      $this->taskFilesystemStack()
-        ->copy(
-          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests,
-          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml',
-          TRUE
-          )
-        ->run();
-    }
-    else {
-      $this->ciLog('No override phpunit.xml file found as: phpunit.xml.' . $this->phpunitTests);
-    }
 
-    $this->ciLog("Prepare folders for type: $this->ciType");
+    $this->ciPreparePhpunit();
 
-    // Handle CI Type value.
-    switch ($this->ciType) {
-      case "project":
-        // We have a composer.json file.
-        if (file_exists($this->ciProjectDir . '/composer.json')) {
-          $this->ciLog("Project include Drupal, let mirror.");
-          // Cannot symlink because $this->docRoot is a mounted volume.
-          $this->ciMirror(
-            $this->ciProjectDir,
-            $this->docRoot
-          );
-        }
-        else {
-          $this->ciLog("Project seems to have only custom code.");
-          // Root contain a web/ folder, we mirror each folders.
-          foreach (['modules', 'themes', 'profiles'] as $type) {
-            $this->ciMirror(
-              $this->ciProjectDir . '/' . $this->drupalWebRoot . '/' . $type . '/custom',
-              $this->webRoot . '/' . $type . '/custom'
-            );
-          }
-        }
-        break;
-
-      case "module":
-      case "theme":
-      case "profile":
-        // If we have a custom build, run it now, see issue:
-        // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
-        $this->ciBuild();
-        // Root contain the theme / module, we mirror with project name.
-        $this->ciMirror(
-          $this->ciProjectDir,
-          $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
-        );
-        break;
-    }
+    $this->ciPrepareFolders();
 
     if ($getConfigFiles) {
       $this->ciGetConfigFiles();
     }
-  }
-
-  /**
-   * Helper for preparing a composer require task.
-   *
-   * @param string|null $dir
-   *   (optional) WorkingDir for composer.
-   *
-   * @return \Robo\Task\Composer\RequireDependency
-   *   Robo composer require task with some specific settings.
-   */
-  public function composerRequire($dir = NULL) {
-    if (!$dir) {
-      $dir = $this->docRoot;
-    }
-
-    $task = $this->taskComposerRequire()
-      ->noInteraction()
-      ->noAnsi()
-      ->workingDir($dir);
-
-    if ($this->verbose) {
-      $task->arg('--verbose');
-    }
-    else {
-      $task->arg('--quiet');
-    }
-    return $task;
-  }
-
-  /**
-   * Check Drupal.
-   *
-   * @return string
-   *   Drupal bootstrap result.
-   */
-  public function drupalCheck() {
-    return $this->ciDrush()
-      ->args('status')
-      ->option('fields', 'bootstrap', '=')
-      ->run();
   }
 
   /**
@@ -457,12 +311,53 @@ class RoboFile extends Tasks {
   }
 
   /**
+   * Helper for preparing a composer require task.
+   *
+   * @param string|null $dir
+   *   (optional) WorkingDir for composer.
+   *
+   * @return \Robo\Task\Composer\RequireDependency
+   *   Robo composer require task with some specific settings.
+   */
+  private function composerRequire($dir = NULL) {
+    if (!$dir) {
+      $dir = $this->docRoot;
+    }
+
+    $task = $this->taskComposerRequire()
+      ->noInteraction()
+      ->noAnsi()
+      ->workingDir($dir);
+
+    if ($this->verbose) {
+      $task->arg('--verbose');
+    }
+    else {
+      $task->arg('--quiet');
+    }
+    return $task;
+  }
+
+  /**
+   * Check Drupal.
+   *
+   * @return string
+   *   Drupal bootstrap result.
+   */
+  private function drupalCheck() {
+    return $this->ciDrush()
+      ->args('status')
+      ->option('fields', 'bootstrap', '=')
+      ->run();
+  }
+
+  /**
    * Install Drupal from profile or config with config_installer.
    *
    * @param string $profile
    *   (Optional) The profile to install, default to minimal.
    */
-  public function drupalSetup($profile = 'minimal') {
+  private function drupalSetup($profile = 'minimal') {
     $this->ciLog("Setup Drupal with $profile...");
 
     // @TODO: use drush --existing-config instead.
@@ -484,6 +379,127 @@ class RoboFile extends Tasks {
     $this->stopOnFail(FALSE);
     $task->run();
     $this->stopOnFail();
+  }
+
+  /**
+   * Mirror our module/theme in the Drupal or the project.
+   */
+  private function ciPrepareFolders() {
+
+    $this->ciLog("Prepare folders for type: $this->ciType");
+
+    // Handle CI Type value.
+    switch ($this->ciType) {
+      case "project":
+        // We have a composer.json file.
+        if (file_exists($this->ciProjectDir . '/composer.json')) {
+          $this->ciLog("Project include Drupal, let mirror.");
+          // Cannot symlink because $this->docRoot (/opt/drupal) is a mounted volume.
+          $this->ciMirror(
+            $this->ciProjectDir,
+            $this->docRoot
+          );
+        }
+        else {
+          $this->ciLog("Project seems to have only custom code.");
+          // Root contain a web/ folder, we mirror each folders.
+          foreach (['modules', 'themes', 'profiles'] as $type) {
+            $this->ciMirror(
+              $this->ciProjectDir . '/' . $this->drupalWebRoot . '/' . $type . '/custom',
+              $this->webRoot . '/' . $type . '/custom'
+            );
+          }
+        }
+        break;
+
+      case "module":
+      case "theme":
+      case "profile":
+        // If we have a custom build, run it now, see issue:
+        // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
+        $this->ciBuild();
+        // Root contain the theme / module, we mirror with project name.
+        $this->ciMirror(
+          $this->ciProjectDir,
+          $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
+        );
+        break;
+    }
+  }
+
+  /**
+   * Setup Phpunit file used for tests.
+   */
+  private function ciPreparePhpunit() {
+    // Override phpunit.xml file if a custom one exist.
+    if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests)) {
+      $this->ciNotice('Override phpunit.xml file with: phpunit.xml.' . $this->phpunitTests);
+      if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml')) {
+        unlink($this->ciProjectDir . '/.gitlab-ci/phpunit.xml');
+      }
+      $this->taskFilesystemStack()
+        ->copy(
+          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests,
+          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml',
+          TRUE
+          )
+        ->run();
+    }
+    else {
+      $this->ciLog('No override phpunit.xml file found as: phpunit.xml.' . $this->phpunitTests);
+    }
+  }
+
+  /**
+   * Get local or remote config files for the CI project.
+   */
+  private function ciGetConfigFiles() {
+    $this->ciLog("Prepare config files for CI");
+
+    $src_dir = $this->ciProjectDir . '/.gitlab-ci/';
+    $drupal_dir = $this->webRoot . '/core/';
+
+    // Manage files for drupal_root/core folder.
+    foreach ($this->ciFiles['core'] as $filename) {
+      // Use local file if exist.
+      if (file_exists($src_dir . $filename)) {
+        $this->ciNotice("Use local core file: $src_dir" . "$filename");
+        $this->taskFilesystemStack()
+          ->copy($src_dir . $filename, $drupal_dir . $filename, TRUE)
+          ->run();
+      }
+      else {
+        $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
+        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
+        if ($remote_file) {
+          file_put_contents($drupal_dir . $filename, $remote_file);
+        }
+        else {
+          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . "$filename");
+        }
+      }
+    }
+
+    // Create directory if do not exist.
+    $this->_mkdir($src_dir);
+
+    // Manage ci configuration files for .gitlab-ci folder.
+    foreach ($this->ciFiles['ci'] as $filename) {
+      // Use remote file if local do not exist.
+      if (!file_exists($src_dir . $filename)) {
+        $this->ciNotice("Download remote ci file: $this->ciRemoteRef" . "$filename");
+        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
+        if ($remote_file) {
+          file_put_contents($src_dir . $filename, $remote_file);
+        }
+        else {
+          $this->io()->warning("Failed to get remote ci file: $this->ciRemoteRef" . "$filename");
+        }
+      }
+      else {
+        $this->ciNotice("Use local ci file: $src_dir" . "$filename");
+      }
+    }
   }
 
   /**

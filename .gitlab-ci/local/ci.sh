@@ -1,11 +1,11 @@
 #!/bin/bash
-set -e
+# set -ex
 
 # This script is an helper to run some tests from Gitlab-ci config in a local
 # environment with docker-compose.
 
 ###############################################################################
-# Local only tests, not included in Gtilab ci and more flexible.
+# Local only tests, not included in Gitlab ci and more flexible.
 #############################################################################&##
 __install_phpunit() {
   if ! eval "_exist_file /opt/drupal/vendor/bin/phpunit"; then
@@ -304,33 +304,7 @@ _exist_dir() {
 _init_variables() {
   _env
 
-  # Remove quotes on NIGHTWATCH_TESTS.
-  sed -i 's#NIGHTWATCH_TESTS="\(.*\)"#NIGHTWATCH_TESTS=\1#g' $__env
-
   source $__env
-
-  # Fixes post source, for a proper docker config.
-  if [ -f "$_DIR/../ci/variables_test.yml" ]; then
-    debug "Use local variables_test.yml"
-    __yaml_variables_test="$_DIR/../ci/variables_test.yml"
-  elif [ -f "$_DIR/variables_test.yml" ]; then
-    debug "Use local downloaded variables_test.yml"
-    __yaml_variables_test="$_DIR/variables_test.yml"
-  else
-    debug "Use remote variables_test.yml"
-    curl -fsSL "${CI_REMOTE_FILES}/ci/variables_test.yml" -o "$_DIR/variables_test.yml"
-    __yaml_variables_test="$_DIR/variables_test.yml"
-  fi
-
-  # CHROME_OPTS can be local and needs no quotes so cannot be sourced.
-  local __chrome_opts
-  if [ -f $__yaml_local ]; then
-    __chrome_opts=$(yq r $__yaml_local "CHROME_OPTS")
-  fi
-  if [[ -z ${__chrome_opts} ]]; then
-    __chrome_opts=$(yq r $__yaml_variables_test "[.variables_test].variables.CHROME_OPTS")
-  fi
-  echo "CHROME_OPTS=${__chrome_opts}" >> $__env
 
   _clean_env
 }
@@ -338,9 +312,6 @@ _init_variables() {
 _clean_env() {
   if [ -f "$_DIR/variables.yml" ]; then
     rm -f "$_DIR/variables.yml"
-  fi
-  if [ -f "$_DIR/variables_test.yml" ]; then
-    rm -f "$_DIR/variables_test.yml"
   fi
 }
 
@@ -367,18 +338,6 @@ _env() {
     __yaml_variables="$_DIR/variables.yml"
   fi
 
-  if [ -f "$_DIR/../ci/variables_test.yml" ]; then
-    debug "Use local variables_test.yml"
-    __yaml_variables_test="$_DIR/../ci/variables_test.yml"
-  elif [ -f "$_DIR/variables_test.yml" ]; then
-    debug "Use local downloaded variables_test.yml"
-    __yaml_variables_test="$_DIR/variables_test.yml"
-  else
-    debug "Use remote variables_test.yml"
-    curl -fsSL "${CI_REMOTE_FILES}/ci/variables_test.yml" -o "$_DIR/variables_test.yml"
-    __yaml_variables_test="$_DIR/variables_test.yml"
-  fi
-
   __yaml_local="$_DIR/.local.yml"
   __env="$_DIR/.env"
 
@@ -386,7 +345,6 @@ _env() {
 
   debug "Generate .env file..."
 
-  WEB_ROOT=$(yq r $__yaml_variables "[.default_variables].WEB_ROOT")
   CI_PROJECT_DIR="/builds"
 
   if [ -f $__env ]; then
@@ -402,65 +360,86 @@ _env() {
   echo 'CI_PROJECT_NAME: my-project' >> $__env
   echo "CI_PROJECT_DIR: ${CI_PROJECT_DIR}" >> $__env
 
-  yq r $__yaml_variables "[.default_variables]" >> $__env
-  yq r $__yaml_variables_test "[.variables_test].variables" >> $__env
-
+  yq '... comments=""' $__yaml_variables | yq '.[.default_variables]' >> $__env
 
   # Fix MINK_DRIVER_ARGS_WEBDRIVER, remove spaces and escape \.
   sed -i '/MINK_DRIVER_ARGS_WEBDRIVER/d' $__env
-  MINK_DRIVER_ARGS_WEBDRIVER=$(yq r $__yaml_variables_test "[.variables_test].variables.MINK_DRIVER_ARGS_WEBDRIVER")
+  MINK_DRIVER_ARGS_WEBDRIVER=$(yq '.[.default_variables].MINK_DRIVER_ARGS_WEBDRIVER' $__yaml_variables)
   MINK_DRIVER_ARGS_WEBDRIVER="$(echo -e "${MINK_DRIVER_ARGS_WEBDRIVER}" | tr -d '[:space:]')"
   MINK_DRIVER_ARGS_WEBDRIVER=$(sed 's#\\#\\\\#g' <<< $MINK_DRIVER_ARGS_WEBDRIVER)
-  echo '# Fixed MINK_DRIVER_ARGS_WEBDRIVER' >> $__env
+  echo '# [fix] Fixed MINK_DRIVER_ARGS_WEBDRIVER' >> $__env
   echo 'MINK_DRIVER_ARGS_WEBDRIVER='${MINK_DRIVER_ARGS_WEBDRIVER} >> $__env
 
   # Fix BEHAT_PARAMS, remove spaces and escape \.
   sed -i '/BEHAT_PARAMS/d' $__env
-  BEHAT_PARAMS=$(yq r $__yaml_variables "[.default_variables].BEHAT_PARAMS")
+  BEHAT_PARAMS=$(yq '.[.default_variables].BEHAT_PARAMS' $__yaml_variables)
   BEHAT_PARAMS="$(echo -e "${BEHAT_PARAMS}" | tr -d '[:space:]')"
   BEHAT_PARAMS=$(sed 's#\\#\\\\#g' <<< $BEHAT_PARAMS)
-  echo '# Fixed BEHAT_PARAMS' >> $__env
+  echo '# [fix] Fixed BEHAT_PARAMS' >> $__env
   echo 'BEHAT_PARAMS='${BEHAT_PARAMS} >> $__env
 
-  # Replace variables.
-  CI_REF=$(yq r $__yaml_variables "[.default_variables].CI_REF")
-  sed -i "s#\${CI_REF}#${CI_REF}#g" $__env
-  echo '# Fixed CI_REF' >> $__env
+  echo '#' >> $__env
+  echo '# [fix] Override variables' >> $__env
+  yq '... comments=""' $__yaml | yq '.variables' >> $__env
 
-  echo '# Override variables' >> $__env
-  yq r $__yaml "variables" >> $__env
+  # if [ -f $__yaml_local ]; then
+  #   echo '#' >> $__env
+  #   echo '# [fix] Local variables' >> $__env
+  #   yq $__yaml_local >> $__env
+  # fi
+
+  # Remove obsolete values.
   sed -i '/^extends:/d' $__env
 
-  if [ -f $__yaml_local ]; then
-    echo '# Local variables' >> $__env
-    yq r $__yaml_local >> $__env
-  fi
-
-  # Replace some variables by their values.
+  # Replace variables.
+  WEB_ROOT=$(yq '.[.default_variables].WEB_ROOT' $__yaml_variables)
   sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
-  echo '# Replaced WEB_ROOT' >> $__env
+  echo '# [fix] Replaced WEB_ROOT' >> $__env
 
-  # CHROME_OPTS needs no quotes so cannot be sourced.
-  sed -i '/CHROME_OPTS/d' $__env
-  echo '# Deleted CHROME_OPTS for sourced' >> $__env
+  DOC_ROOT=$(yq '.[.default_variables].DOC_ROOT' $__yaml_variables)
+  sed -i "s#\${DOC_ROOT}#${DOC_ROOT}#g" $__env
+  echo '# [fix] Replaced DOC_ROOT' >> $__env
+
+  SIMPLETEST_DB=$(yq '.[.default_variables].SIMPLETEST_DB' $__yaml_variables)
+  sed -i "s#\${SIMPLETEST_DB}#${SIMPLETEST_DB}#g" $__env
+  echo '# [fix] Replaced SIMPLETEST_DB' >> $__env
+
+  DB_DRIVER=$(yq '.[.default_variables].DB_DRIVER' $__yaml_variables)
+  sed -i "s#\${DB_DRIVER}#${DB_DRIVER}#g" $__env
+  echo '# [fix] Replaced DB_DRIVER' >> $__env
+
+  CI_REF=$(yq '.variables.CI_REF' $__yaml)
+  sed -i "s#\${CI_REF}#${CI_REF}#g" $__env
+  echo '# [fix] Fixed CI_REF' >> $__env
+  echo 'CI_IMAGE_REF="'${CI_REF}'"' >> $__env
+
+  CI_DRUPAL_VERSION=$(yq '.variables.CI_DRUPAL_VERSION.value' $__yaml)
+  sed -i '/CI_DRUPAL_VERSION/d' $__env
+  echo '# [fix] drupal version' >> $__env
+  echo 'CI_DRUPAL_VERSION='${CI_DRUPAL_VERSION} >> $__env
+
+  # Replace some variables by their values from main file.
+  DRUPAL_WEB_ROOT=$(yq '.variables.DRUPAL_WEB_ROOT' $__yaml)
+  sed -i "s#\${DRUPAL_WEB_ROOT}#${DRUPAL_WEB_ROOT}#g" $__env
+  echo '# [fix] Replaced DRUPAL_WEB_ROOT' >> $__env
+
+  # Remove quotes on NIGHTWATCH_TESTS.
+  # sed -i 's#NIGHTWATCH_TESTS="\(.*\)"#NIGHTWATCH_TESTS=\1#g' $__env
 
   # Fix env file format.
   _yml_to_env_fixes $__env
 }
 
 _yml_to_env_fixes() {
-  __env_file="${1}"
+  # Delete empty lines.
+  sed -i '/^$/d' $__env
   # Delete lines starting with spaces.
   sed -i '/^ /d' $__env
   # Replace : by =.
-  sed -i 's#: #=#g' $__env_file
+  sed -i 's#: #=#g' $__env
   # Treat 1 / 0 options without double quotes.
-  sed -i 's#"1"#1#g' $__env_file
-  sed -i 's#"0"#0#g' $__env_file
-  # Remove quotes on CI_DRUPAL_VERSION.
-  sed -i 's#CI_DRUPAL_VERSION="\(.*\)"#CI_DRUPAL_VERSION=\1#g' $__env_file
-  # Add quotes on Nightwatch tests and Chrome opts.
-  sed -i 's#NIGHTWATCH_TESTS=\(.*\)#NIGHTWATCH_TESTS="\1"#g' $__env_file
+  sed -i 's#"1"#1#g' $__env
+  sed -i 's#"0"#0#g' $__env
 }
 
 _up() {

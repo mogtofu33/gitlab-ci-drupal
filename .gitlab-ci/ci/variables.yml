@@ -10,12 +10,8 @@
 
 .default_variables:
 
-  # Make CI very (very!) verbose in case of problem.
-  # https://docs.gitlab.com/ee/ci/variables/#debug-logging
-  # CI_DEBUG_TRACE: 1
-
-  # Should be the same as 'include: ref:' from .gitlab-ci.yml. Default is last stable.
-  # Use a specific tag to keep your CI consistent.
+  # Should be the same as 'include: ref:' from .gitlab-ci.yml.
+  # Based on branch for this project.
   CI_REF: "4.x-dev"
 
   # Minor Drupal version to work with, limited to tags on
@@ -24,21 +20,21 @@
 
   # Select what you are running CI on, options are:
   #   project
-  #     A full Drupal project with a composer.json file at the root.
+  #     A full Drupal project managed with composer.
   #   module
-  #     A single Drupal module or theme at the root.
+  #     A single Drupal module or theme.
   CI_TYPE: "project"
   # CI_TYPE: "module"
 
-  # Path to the Drupal web root.
+  # Relative path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' on some
   # distributions.
   DRUPAL_WEB_ROOT: web
-  WEB_ROOT: "/opt/drupal/${DRUPAL_WEB_ROOT}"
 
-  # Path to the Drupal doc root.
-  # Apache docroot of the image used to run the jobs.
+  # Path to the Drupal doc and web root.
+  # Drupal official image create symlink /opt/drupal/web > /var/www/html
   DOC_ROOT: "/opt/drupal"
+  WEB_ROOT: "${DOC_ROOT}/${DRUPAL_WEB_ROOT}"
 
   # Phpunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).
@@ -64,12 +60,12 @@
   TOOLS_QA: "phpcs:0,phpmd:0,parallel-lint:0,phpstan:0,phpcpd:0"
   TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
-  # Composer override to use packagist mirror.
-  # COMPOSER_REPO_PACKAGIST_URL: "https?://repo.packagist.org"
-
   # Composer override to use github oauth token.
   # https://getcomposer.org/doc/06-config.md#github-oauth
   # COMPOSER_GITHUB_OAUTH_TOKEN: ""
+
+  # Composer override to use packagist mirror.
+  # COMPOSER_REPO_PACKAGIST_URL: "https://repo.packagist.org"
 
   # Yarn override to use registry mirror.
   # YARN_REGISTRY: "https://registry.yarnpkg.com"
@@ -152,16 +148,42 @@
   ##############################################################################
 
   ##############################################################################
+  # Services used by some jobs.
+  #
+  DB_DRIVER: mysql
+  # DB_DRIVER: pgsql
+  # DB_DRIVER: sqlite
+  #
+  # Database service as docker image and tag.
+  SERVICE_DATABASE: "mariadb:10"
+  # SERVICE_DATABASE: "mysql:8"
+  # SERVICE_DATABASE: "postgres:14"
+  #
+  SERVICE_CHROMEDRIVER: "drupalci/webdriver-chromedriver:production"
+  SERVICE_CHROME: "browserless/chrome:latest"
+  #
+  ##############################################################################
+
+  ##############################################################################
   # Other variables for CI only that do not need editing in normal usage.
   #
-  # Required by service:mysql.
-  MYSQL_DATABASE: "drupal"
-  MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+  #
+  # Required by service:mysql/mariadb.
+  MYSQL_DATABASE: drupal
+  MYSQL_USER: drupal
+  MYSQL_PASSWORD: drupal
+  MYSQL_ALLOW_EMPTY_PASSWORD: 1
+  #
+  POSTGRES_PASSWORD: drupal
+  POSTGRES_DB: drupal
+  POSTGRES_USER: drupal
   #
   # Required by Drupal tests with PHPunit.
   # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
   SIMPLETEST_BASE_URL: "http://build"
-  SIMPLETEST_DB: "mysql://root@mariadb/drupal"
+  SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
+  # SIMPLETEST_DB=sqlite://localhost/:memory:
+  #
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
   SYMFONY_DEPRECATIONS_HELPER: "disabled"
   #
@@ -185,22 +207,20 @@
       "http://chrome:9515"
     ]
   #
+  # NightwatchJS tests.
+  #
   DRUPAL_TEST_BASE_URL: "http://build"
   DRUPAL_TEST_WEBSERVER_USER: www-data
   #
-  # MariaDB and PostgreSQL are ~30% faster than SQLite.
-  DRUPAL_TEST_DB_URL: mysql://root@mariadb/drupal
-  # DRUPAL_TEST_DB_URL=pgsql://drupal:drupal@pgsql/drupal
-  # DRUPAL_TEST_DB_URL=sqlite://localhost/sites/default/files/db.sqlite
+  DRUPAL_TEST_DB_URL: ${SIMPLETEST_DB}
   #
-  # NightwatchJS tests.
   DRUPAL_TEST_WEBDRIVER_HOSTNAME: chrome
   DRUPAL_TEST_WEBDRIVER_PORT: 9515
   DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--whitelisted-ips --allowed-origins=chrome --disable-gpu --headless --no-sandbox --window-size=1920,1080"
   #
   DRUPAL_NIGHTWATCH_OUTPUT: /tmp/report-nightwatchjs
   DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: ../
-  DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: node_modules,vendor,.*,sites/*/files,sites/*/private,sites/simpletest,sites/default/files/simpletest
+  DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/simpletest,sites/default/files/simpletest"
   #
   # Settings for Behat with DrupalExtension and ScreenshotExtensions, match the
   # tests on behat_tests included in this project.
@@ -209,6 +229,11 @@
   BEHAT_PARAMS: >
     {
       "extensions" : {
+        "Bex\\Behat\\ScreenshotExtension" : {
+          "image_drivers" : {
+            "local" : { "screenshot_directory" : "report-behat" }
+          }
+        },
         "Drupal\\DrupalExtension" : {
           "drupal" : {
             "drupal_root" : "${WEB_ROOT}"
@@ -217,9 +242,20 @@
       }
     }
   #
+  # Enable Docker network bridge to access services.
+  # https://docs.gitlab.com/runner/configuration/feature-flags.html#available-feature-flags
+  FF_NETWORK_PER_BUILD: 1
+  #
   # Config files location for inclusion if not present locally (from ./.gitlab-ci/).
   CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REF}/.gitlab-ci/"
   #
   # Docker image version used for CI.
   # Should be the same as CI_REF, but can be overridden for some use cases.
   CI_IMAGE_REF: ${CI_REF}
+  #
+  # Internal verbosity for RoboFile.php scripts.
+  CI_VERBOSE: 0
+  #
+  # Make CI very (very!) verbose in case of problem.
+  # https://docs.gitlab.com/ee/ci/variables/#debug-logging
+  # CI_DEBUG_TRACE: 1
