@@ -207,20 +207,7 @@
       "http://chrome:9515"
     ]
   #
-  # NightwatchJS tests.
-  #
-  DRUPAL_TEST_BASE_URL: "http://build"
-  DRUPAL_TEST_WEBSERVER_USER: www-data
-  #
-  DRUPAL_TEST_DB_URL: ${SIMPLETEST_DB}
-  #
-  DRUPAL_TEST_WEBDRIVER_HOSTNAME: chrome
-  DRUPAL_TEST_WEBDRIVER_PORT: 9515
-  DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--whitelisted-ips --allowed-origins=chrome --disable-gpu --headless --no-sandbox --window-size=1920,1080"
-  #
-  DRUPAL_NIGHTWATCH_OUTPUT: /tmp/report-nightwatchjs
-  DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: ../
-  DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/simpletest,sites/default/files/simpletest"
+  # Behat tests.
   #
   # Settings for Behat with DrupalExtension and ScreenshotExtensions, match the
   # tests on behat_tests included in this project.
@@ -241,6 +228,8 @@
         }
       }
     }
+  #
+  # General settings.
   #
   # Enable Docker network bridge to access services.
   # https://docs.gitlab.com/runner/configuration/feature-flags.html#available-feature-flags

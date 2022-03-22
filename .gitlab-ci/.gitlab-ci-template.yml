@@ -196,6 +196,8 @@ nightwatchjs:
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
+    # Prepare variables.
+    - envsubst < .env.tmpl > .env
     # Launch Nightwatch tests from core folder.
     - yarn test:nightwatch ${NIGHTWATCH_TESTS}
   after_script:

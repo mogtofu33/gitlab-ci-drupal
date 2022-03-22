@@ -107,7 +107,7 @@ class RoboFile extends Tasks {
     'core' => [
       '.eslintignore',
       '.stylelintignore',
-      '.env',
+      '.env.tmpl',
       'phpunit.xml',
     ],
     'ci' => [
