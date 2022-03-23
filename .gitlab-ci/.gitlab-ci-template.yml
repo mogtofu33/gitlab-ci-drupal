@@ -182,6 +182,8 @@ nightwatchjs:
       when: never
     - when: on_success
   services:
+    - name: ${SERVICE_DATABASE}
+      alias: db
     - name: ${SERVICE_CHROMEDRIVER}
       alias: chrome
   script:

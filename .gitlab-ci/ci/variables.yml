@@ -181,8 +181,8 @@
   # Required by Drupal tests with PHPunit.
   # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
   SIMPLETEST_BASE_URL: "http://build"
-  # SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
-  SIMPLETEST_DB: "${DB_DRIVER}://root@db/drupal"
+  SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
+  # SIMPLETEST_DB: "${DB_DRIVER}://root@db/drupal"
   # SIMPLETEST_DB=sqlite://localhost/:memory:
   #
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
@@ -210,18 +210,12 @@
   #
   # Behat tests.
   #
-  # Settings for Behat with DrupalExtension and ScreenshotExtensions, match the
-  # tests on behat_tests included in this project.
+  # Settings for Behat with DrupalExtension, match the tests on behat_tests
+  # included in this project.
   # https://www.drupal.org/project/drupalextension
-  # https://github.com/elvetemedve/behat-screenshot
   BEHAT_PARAMS: >
     {
       "extensions" : {
-        "Bex\\Behat\\ScreenshotExtension" : {
-          "image_drivers" : {
-            "local" : { "screenshot_directory" : "report-behat" }
-          }
-        },
         "Drupal\\DrupalExtension" : {
           "drupal" : {
             "drupal_root" : "${WEB_ROOT}"
