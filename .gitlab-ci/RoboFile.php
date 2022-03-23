@@ -394,21 +394,16 @@ class RoboFile extends Tasks {
         // We have a composer.json file.
         if (file_exists($this->ciProjectDir . '/composer.json')) {
           $this->ciLog("Project include Drupal, let mirror.");
-          // Cannot symlink because $this->docRoot (/opt/drupal) is a mounted volume.
-          $this->ciMirror(
-            $this->ciProjectDir,
-            $this->docRoot
-          );
-        }
-        else {
-          $this->ciLog("Project seems to have only custom code.");
-          // Root contain a web/ folder, we mirror each folders.
-          foreach (['modules', 'themes', 'profiles'] as $type) {
-            $this->ciMirror(
-              $this->ciProjectDir . '/' . $this->drupalWebRoot . '/' . $type . '/custom',
-              $this->webRoot . '/' . $type . '/custom'
-            );
-          }
+          $this->taskFilesystemStack()
+            ->rename($this->docRoot, $this->docRoot . '.bak')
+            ->symlink($this->ciProjectDir, $this->docRoot)
+            ->run();
+          
+          // // Cannot symlink because $this->docRoot (/opt/drupal) is a mounted volume.
+          // $this->ciMirror(
+          //   $this->ciProjectDir,
+          //   $this->docRoot
+          // );
         }
         break;
 

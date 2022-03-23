@@ -167,7 +167,6 @@
   ##############################################################################
   # Other variables for CI only that do not need editing in normal usage.
   #
-  #
   # Required by service:mysql/mariadb.
   MYSQL_DATABASE: drupal
   MYSQL_USER: drupal
