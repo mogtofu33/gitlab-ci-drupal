@@ -181,7 +181,8 @@
   # Required by Drupal tests with PHPunit.
   # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
   SIMPLETEST_BASE_URL: "http://build"
-  SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
+  # SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
+  SIMPLETEST_DB: "${DB_DRIVER}://root@db/drupal"
   # SIMPLETEST_DB=sqlite://localhost/:memory:
   #
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
