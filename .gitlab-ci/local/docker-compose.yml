@@ -20,6 +20,8 @@ services:
       - "88:80"
     links:
       - db
+      - chrome
+      - chromedriver
     volumes:
       # Mount the parent folder as a module.
       # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
@@ -37,12 +39,12 @@ services:
     env_file:
       - .env
 
-  mariadb:
+  db:
     image: ${SERVICE_DATABASE}
     expose:
       - "3306"
     volumes:
-      - database_data:/var/lib/mysql
+      # - database_data:/var/lib/mysql
       # Add my.cnf for better performance.
       - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
     container_name: ci-db
@@ -52,7 +54,7 @@ services:
   chromedriver:
     image: ${SERVICE_CHROMEDRIVER}
     expose:
-      - "9515"
+      - "${SERVICE_CHROMEDRIVER_PORT}"
     container_name: ci-chromedriver
     env_file:
       - .env
@@ -60,7 +62,7 @@ services:
   chrome:
     image: ${SERVICE_CHROME}
     expose:
-      - "3000"
+      - "${SERVICE_CHROME_PORT}"
     container_name: ci-chrome
     env_file:
       - .env
@@ -78,5 +80,5 @@ services:
   #   env_file:
   #     - .env
 
-volumes:
-  database_data:
+# volumes:
+#   database_data:

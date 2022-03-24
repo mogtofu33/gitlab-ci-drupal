@@ -160,7 +160,9 @@
   # SERVICE_DATABASE: "postgres:14"
   #
   SERVICE_CHROMEDRIVER: "drupalci/webdriver-chromedriver:production"
-  SERVICE_CHROME: "browserless/chrome:latest"
+  SERVICE_CHROMEDRIVER_PORT: 9515
+  SERVICE_CHROME: "mogtofu33/chrome-headless:${CI_REF}"
+  SERVICE_CHROME_PORT: 9222
   #
   ##############################################################################
 
@@ -182,7 +184,7 @@
   SIMPLETEST_BASE_URL: "http://build"
   SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
   # SIMPLETEST_DB: "${DB_DRIVER}://root@db/drupal"
-  # SIMPLETEST_DB=sqlite://localhost/:memory:
+  # SIMPLETEST_DB: "sqlite://localhost/:memory:"
   #
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
   SYMFONY_DEPRECATIONS_HELPER: "disabled"
@@ -222,6 +224,9 @@
         }
       }
     }
+  # Chrome options, used by mogtofu33/chrome-headless startup.
+  # https://peter.sh/experiments/chromium-command-line-switches/
+  CHROME_OPTS: "--headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --disable-crash-reporter --disable-gpu --disable-software-rasterizer"
   #
   # General settings.
   #
@@ -230,7 +235,7 @@
   FF_NETWORK_PER_BUILD: 1
   #
   # Config files location for inclusion if not present locally (from ./.gitlab-ci/).
-  CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REF}/.gitlab-ci/"
+  CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REF}/.gitlab-ci"
   #
   # Docker image version used for CI.
   # Should be the same as CI_REF, but can be overridden for some use cases.

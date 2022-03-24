@@ -89,7 +89,8 @@ build:
             "drupal/drupal-extension:~4.1" \
             "dmore/behat-chrome-extension:^1.3" \
             "emuse/behat-html-formatter:0.2.*" \
-            "friends-of-behat/mink-extension:^2.6";
+            "friends-of-behat/mink-extension:^2.6" \
+            "dmore/chrome-mink-driver:2.8.1-beta1";
           echo -e "\e[0Ksection_end:`date +%s`:dev_install_behat\r\e[0K";
         fi
 
@@ -204,7 +205,7 @@ nightwatchjs:
     # Log versions.
     - npx nightwatch --version
     # Ensure chromedriver is running.
-    - curl -s http://chrome:9515/status | jq '.'
+    - curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
@@ -256,20 +257,17 @@ behat:
     - name: ${SERVICE_CHROME}
       alias: chrome
   script:
-    - |
-      # Test if we have a behat.yml file
-      if [ ! -f "${CI_PROJECT_DIR}/behat_tests/behat.yml" ]; then
-        echo -e "\033[1;31mNo behat tests found in behat_tests/behat.yml.\033[0;37m";
-        exit 1
-      fi
     - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal ${BEHAT_INSTALL_PROFILE}"
     # Install Drupal with the selected profile.
     - robo drupal:install ${BEHAT_INSTALL_PROFILE}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
-    - curl -s http://chrome:3000/json/version | jq '.' || true
+    - curl -s http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.' || true
+    - echo -e "\e[0Ksection_start:`date +%s`:behat_params[collapsed=true]\r\e[0K\e[1;34m Behat parameters"
+    - echo $BEHAT_PARAMS
+    - cat ${CI_PROJECT_DIR}/behat_tests/behat.yml
+    - echo -e "\e[0Ksection_end:`date +%s`:behat_params\r\e[0K"
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
-    - cd ${WEB_ROOT}
     - ${DOC_ROOT}/vendor/bin/behat
         --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
         --format progress
@@ -278,6 +276,7 @@ behat:
         --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
         --format html
         --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
+        --verbose
 
 ################################################################################
 # Code quality jobs for Drupal 8+ based on PHPQA

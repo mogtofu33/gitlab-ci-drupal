@@ -6,7 +6,41 @@
 
 ###############################################################################
 # Local only tests, not included in Gitlab ci and more flexible.
-#############################################################################&##
+###############################################################################
+__get_robofile() {
+  if [ ! -f "RoboFile.php" ]; then
+    _dkexec_bash "curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php;"
+  fi
+}
+
+__build() {
+  # before_script
+  __get_robofile
+  _dkexec_bash "robo ci:build before_build"
+
+  # script
+  _dkexec_bash "composer self-update;"
+  if [ "${CI_TYPE}" == "project" ]; then
+    if eval "_exist_file ${CI_PROJECT_DIR}/composer.json"; then
+      _dkexec_bash "composer validate --no-check-all --no-check-publish -n;"
+      _dkexec_bash "composer install -n --prefer-dist;"
+      _dkexec_bash "composer require -n --dev \
+        'drupal/core-dev:~${CI_DRUPAL_VERSION}' \
+        drush/drush \
+        'phpspec/prophecy-phpunit:^2'"
+      _dkexec_bash "composer require -n --dev \
+        'drupal/drupal-extension:~4.1' \
+        'dmore/behat-chrome-extension:^1.3' \
+        'emuse/behat-html-formatter:0.2.*' \
+        'friends-of-behat/mink-extension:^2.6';"
+    fi
+  fi
+
+  # after_script
+  _dkexec_bash "robo ci:build"
+  # _dkexec_bash "robo ci:prepare"
+}
+
 __install_phpunit() {
   if ! eval "_exist_file /opt/drupal/vendor/bin/phpunit"; then
     if [ "${CI_TYPE}" == "project" ]; then
@@ -31,7 +65,7 @@ __install_phpunit() {
 # Usage:
 #   phpunit web/core/modules/action/tests/src/Unit
 _phpunit() {
-  __install_phpunit
+  # __install_phpunit
   local __path
 
   if [[ $CI_TYPE == "module" ]]; then
@@ -57,18 +91,13 @@ _phpunit() {
     fi
   fi
 
-  if docker exec ci-drupal ps | grep chromedriver; then
-    printf "%s[NOTICE]%s Chromedriver running\\n" "${_dim}" "${_end}"
-  else
-    printf "%s[NOTICE]%s Start Chromedriver\\n" "${_dim}" "${_end}"
-    docker exec -d ci-drupal /scripts/start-chromedriver.sh
-    sleep 2s
-  fi
+          # --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel,${PHPUNIT_TESTS}functional,${PHPUNIT_TESTS}functional-javascript" \
 
   _dkexec sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit \
         --configuration ${WEB_ROOT}/core \
-        --verbose --debug \
-        ${__path}
+        --testsuite "${PHPUNIT_TESTS}functional-javascript" \
+        --verbose
+        # ${__path}
 }
 
 # Standalone qa test, can set path as argument and tools with option "-qa".
@@ -180,11 +209,11 @@ _behat() {
 __install_behat() {
   if ! eval "_exist_file /opt/drupal/vendor/bin/behat"; then
     printf "%s[NOTICE]%s Install Behat\\n" "${_dim_blu}" "${_end}"
-    _dkexec composer require -d /opt/drupal --no-ansi -n \
+    _dkexec composer require -d /opt/drupal --no-ansi -n --dev \
       "drupal/drupal-extension:~4.1" \
       "dmore/behat-chrome-extension:^1.3" \
-      "bex/behat-screenshot:^2.1" \
-      "emuse/behat-html-formatter:0.2.*"
+      "emuse/behat-html-formatter:0.2.*" \
+      "friends-of-behat/mink-extension:^2.6";
   else
     printf "%s[SKIP]%s Behat already installed\\n" "${_dim_blu}" "${_end}"
   fi
@@ -318,8 +347,10 @@ _clean_env() {
 _env() {
 
   if [ -f "$_DIR/../../starter.gitlab-ci.yml" ]; then
+    debug "Use local starter.gitlab-ci.yml"
     __yaml="$_DIR/../../starter.gitlab-ci.yml"
   elif [ -f "$_DIR/../../.gitlab-ci.yml" ]; then
+    debug "Use local .gitlab-ci.yml"
     __yaml="$_DIR/../../.gitlab-ci.yml"
   else
     printf "%s[ERROR]%s Missing .gitlab-ci.yml or starter.gitlab-ci.yml!\\n" "${_red}" "${_end}"
@@ -378,18 +409,8 @@ _env() {
   echo '# [fix] Fixed BEHAT_PARAMS' >> $__env
   echo 'BEHAT_PARAMS='${BEHAT_PARAMS} >> $__env
 
-  echo '#' >> $__env
-  echo '# [fix] Override variables' >> $__env
+  echo '# [fix] Override variables from '$__yaml >> $__env
   yq '... comments=""' $__yaml | yq '.variables' >> $__env
-
-  # if [ -f $__yaml_local ]; then
-  #   echo '#' >> $__env
-  #   echo '# [fix] Local variables' >> $__env
-  #   yq $__yaml_local >> $__env
-  # fi
-
-  # Remove obsolete values.
-  sed -i '/^extends:/d' $__env
 
   # Replace variables.
   WEB_ROOT=$(yq '.[.default_variables].WEB_ROOT' $__yaml_variables)
@@ -414,23 +435,26 @@ _env() {
   echo 'CI_IMAGE_REF="'${CI_REF}'"' >> $__env
 
   CI_DRUPAL_VERSION=$(yq '.variables.CI_DRUPAL_VERSION.value' $__yaml)
-  sed -i '/CI_DRUPAL_VERSION/d' $__env
+  sed -i "s#CI_DRUPAL_VERSION:\(.*\)#CI_DRUPAL_VERSION=${CI_DRUPAL_VERSION}#g" $__env
   echo '# [fix] drupal version' >> $__env
-  echo 'CI_DRUPAL_VERSION='${CI_DRUPAL_VERSION} >> $__env
 
   # Replace some variables by their values from main file.
   DRUPAL_WEB_ROOT=$(yq '.variables.DRUPAL_WEB_ROOT' $__yaml)
   sed -i "s#\${DRUPAL_WEB_ROOT}#${DRUPAL_WEB_ROOT}#g" $__env
   echo '# [fix] Replaced DRUPAL_WEB_ROOT' >> $__env
 
-  # Remove quotes on NIGHTWATCH_TESTS.
-  # sed -i 's#NIGHTWATCH_TESTS="\(.*\)"#NIGHTWATCH_TESTS=\1#g' $__env
+  if [ -f $__yaml_local ]; then
+    echo '# [fix] Local override variables .local.yml' >> $__env
+    yq $__yaml_local >> $__env
+  fi
 
   # Fix env file format.
   _yml_to_env_fixes $__env
 }
 
 _yml_to_env_fixes() {
+  # Remove obsolete values.
+  sed -i '/^extends:/d' $__env
   # Delete empty lines.
   sed -i '/^$/d' $__env
   # Delete lines starting with spaces.

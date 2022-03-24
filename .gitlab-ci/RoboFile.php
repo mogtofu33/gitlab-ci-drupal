@@ -284,7 +284,7 @@ class RoboFile extends Tasks {
 
     if (file_exists($filename)) {
       $this->ciLog("Import dump $filename");
-      $this->_exec('mysql -hmariadb -uroot drupal < ' . $filename . ';');
+      $this->_exec('mysql -hdb -uroot drupal < ' . $filename . ';');
 
       // When install from dump we need to be sure settings.php is correct.
       $settings = file_get_contents($this->ciProjectDir . '/.gitlab-ci/settings.local.php');
@@ -393,17 +393,11 @@ class RoboFile extends Tasks {
       case "project":
         // We have a composer.json file.
         if (file_exists($this->ciProjectDir . '/composer.json')) {
-          $this->ciLog("Project include Drupal, let mirror.");
+          $this->ciLog("Project include Drupal, symlink to included Drupal.");
           $this->taskFilesystemStack()
-            ->rename($this->docRoot, $this->docRoot . '.bak')
+            ->rename($this->docRoot, $this->docRoot . '_bak')
             ->symlink($this->ciProjectDir, $this->docRoot)
             ->run();
-          
-          // // Cannot symlink because $this->docRoot (/opt/drupal) is a mounted volume.
-          // $this->ciMirror(
-          //   $this->ciProjectDir,
-          //   $this->docRoot
-          // );
         }
         break;
 
@@ -414,10 +408,11 @@ class RoboFile extends Tasks {
         // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
         $this->ciBuild();
         // Root contain the theme / module, we mirror with project name.
-        $this->ciMirror(
-          $this->ciProjectDir,
-          $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
-        );
+        $this->taskFilesystemStack()
+          ->symlink(
+            $this->ciProjectDir,
+            $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
+          )->run();
         break;
     }
   }
@@ -542,30 +537,6 @@ class RoboFile extends Tasks {
    */
   private function ciNotice($message) {
     $this->say("[notice] $message");
-  }
-
-  /**
-   * Helper to mirror files and folders.
-   *
-   * @param string $src
-   *   Folder source.
-   * @param string $target
-   *   Folder target.
-   */
-  private function ciMirror($src, $target) {
-    if (!file_exists($src)) {
-      $this->ciNotice("Missing src folder: $src");
-    }
-    else {
-      if (!file_exists($target)) {
-        $this->ciNotice("Missing target folder: $target");
-      }
-
-      // Mirror our folder in the target.
-      $this->taskFilesystemStack()
-        ->mirror($src, $target)
-        ->run();
-    }
   }
 
 }

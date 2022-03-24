@@ -1,5 +1,7 @@
 <?php
 
+// This file is used when installing Drupal from an existing database dump.
+
 $settings['hash_salt'] = 'CI_ONLY_HASH_SALT_NOT_SAFE_!!!!';
 
 $settings["config_sync_directory"] = getenv('DOC_ROOT') . '/config/sync';
