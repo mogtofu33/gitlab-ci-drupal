@@ -102,7 +102,7 @@ variables:
   # As a sample here is a list of some variables, see documentation for more
   # variables.
   #
-  ## List of DIRS_* variables to define dirs to analyse for specific jobs.
+  ## List of DIRS_* variables to define dirs to analyze for specific jobs.
   ## Code quality dirs, must include your PHP code to check.
   #
   # DIRS_QA: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
