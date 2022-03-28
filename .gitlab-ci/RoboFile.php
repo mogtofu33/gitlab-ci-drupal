@@ -460,12 +460,12 @@ class RoboFile extends Tasks {
       }
       else {
         $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
+        $remote_file = file_get_contents($this->ciRemoteRef . '/' . $filename);
         if ($remote_file) {
           file_put_contents($drupal_dir . $filename, $remote_file);
         }
         else {
-          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . "$filename");
+          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . '/' . "$filename");
         }
       }
     }
