@@ -184,6 +184,9 @@ class RoboFile extends Tasks {
     if (getenv('CI_REMOTE_FILES')) {
       $this->ciRemoteRef = getenv('CI_REMOTE_FILES');
     }
+    if (strcmp($this->ciRemoteRef, "/") !== 0) {
+      $this->ciRemoteRef .= '/';
+    }
 
     // Pull a DB_URL from the environment, if it exists.
     if (filter_var(getenv('DB_URL'), FILTER_VALIDATE_URL)) {
@@ -460,12 +463,12 @@ class RoboFile extends Tasks {
       }
       else {
         $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteRef . '/' . $filename);
+        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
         if ($remote_file) {
           file_put_contents($drupal_dir . $filename, $remote_file);
         }
         else {
-          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . '/' . "$filename");
+          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . "$filename");
         }
       }
     }
