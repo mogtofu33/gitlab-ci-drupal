@@ -245,19 +245,11 @@ class RoboFile extends Tasks {
 
   /**
    * Mirror our module/theme in the Drupal or the project.
-   *
-   * @param bool $getConfigFiles
-   *   (optional) Get config files in the process, default true.
    */
-  public function ciPrepare($getConfigFiles = TRUE) {
-
+  public function ciPrepare() {
     $this->ciPreparePhpunit();
-
+    $this->ciGetConfigFiles();
     $this->ciPrepareFolders();
-
-    if ($getConfigFiles) {
-      $this->ciGetConfigFiles();
-    }
   }
 
   /**
@@ -398,9 +390,7 @@ class RoboFile extends Tasks {
         if (file_exists($this->ciProjectDir . '/composer.json')) {
           $this->ciLog("Project include Drupal, symlink to included Drupal.");
           $this->taskFilesystemStack()
-            ->rename($this->docRoot, $this->docRoot . '_bak')
-            ->run();
-          $this->taskFilesystemStack()
+            ->remove($this->docRoot)
             ->symlink($this->ciProjectDir, $this->docRoot)
             ->run();
         }
@@ -452,7 +442,8 @@ class RoboFile extends Tasks {
     $this->ciLog("Prepare config files for CI");
 
     $src_dir = $this->ciProjectDir . '/.gitlab-ci/';
-    $drupal_dir = $this->webRoot . '/core/';
+    // $drupal_dir = $this->webRoot . '/core/';
+    $dest_dir = $this->ciProjectDir . '/' . $this->drupalWebRoot . '/core/';
 
     // Manage files for drupal_root/core folder.
     foreach ($this->ciFiles['core'] as $filename) {
@@ -460,14 +451,15 @@ class RoboFile extends Tasks {
       if (file_exists($src_dir . $filename)) {
         $this->ciNotice("Use local core file: $src_dir" . "$filename");
         $this->taskFilesystemStack()
-          ->copy($src_dir . $filename, $drupal_dir . $filename, TRUE)
+          ->copy($src_dir . $filename, $dest_dir . $filename, TRUE)
           ->run();
       }
       else {
         $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
         $remote_file = file_get_contents($this->ciRemoteRef . $filename);
         if ($remote_file) {
-          file_put_contents($drupal_dir . $filename, $remote_file);
+          // file_put_contents($drupal_dir . $filename, $remote_file);
+          file_put_contents($dest_dir . $filename, $remote_file);
         }
         else {
           $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . "$filename");
