@@ -399,6 +399,8 @@ class RoboFile extends Tasks {
           $this->ciLog("Project include Drupal, symlink to included Drupal.");
           $this->taskFilesystemStack()
             ->rename($this->docRoot, $this->docRoot . '_bak')
+            ->run();
+          $this->taskFilesystemStack()
             ->symlink($this->ciProjectDir, $this->docRoot)
             ->run();
         }
