@@ -24,4 +24,4 @@
   cache:
     key: "drupal-node_modules-${CI_COMMIT_REF_NAME}"
     paths:
-      - ${WEB_ROOT}/core/node_modules
+      - ${DRUPAL_WEB_ROOT}/core/node_modules
