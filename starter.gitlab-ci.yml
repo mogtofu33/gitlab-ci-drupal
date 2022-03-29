@@ -154,6 +154,7 @@ variables:
   # SKIP_LINT: 1 # Skip all lint, ignore SKIP_LINT_*.
   # SKIP_LINT_CSS: 1
   # SKIP_LINT_JS: 1
+  # SKIP_LINT_YAML: 1
   # SKIP_LINT_TWIG: 1
   #
   # SKIP_METRICS: 1
