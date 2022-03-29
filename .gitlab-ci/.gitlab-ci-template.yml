@@ -67,32 +67,22 @@ build:
   script:
     - composer self-update
     # Validate the composer.json file.
-    - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+    - if [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n;
       fi
-    # Install the project with core-dev and Drush.
-    # @todo remove phpspec/prophecy-phpunit when Drupal 9 is eol.
+    # Install the project with core-dev, Drush and Behat if needed.
     - |
-      if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
+      if [ -f composer.json ]; then
         echo -e "\e[0Ksection_start:`date +%s`:install[collapsed=true]\r\e[0K\e[1;34m Composer install\e[0m";
         composer install -n --prefer-dist;
-        COMPOSER_MEMORY_LIMIT=-1 composer require -n --dev \
-          "drupal/core-dev:~${CI_DRUPAL_VERSION}" \
-          "drush/drush" \
-          "phpspec/prophecy-phpunit:^2";
         echo -e "\e[0Ksection_end:`date +%s`:install\r\e[0K";
       fi
     - |
-        if [ ${CI_TYPE} == "project" ] && [ -f composer.json ] && [ $SKIP_TEST_BEHAT == 0 ]; then
-          echo -e "\e[0Ksection_start:`date +%s`:dev_install_behat[collapsed=true]\r\e[0K\e[1;34m Composer require behat\e[0m";
-          COMPOSER_MEMORY_LIMIT=-1 composer require -n --dev \
-            "drupal/drupal-extension:~4.1" \
-            "dmore/behat-chrome-extension:^1.3" \
-            "emuse/behat-html-formatter:0.2.*" \
-            "friends-of-behat/mink-extension:^2.6" \
-            "dmore/chrome-mink-driver:2.8.1-beta1";
-          echo -e "\e[0Ksection_end:`date +%s`:dev_install_behat\r\e[0K";
-        fi
+      if [ -f composer.json ]; then
+        echo -e "\e[0Ksection_start:`date +%s`:install[collapsed=true]\r\e[0K\e[1;34m Composer install dev\e[0m";
+        robo drupal:require-dev $SKIP_TEST_BEHAT
+        echo -e "\e[0Ksection_end:`date +%s`:install dev\r\e[0K";
+      fi
 
 ################################################################################
 # Drupal tests.
@@ -127,7 +117,7 @@ phpunit_unit:
         --log-junit report-${CI_JOB_NAME}/junit-unit-kernel.xml
         --verbose --debug
   after_script:
-    # [CODECOV] integration, need to set up CI ENVIRONMENT VARIABLES 'CODECOV_TOKEN' to work.
+    # [CODECOV] integration, need to set up CI environment variable 'CODECOV_TOKEN' to work.
     # see https://codecov.io
     - if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
         bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/coverage.xml" || true;
@@ -172,7 +162,8 @@ phpunit_funcjs:
       alias: chrome
   script:
     # Check Chromedriver.
-    - curl -s http://chrome:9515/status | jq '.' || true
+    - curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
+    # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
         --testsuite "${PHPUNIT_TESTS}functional-javascript"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
@@ -267,7 +258,7 @@ behat:
     - robo drupal:install ${BEHAT_INSTALL_PROFILE}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
-    - curl -s http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.' || true
+    - curl -s http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.'
     - echo -e "\e[0Ksection_start:`date +%s`:behat_params[collapsed=true]\r\e[0K\e[1;34m Behat parameters"
     - echo $BEHAT_PARAMS
     - cat ${CI_PROJECT_DIR}/behat_tests/behat.yml

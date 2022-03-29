@@ -66,7 +66,7 @@ class RoboFile extends Tasks {
    *   $WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
-  protected $webRoot = '/opt/drupal/web';
+  protected $webRoot = '/var/www/html';
 
   /**
    * CI context type.
@@ -117,15 +117,6 @@ class RoboFile extends Tasks {
       'settings.local.php',
     ],
   ];
-
-  /**
-   * NIGHTWATCH_TESTS context.
-   *
-   * @var string
-   *   The Nightwatch tests to run, look at env values for. This can be
-   *   overridden by specifying a $NIGHTWATCH_TESTS environment variable.
-   */
-  protected $nightwatchTests = "--skiptags core";
 
   /**
    * CI_DRUPAL_VERSION context.
@@ -210,12 +201,7 @@ class RoboFile extends Tasks {
       $this->webRoot = getenv('WEB_ROOT');
     }
     else {
-      $this->webRoot = $this->docRoot . '/' . $this->drupalWebRoot;
-    }
-
-    // Pull a NIGHTWATCH_TESTS from the environment, if it exists.
-    if (getenv('NIGHTWATCH_TESTS')) {
-      $this->nightwatchTests = getenv('NIGHTWATCH_TESTS');
+      $this->webRoot = $this->ciProjectDir . '/' . $this->drupalWebRoot;
     }
 
     // Pull a PHPUNIT_TESTS from the environment, if it exists.
@@ -306,6 +292,36 @@ class RoboFile extends Tasks {
   }
 
   /**
+   * Add Drupal dev third party for dev.
+   *
+   * @param string $SKIP_TEST_BEHAT
+   *   (optional) Skip behat flag to check if we install behat dependency.
+   */
+  public function drupalRequireDev($SKIP_TEST_BEHAT = "1") {
+    if (!file_exists($this->ciProjectDir . '/vendor/bin/drush')) {
+      $this->composerRequire()
+          ->dependency('drush/drush', '>10')
+          ->run();
+    }
+    $task = $this->composerRequire()
+      ->dependency('drupal/core-dev', '~' . $this->ciDrupalVersion)
+      ->dependency('phpspec/prophecy-phpunit', '^2');
+
+    if ($SKIP_TEST_BEHAT == "0") {
+      $task
+        ->dependency('drupal/drupal-extension', '~4.1')
+        ->dependency('dmore/behat-chrome-extension', '^1.3')
+        ->dependency('emuse/behat-html-formatter', '0.2.*')
+        ->dependency('friends-of-behat/mink-extension', '^2.6')
+        ->dependency('dmore/chrome-mink-driver', '2.8.1-beta1');
+    }
+
+    $task
+      ->dev()
+      ->run();
+  }
+
+  /**
    * Helper for preparing a composer require task.
    *
    * @param string|null $dir
@@ -315,21 +331,18 @@ class RoboFile extends Tasks {
    *   Robo composer require task with some specific settings.
    */
   private function composerRequire($dir = NULL) {
-    if (!$dir) {
-      $dir = $this->docRoot;
-    }
-
     $task = $this->taskComposerRequire()
       ->noInteraction()
-      ->noAnsi()
-      ->workingDir($dir);
+      ->option('with-all-dependencies');
+
+    if ($dir) {
+      $task->workingDir($dir);
+    }
 
     if ($this->verbose) {
-      $task->arg('--verbose');
+      $task->option('verbose');
     }
-    else {
-      $task->arg('--quiet');
-    }
+
     return $task;
   }
 
@@ -386,14 +399,11 @@ class RoboFile extends Tasks {
     // Handle CI Type value.
     switch ($this->ciType) {
       case "project":
-        // We have a composer.json file.
-        if (file_exists($this->ciProjectDir . '/composer.json')) {
-          $this->ciLog("Project include Drupal, symlink to included Drupal.");
-          $this->taskFilesystemStack()
-            ->remove($this->docRoot)
-            ->symlink($this->ciProjectDir, $this->docRoot)
-            ->run();
-        }
+        $this->ciLog("Project include Drupal, symlink to included Drupal.");
+        $this->taskFilesystemStack()
+          ->remove($this->webRoot)
+          ->symlink($this->ciProjectDir . '/' . $this->drupalWebRoot, $this->webRoot)
+          ->run();
         break;
 
       case "module":
@@ -442,8 +452,10 @@ class RoboFile extends Tasks {
     $this->ciLog("Prepare config files for CI");
 
     $src_dir = $this->ciProjectDir . '/.gitlab-ci/';
-    // $drupal_dir = $this->webRoot . '/core/';
     $dest_dir = $this->ciProjectDir . '/' . $this->drupalWebRoot . '/core/';
+
+    // Create directory if do not exist.
+    $this->_mkdir($src_dir);
 
     // Manage files for drupal_root/core folder.
     foreach ($this->ciFiles['core'] as $filename) {
@@ -458,7 +470,6 @@ class RoboFile extends Tasks {
         $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
         $remote_file = file_get_contents($this->ciRemoteRef . $filename);
         if ($remote_file) {
-          // file_put_contents($drupal_dir . $filename, $remote_file);
           file_put_contents($dest_dir . $filename, $remote_file);
         }
         else {
@@ -466,9 +477,6 @@ class RoboFile extends Tasks {
         }
       }
     }
-
-    // Create directory if do not exist.
-    $this->_mkdir($src_dir);
 
     // Manage ci configuration files for .gitlab-ci folder.
     foreach ($this->ciFiles['ci'] as $filename) {
@@ -496,15 +504,14 @@ class RoboFile extends Tasks {
    *   A drush exec command.
    */
   private function ciDrush() {
-    if (!file_exists($this->docRoot . '/vendor/bin/drush')) {
+    if (!file_exists($this->ciProjectDir . '/vendor/bin/drush')) {
       $task = $this->composerRequire()
         ->dependency('drush/drush', '>10')
-        ->dev()
         ->run();
     }
 
     // Drush needs an absolute path to the webroot.
-    $task = $this->taskExec($this->docRoot . '/vendor/bin/drush')
+    $task = $this->taskExec($this->ciProjectDir . '/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {

@@ -27,14 +27,14 @@
   # CI_TYPE: "module"
 
   # Relative path to the Drupal web root.
-  # For a project based on Drupal this is 'web'. Can be 'docroot' on some
-  # distributions.
+  # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
+  # some distributions.
   DRUPAL_WEB_ROOT: web
 
   # Path to the Drupal doc and web root.
   # Drupal official image create symlink /opt/drupal/web > /var/www/html
   DOC_ROOT: "/opt/drupal"
-  WEB_ROOT: "${DOC_ROOT}/${DRUPAL_WEB_ROOT}"
+  WEB_ROOT: "/var/www/html"
 
   # Phpunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).

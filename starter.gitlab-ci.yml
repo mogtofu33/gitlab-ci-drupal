@@ -55,8 +55,9 @@ variables:
     value: "9.3"
     description: The version of Drupal to use for this Pipeline.
 
-  # For a project based on Drupal this is 'web'. Can be 'docroot' on some
-  # distributions like 'varbase'.
+  # Relative path to the Drupal web root.
+  # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
+  # some distributions.
   DRUPAL_WEB_ROOT: web
 
   # Phpunit tests to run, default provide only custom code or if this variable
