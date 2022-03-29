@@ -199,12 +199,19 @@ nightwatchjs:
       alias: chrome
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
+    # Chromedriver missing libx11.
+    # - apt update && apt install -y libx11-xcb-dev
     # Install packages from Drupal.
     - yarn --cwd ${WEB_ROOT}/core install
-    # Log versions.
-    - node ${WEB_ROOT}/core/node_modules/nightwatch/bin/nightwatch --version
     # Ensure chromedriver is running.
     - curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
+    # Update chromedriver if needed, the ci image include the latest stable version of chrome.
+    # Drupal package.json can be late on chromedriver version.
+    - |
+      yarn --cwd ${WEB_ROOT}/core upgrade \
+      chromedriver@$(curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
+    # Log versions.
+    - node ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
@@ -217,7 +224,7 @@ nightwatchjs:
     # Html report, install plugin and run from the xml report.
     - yarn --cwd ${WEB_ROOT}/core add nightwatch-html-reporter
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install_reporter\r\e[0K"
-    - npx nightwatch-html-reporter
+    - node ${WEB_ROOT}/core/node_modules/.bin/nightwatch-html-reporter
         --report-dir /tmp/report-${CI_JOB_NAME}
         --output nightwatch.html
         --browser false
@@ -315,7 +322,7 @@ lint_js:
       when: never
     - when: always
   script:
-    - node ${WEB_ROOT}/core/node_modules/eslint/bin/eslint.js
+    - node ${WEB_ROOT}/core/node_modules/.bin/eslint.js
         --config ${CONFIG_ESLINT}
         --resolve-plugins-relative-to ${WEB_ROOT}/core
         --format html
@@ -331,7 +338,7 @@ lint_yaml:
       when: never
     - when: always
   script:
-    - node ${WEB_ROOT}/core/node_modules/eslint/bin/eslint.js
+    - node ${WEB_ROOT}/core/node_modules/.bin/eslint.js
         --config ${CONFIG_ESLINT}
         --resolve-plugins-relative-to ${WEB_ROOT}/core
         --ext .yml
@@ -350,7 +357,7 @@ lint_css:
     - when: always
   script:
     - yarn --cwd ${WEB_ROOT}/core add stylelint-html-formatter
-    - node ${WEB_ROOT}/core/node_modules/stylelint/bin/stylelint.js
+    - node ${WEB_ROOT}/core/node_modules/.bin/stylelint.js
         --config ${CONFIG_STYLELINT}
         --custom-formatter node_modules/stylelint-html-formatter
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint.html
