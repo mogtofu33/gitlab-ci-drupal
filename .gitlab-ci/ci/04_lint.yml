@@ -13,7 +13,7 @@
         yarn config set registry ${YARN_REGISTRY};
       fi
     # Install packages from core/package.json
-    - yarn --cwd ${WEB_ROOT}/core install
+    - yarn --cwd ${DRUPAL_WEB_ROOT}/core install
     # Prepare ci (mirror files in Docker image doc root).
     - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     - robo ci:prepare
