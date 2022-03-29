@@ -199,19 +199,18 @@ nightwatchjs:
       alias: chrome
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
-    # Chromedriver missing libx11.
-    # - apt update && apt install -y libx11-xcb-dev
     # Install packages from Drupal.
     - yarn --cwd ${WEB_ROOT}/core install
-    # Ensure chromedriver is running.
+    # Ensure chrome is running.
     - curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
-    # Update chromedriver if needed, the ci image include the latest stable version of chrome.
-    # Drupal package.json can be late on chromedriver version.
+    # Update chromedriver as Drupal package.json can be late on chrome version.
     - |
       yarn --cwd ${WEB_ROOT}/core upgrade \
       chromedriver@$(curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
     # Log versions.
-    - node ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version
+    - |
+      node ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version;
+      node ${WEB_ROOT}/core/node_modules/.bin/chromedriver --version;
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
