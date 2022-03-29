@@ -360,7 +360,7 @@ lint_css:
       when: never
     - when: always
   script:
-    - yarn --cwd ${WEB_ROOT}/core add stylelint-html-formatter
+    - yarn --cwd ${DRUPAL_WEB_ROOT}/core add stylelint-html-formatter
     - |
       node ${WEB_ROOT}/core/node_modules/.bin/stylelint \
         --config ${CONFIG_STYLELINT} \
