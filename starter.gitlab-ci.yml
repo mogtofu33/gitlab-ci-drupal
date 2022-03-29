@@ -94,6 +94,8 @@ variables:
   # SKIP_LINT_CSS: 1
   ## If you don't have any javascript files, you can skip with
   # SKIP_LINT_JS: 1
+  ## If you don't want to check yaml files, you can skip with
+  # SKIP_LINT_YAML: 1
   ## If you don't have any twig files, you can skip with
   # SKIP_LINT_TWIG: 1
   #

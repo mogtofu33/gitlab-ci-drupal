@@ -140,11 +140,13 @@
   #
   # OR skip single jobs in lint.
   #
-  # CSS lint job with stylelint
+  # CSS lint job with stylelint.
   SKIP_LINT_CSS: 0
-  # Javascript lint job with eslint
+  # Javascript lint job with eslint.
   SKIP_LINT_JS: 0
-  # Twig lint job using symfony console
+  # Yaml lint job with eslint.
+  SKIP_LINT_YAML: 0
+  # Twig lint job using symfony console.
   SKIP_LINT_TWIG: 0
   #
   ##############################################################################
