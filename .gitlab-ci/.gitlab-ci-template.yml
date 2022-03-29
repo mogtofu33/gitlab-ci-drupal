@@ -365,7 +365,7 @@ lint_css:
       node ${WEB_ROOT}/core/node_modules/.bin/stylelint \
         --config ${CONFIG_STYLELINT} \
         --ignore-path ${WEB_ROOT}/core/.stylelintignore \
-        --custom-formatter node_modules/stylelint-html-formatter \
+        --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-html-formatter \
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint.html \
         "${DIRS_CSS}"
 
