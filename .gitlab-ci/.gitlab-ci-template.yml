@@ -321,7 +321,7 @@ lint_js:
       when: never
     - when: always
   script:
-    - node ${WEB_ROOT}/core/node_modules/.bin/eslint.js
+    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
         --config ${CONFIG_ESLINT}
         --resolve-plugins-relative-to ${WEB_ROOT}/core
         --format html
@@ -337,7 +337,7 @@ lint_yaml:
       when: never
     - when: always
   script:
-    - node ${WEB_ROOT}/core/node_modules/.bin/eslint.js
+    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
         --config ${CONFIG_ESLINT}
         --resolve-plugins-relative-to ${WEB_ROOT}/core
         --ext .yml
@@ -356,7 +356,7 @@ lint_css:
     - when: always
   script:
     - yarn --cwd ${WEB_ROOT}/core add stylelint-html-formatter
-    - node ${WEB_ROOT}/core/node_modules/.bin/stylelint.js
+    - node ${WEB_ROOT}/core/node_modules/.bin/stylelint
         --config ${CONFIG_STYLELINT}
         --custom-formatter node_modules/stylelint-html-formatter
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint.html
