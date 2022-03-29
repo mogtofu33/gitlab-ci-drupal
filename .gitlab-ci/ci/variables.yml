@@ -78,9 +78,14 @@
   #
   # Eslint / Stylelint files to test.
   #
+  # Configuration files, default is Drupal used for core.
+  CONFIG_ESLINT: ${WEB_ROOT}/core/.eslintrc.passing.json
+  CONFIG_STYLELINT: ${WEB_ROOT}/core/.stylelintrc.json
+  #
   # Space separated for multiple folders.
   # Default is to check files under all custom folders.
   DIRS_JS: "${WEB_ROOT}/**/custom/**/*.js"
+  DIRS_YAML: "${WEB_ROOT}/**/custom/**/*.yml"
   DIRS_CSS: "${WEB_ROOT}/**/custom/**/css/*.css"
   #
   # Twig templates files to test.
@@ -88,6 +93,7 @@
   #
   # phpmetrics / phpstats dirs to include.
   #
+  # Comma separated for multiple folders.
   # Default is to check all custom dirs.
   DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
 
@@ -158,6 +164,8 @@
   SERVICE_DATABASE: "mariadb:10"
   # SERVICE_DATABASE: "mysql:8"
   # SERVICE_DATABASE: "postgres:14"
+  SERVICE_DATABASE_PORT: 3306
+  # SERVICE_DATABASE_PORT: 5432
   #
   SERVICE_CHROMEDRIVER: "drupalci/webdriver-chromedriver:production"
   SERVICE_CHROMEDRIVER_PORT: 9515

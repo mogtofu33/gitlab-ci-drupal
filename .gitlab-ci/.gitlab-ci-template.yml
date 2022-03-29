@@ -1,5 +1,5 @@
 ###############################################################################
-# Gitlab CI integration for Drupal 8/9 project or module: unit tests,
+# Gitlab CI integration for Drupal 9 project or module: unit tests,
 # code quality, linting, metrics and deploy samples.
 #
 # Project: https://gitlab.com/mog33/gitlab-ci-drupal
@@ -199,24 +199,23 @@ nightwatchjs:
       alias: chrome
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
-    - cd ${WEB_ROOT}/core
     # Install packages from Drupal.
     - yarn --cwd ${WEB_ROOT}/core install
     # Log versions.
-    - npx nightwatch --version
+    - node ${WEB_ROOT}/core/node_modules/nightwatch/bin/nightwatch --version
     # Ensure chromedriver is running.
     - curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # Prepare reports.
     - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Prepare variables.
-    - envsubst < .env.tmpl > .env
+    - envsubst < ${WEB_ROOT}/core/.env.tmpl > ${WEB_ROOT}/core/.env
     # Launch Nightwatch tests from core folder.
-    - yarn test:nightwatch ${NIGHTWATCH_TESTS}
-  after_script:
+    - yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
+    # Prepare report.
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install_reporter[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs reporter"
     # Html report, install plugin and run from the xml report.
-    - yarn add nightwatch-html-reporter
+    - yarn --cwd ${WEB_ROOT}/core add nightwatch-html-reporter
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install_reporter\r\e[0K"
     - npx nightwatch-html-reporter
         --report-dir /tmp/report-${CI_JOB_NAME}
@@ -303,10 +302,10 @@ php-qa:
   allow_failure: true
 
 ################################################################################
-# Code lint jobs for Drupal 8/9
+# Code lint jobs for Drupal 9
 ################################################################################
 
-# This is a eslint report based on Drupal 8/9 standards.
+# This is a eslint report based on Drupal 9 standards.
 # https://www.drupal.org/docs/develop/standards/javascript
 lint_js:
   stage: tests
@@ -316,13 +315,29 @@ lint_js:
       when: never
     - when: always
   script:
-    - cd ${WEB_ROOT}/core
-    - npx eslint
-        --config .eslintrc.passing.json
+    - node ${WEB_ROOT}/core/node_modules/eslint/bin/eslint.js
+        --config ${CONFIG_ESLINT}
         --resolve-plugins-relative-to ${WEB_ROOT}/core
         --format html
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html"
         "${DIRS_JS}"
+
+# This is a eslint report for Yaml files.
+lint_yaml:
+  stage: tests
+  extends: .lint_template
+  rules:
+    - if: '$SKIP_LINT == "1" || $SKIP_LINT_YAML == "1"'
+      when: never
+    - when: always
+  script:
+    - node ${WEB_ROOT}/core/node_modules/eslint/bin/eslint.js
+        --config ${CONFIG_ESLINT}
+        --resolve-plugins-relative-to ${WEB_ROOT}/core
+        --ext .yml
+        --format html
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint.html"
+        "${DIRS_YAML}"
 
 # Drupal 9 rules used here for stylelint to check css.
 # https://www.drupal.org/docs/develop/standards/css
@@ -334,10 +349,9 @@ lint_css:
       when: never
     - when: always
   script:
-    - cd ${WEB_ROOT}/core
-    - yarn add stylelint-html-formatter
-    - npx stylelint
-        --config .stylelintrc.json
+    - yarn --cwd ${WEB_ROOT}/core add stylelint-html-formatter
+    - node ${WEB_ROOT}/core/node_modules/stylelint/bin/stylelint.js
+        --config ${CONFIG_STYLELINT}
         --custom-formatter node_modules/stylelint-html-formatter
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint.html
         "${DIRS_CSS}"

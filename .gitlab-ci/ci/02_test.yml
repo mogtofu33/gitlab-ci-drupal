@@ -26,7 +26,8 @@
         yarn config set registry ${YARN_REGISTRY};
       fi
     # Set permissions for tests.
-    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites/default/files/simpletest &&
-      chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites &&
+    - |
+      mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites/default/files/simpletest && \
+      chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites && \
       chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites
     - echo -e "\e[0Ksection_end:`date +%s`:test_ci_prepare\r\e[0K"

@@ -1,5 +1,5 @@
 ################################################################################
-# Gitlab CI integration for Drupal 8/9 project or module: tests, code quality,
+# Gitlab CI integration for Drupal 9 project or module: tests, code quality,
 # linting, metrics and deploy samples.
 #
 # Project: https://gitlab.com/mog33/gitlab-ci-drupal
@@ -81,6 +81,7 @@ variables:
   # DIRS_QA: "${WEB_ROOT}/modules/custom"
   ## Eslint / Stylelint files to test.
   # DIRS_JS: "${CI_PROJECT_DIR}/js/*.js"
+  # DIRS_YAML: "${CI_PROJECT_DIR}/*.yml"
   # DIRS_CSS: "${CI_PROJECT_DIR}/css/*.css"
   ## Twig files to test.
   # DIRS_TWIG: "${CI_PROJECT_DIR}/templates"
@@ -112,6 +113,7 @@ variables:
   ## Default is to check files under all custom folders.
   #
   # DIRS_JS: "${WEB_ROOT}/**/custom/**/*.js"
+  # DIRS_YAML: "${WEB_ROOT}/**/custom/**/*.yml"
   # DIRS_CSS: "${WEB_ROOT}/**/custom/**/css/*.css"
   #
   ## Twig files to test, recursive.
