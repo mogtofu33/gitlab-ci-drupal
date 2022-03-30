@@ -143,8 +143,10 @@ variables:
   ## Only needed if you have Behat tests, comment or set to 0 to enable.
   ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#behat-tests
   SKIP_TEST_BEHAT: 1
-  ## Can use a profile setup or a sql dump file in ./dump/
+  ## Can use a profile setup or a sql dump file.
   # BEHAT_INSTALL_PROFILE: "minimal"
+  # BEHAT_INSTALL_PROFILE: "dump"
+  # BEHAT_INSTALL_DUMP: "path/relative/to/project/root/dump.sql.zip"
   #
   ## Only if you have Nightwatch tests in your code.
   ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs

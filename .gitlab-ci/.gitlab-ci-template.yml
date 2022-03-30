@@ -255,7 +255,7 @@ behat:
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal ${BEHAT_INSTALL_PROFILE}"
     # Install Drupal with the selected profile.
-    - robo drupal:install ${BEHAT_INSTALL_PROFILE}
+    - robo drupal:install ${BEHAT_INSTALL_PROFILE} ${BEHAT_INSTALL_DUMP}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
     - curl -s -H "Host:localhost" http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.'

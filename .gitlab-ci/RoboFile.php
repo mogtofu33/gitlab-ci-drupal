@@ -33,6 +33,15 @@ class RoboFile extends Tasks {
    * Database connection information.
    *
    * @var string
+   *   The database driver. This can be overridden by specifying a $DB_DRIVER.
+   *   Default is to the ci variables used with db service.
+   */
+  protected $dbDriver = 'mysql';
+
+  /**
+   * Database connection information.
+   *
+   * @var string
    *   The database URL. This can be overridden by specifying a $DB_URL or a
    *   $SIMPLETEST_DB environment variable.
    *   Default is to the ci variables used with db service.
@@ -188,6 +197,9 @@ class RoboFile extends Tasks {
     if (filter_var(getenv('SIMPLETEST_DB'), FILTER_VALIDATE_URL)) {
       $this->dbUrl = getenv('SIMPLETEST_DB');
     }
+    if (getenv('DB_DRIVER')) {
+      $this->dbDriver = getenv('DB_DRIVER');
+    }
 
     // Pull a DOC_ROOT from the environment, if it exists.
     if (getenv('DOC_ROOT')) {
@@ -244,8 +256,10 @@ class RoboFile extends Tasks {
    *
    * @param string $profile
    *   (optional) The profile to install, default to minimal.
+   * @param string $dump
+   *   (optional) Dump file if profile is 'dump'.
    */
-  public function drupalInstall($profile = 'minimal') {
+  public function drupalInstall($profile = 'minimal', $dump = NULL) {
     // Ensure permissions.
     $dir = $this->webRoot . '/sites/default/files';
     $this->taskFilesystemStack()
@@ -255,37 +269,13 @@ class RoboFile extends Tasks {
       ->chmod($dir, 0777, 0000, TRUE)
       ->run();
 
-    $this->ciNotice("Installing Drupal with profile $profile, check if dump file exist...");
-
-    $filename = $this->ciProjectDir . '/dump/dump-' . $this->ciDrupalVersion . '_' . $profile . '.sql';
-
-    if (file_exists($filename . '.gz')) {
-      $this->ciLog("Extract dump $filename.gz");
-      $this->_exec('zcat ' . $filename . '.gz > ' . $filename . ';');
-    }
-
-    if (file_exists($filename)) {
-      $this->ciLog("Import dump $filename");
-      $this->_exec('mysql -hdb -uroot drupal < ' . $filename . ';');
-
-      // When install from dump we need to be sure settings.php is correct.
-      $settings = file_get_contents($this->ciProjectDir . '/.gitlab-ci/settings.local.php');
-      if (!file_exists($this->webRoot . '/sites/default/settings.local.php')) {
-        $this->taskFilesystemStack()
-          ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->webRoot . '/sites/default/settings.local.php', TRUE)
-          ->run();
+    if ('dump' === $profile && $dump) {
+      if ($filename = $this->drupalPrepareDump($dump)) {
+        $this->drupalImportDump($filename);
       }
-
-      $this->taskFilesystemStack()
-        ->remove($this->webRoot . '/sites/default/settings.php')
-        ->copy($this->webRoot . '/sites/default/default.settings.php', $this->webRoot . '/sites/default/settings.php', TRUE)
-        ->run();
-      $this->taskFilesystemStack()
-        ->appendToFile($this->webRoot . '/sites/default/settings.php', 'include $app_root . "/" . $site_path . "/settings.local.php";')
-        ->run();
     }
     else {
-      $this->ciLog("No dump found $filename, installing Drupal with Drush.");
+      $this->ciLog("Install Drupal profile $profile with Drush.");
       $this->drupalSetup($profile);
     }
 
@@ -323,15 +313,105 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Helper for preparing a composer require task.
+   * Prepare dump file to use for Drupal install.
    *
-   * @param string|null $dir
-   *   (optional) WorkingDir for composer.
+   * @param string $dump
+   *   Dump file, can be local or remote.
+   *
+   * @return string|null
+   *  Local extracted filename to use for dump.
+   */
+  private function drupalPrepareDump($dump) {
+
+    $this->ciNotice("Installing Drupal with dump file $dump...");
+
+    $this->drupalCopySettingsLocal();
+
+    if (substr($dump, 0, 4) === 'http') {
+      if ($remote_file = file_get_contents($dump)) {
+        $filename = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $dump;
+        file_put_contents($filename, $remote_file);
+      }
+      else {
+        $this->io()->error("Failed to get remote dump file: $dump");
+        return NULL;
+      }
+    }
+    else {
+      $filename = $this->ciProjectDir . DIRECTORY_SEPARATOR . $dump;
+      if (!file_exists($filename)) {
+        $this->io()->error("Cannot find dump file $filename");
+        return NULL;
+      }
+    }
+
+    // Extract dump (gz and zip).
+    $infos = pathinfo($filename);
+    $exec = NULL;
+    if ('gz' === $infos['extension']) {
+      $exec = 'zcat ' . $filename . ' > ' . $infos['dirname'] . DIRECTORY_SEPARATOR . $infos['filename'] . ';';
+    }
+    elseif ('zip' === $infos['extension']) {
+      $exec = 'unzip -fo ' . $filename . ';';
+    }
+    else {
+      $this->io()->error("Unknown file extension " . $infos['extension'] . ", this script only support gz or zip.");
+      return NULL;
+    }
+
+    $this->ciLog("Extract dump $filename");
+    $this->_exec($exec);
+
+    return $infos['dirname'] . DIRECTORY_SEPARATOR . $infos['filename'];
+  }
+
+  /**
+   * Prepare Drupal settings with a dump import.
+   */
+  private function drupalCopySettingsLocal() {
+    $task = $this->taskFilesystemStack();
+    // When install from dump we need to be sure settings.php is correct.
+    if (!file_exists($this->webRoot . '/sites/default/settings.local.php')) {
+      $task
+        ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->webRoot . '/sites/default/settings.local.php', TRUE);
+    }
+
+    $task
+      ->remove($this->webRoot . '/sites/default/settings.php')
+      ->copy($this->webRoot . '/sites/default/default.settings.php', $this->webRoot . '/sites/default/settings.php', TRUE)
+      ->appendToFile($this->webRoot . '/sites/default/settings.php', 'include $app_root . "/" . $site_path . "/settings.local.php";');
+  
+    $task->run();
+  }
+
+  /**
+   * Import a dump file in db based on DB_DRIVER.
+   *
+   * @param string $filename
+   *   Local path to filename dump.
+   */
+  private function drupalImportDump($filename) {
+    $this->ciLog("Import dump $filename with $this->dbDriver");
+
+    switch ($this->dbDriver) {
+      case 'mysql':
+        $this->_exec('mysql -h db -u root drupal < ' . $filename . ';');
+        break;
+      case 'pgsql':
+        $this->_exec('psql -h db -U drupal -d drupal -f ' . $filename . ';');
+        break;
+      default:
+        $this->io()->error("Db driver $this->dbDriver is not supported by this script.");
+    }
+  }
+
+  /**
+   * Helper for preparing a composer require task.
    *
    * @return \Robo\Task\Composer\RequireDependency
    *   Robo composer require task with some specific settings.
    */
-  private function composerRequire($dir = NULL) {
+  private function composerRequire() {
     $task = $this->taskComposerRequire()
       ->noInteraction()
       ->option('with-all-dependencies');
@@ -348,7 +428,7 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Check Drupal.
+   * Check Drupal status with drush.
    *
    * @return string
    *   Drupal bootstrap result.
