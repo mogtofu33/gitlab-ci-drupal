@@ -38,7 +38,7 @@
   DOC_ROOT: "/opt/drupal"
   WEB_ROOT: "/opt/drupal/${DRUPAL_WEB_ROOT}"
 
-  # Phpunit tests to run, default provide only custom code or if this variable
+  # PHPunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
   PHPUNIT_TESTS: "custom"
@@ -55,6 +55,11 @@
 
   # If not using a db dump, select install profile for Behat tests.
   BEHAT_INSTALL_PROFILE: "minimal"
+  # If dump, select 'dump' profile and fill local or remote file.
+  # BEHAT_INSTALL_PROFILE: "dump"
+  # Support local or remote file with extensions:
+  #   .sql, .sql.gz, .pg_dump, .pg_dump.gz
+  BEHAT_INSTALL_DUMP: ""
 
   # See Phpqa available tools:
   # https://github.com/EdgedesignCZ/phpqa#available-tools
@@ -73,7 +78,7 @@
   # YARN_REGISTRY: "https://registry.yarnpkg.com"
 
   ##############################################################################
-  # List of DIRS_* variables to define dirs to analyse for specific jobs.
+  # List of DIRS_* variables to define dirs to analyze for specific jobs.
   #
   # Code quality dirs, must include your PHP code to check.
   DIRS_QA: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
@@ -99,7 +104,7 @@
   # Default is to check all custom dirs.
   DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
 
-  ################################################# | jq '.'
+  ##############################################################################
   #
   # Skip Build, if not running any tests or deploy.
   SKIP_BUILD: 0
@@ -112,11 +117,11 @@
   # For tests information see
   # https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8.
   #
-  # Phpunit unit,kernel with code coverage and optional Codecove.io support
+  # PHPunit unit,kernel with code coverage and optional Codecove.io support
   SKIP_TEST_UNITKERNEL: 0
-  # Phpunit functional tests (browser tests)
+  # PHPunit functional tests (browser tests)
   SKIP_TEST_FUNCTIONAL: 0
-  # Phpunit functional javascript tests (browser with javascript tests)
+  # PHPunit functional javascript tests (browser with javascript tests)
   SKIP_TEST_FUNCTIONALJS: 0
   # Nightwatch tests (browser with javascript tests), since Drupal 8.6
   # Currently not fully ready for Drupal so skip by default.
@@ -156,17 +161,18 @@
   ##############################################################################
 
   ##############################################################################
-  # Services used by some jobs.
+  # Services used by some jobs (PHPunit, Behat, Nightwatch.js).
   #
   DB_DRIVER: mysql
   # DB_DRIVER: pgsql
+  ## SQLite require specific SIMPLETEST_DB value, see below.
   # DB_DRIVER: sqlite
   #
   # Database service as docker image and tag.
   SERVICE_DATABASE: "mariadb:10"
   # SERVICE_DATABASE: "mysql:8"
-  # SERVICE_DATABASE: "postgres:14"
   SERVICE_DATABASE_PORT: 3306
+  # SERVICE_DATABASE: "postgres:13-alpine"
   # SERVICE_DATABASE_PORT: 5432
   #
   SERVICE_CHROMEDRIVER: "drupalci/webdriver-chromedriver:production"
@@ -184,7 +190,7 @@
   MYSQL_USER: drupal
   MYSQL_PASSWORD: drupal
   MYSQL_ALLOW_EMPTY_PASSWORD: 1
-  #
+ # Required by service:pgsql.
   POSTGRES_PASSWORD: drupal
   POSTGRES_DB: drupal
   POSTGRES_USER: drupal
@@ -195,7 +201,6 @@
   # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
   SIMPLETEST_BASE_URL: "http://build"
   SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
-  # SIMPLETEST_DB: "${DB_DRIVER}://root@db/drupal"
   # SIMPLETEST_DB: "sqlite://localhost/:memory:"
   #
   BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"

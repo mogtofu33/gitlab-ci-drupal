@@ -12,7 +12,7 @@ $databases['default']['default'] = [
   'password' => 'drupal',
   // 'prefix' => '',
   'host' => 'db',
-  // 'port' => '',
+  'port' => getenv('SERVICE_DATABASE_PORT'),
   'namespace' => 'Drupal\\Core\\Database\\Driver\\' . getenv('DB_DRIVER'),
   'driver' => getenv('DB_DRIVER'),
 ];
