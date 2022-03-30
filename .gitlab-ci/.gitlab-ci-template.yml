@@ -258,7 +258,7 @@ behat:
     - robo drupal:install ${BEHAT_INSTALL_PROFILE}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
-    - curl -s http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.'
+    - curl -H "Host: localhost" -s http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.'
     - echo -e "\e[0Ksection_start:`date +%s`:behat_params[collapsed=true]\r\e[0K\e[1;34m Behat parameters"
     - echo $BEHAT_PARAMS
     - cat ${CI_PROJECT_DIR}/behat_tests/behat.yml
