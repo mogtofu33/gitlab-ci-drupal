@@ -21,20 +21,18 @@ services:
     links:
       - db
       - chrome
-      - chromedriver
     volumes:
       # Mount the parent folder as a module.
       # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
-      # Mount the parent folder as a group of modules or project for local test.
-      # - ../../:${DOC_ROOT}
-      # - ../../:/opt/drupal
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../../:${CI_PROJECT_DIR}
+      # Mount the parent folder as a group of modules or project for local test.
+      # - ../../:${DOC_ROOT}
       # [OPTIONAL] composer cache folder to speed up the process.
-      # - ${HOME}/.cache/composer:/var/www/.composer/cache
-    working_dir: ${DOC_ROOT}
+      - ${HOME}/.cache/composer:/var/www/.composer/cache
+    # working_dir: ${DOC_ROOT}
     # Mimic Gitlab-ci.
-    # working_dir: /builds
+    working_dir: /builds
     container_name: ci-drupal
     env_file:
       - .env
@@ -42,22 +40,18 @@ services:
   db:
     image: ${SERVICE_DATABASE}
     expose:
-      - "3306"
-    volumes:
-      # - database_data:/var/lib/mysql
-      # Add my.cnf for better performance.
-      - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - "${SERVICE_DATABASE_PORT}"
     container_name: ci-db
     env_file:
       - .env
 
-  chromedriver:
-    image: ${SERVICE_CHROMEDRIVER}
-    expose:
-      - "${SERVICE_CHROMEDRIVER_PORT}"
-    container_name: ci-chromedriver
-    env_file:
-      - .env
+  # chrome:
+  #   image: ${SERVICE_CHROMEDRIVER}
+  #   expose:
+  #     - "${SERVICE_CHROMEDRIVER_PORT}"
+  #   container_name: ci-chromedriver
+  #   env_file:
+  #     - .env
 
   chrome:
     image: ${SERVICE_CHROME}
