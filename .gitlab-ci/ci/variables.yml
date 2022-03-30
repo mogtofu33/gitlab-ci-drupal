@@ -99,9 +99,7 @@
   # Default is to check all custom dirs.
   DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
 
-  ##############################################################################
-  # List of SKIP_* variables to skip some jobs.
-  # Default is 0, uncomment and set 1 to skip.
+  ################################################# | jq '.'
   #
   # Skip Build, if not running any tests or deploy.
   SKIP_BUILD: 0
@@ -192,6 +190,8 @@
   POSTGRES_USER: drupal
   #
   # Required by Drupal tests with PHPunit.
+  # Build is the Gitlab-ci name of the running container with the /builds code.
+  # This is provided by FF_NETWORK_PER_BUILD.
   # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
   SIMPLETEST_BASE_URL: "http://build"
   SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
@@ -210,15 +210,16 @@
         "chromeOptions":{
           "w3c":false,
           "args":[
-            "--whitelisted-ips",
-            "--allowed-origins=chrome",
-            "--disable-gpu",
             "--headless",
-            "--no-sandbox"
+            "--no-sandbox",
+            "--disable-gpu",
+            "--window-size=1920,1080",
+            "--whitelisted-ips",
+            "--allowed-origins=chrome"
           ]
         }
       },
-      "http://chrome:9515"
+      "http://chrome:${SERVICE_CHROMEDRIVER_PORT}"
     ]
   #
   # Behat tests.
@@ -238,7 +239,15 @@
     }
   # Chrome options, used by mogtofu33/chrome-headless startup.
   # https://peter.sh/experiments/chromium-command-line-switches/
-  CHROME_OPTS: "--headless --no-sandbox --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --disable-crash-reporter --disable-gpu --disable-software-rasterizer"
+  CHROME_OPTS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080 --whitelisted-ips --allowed-origins=chrome --remote-debugging-address=0.0.0.0 --remote-debugging-port=${SERVICE_CHROME_PORT}"
+  #
+  # Nightwatch settings.
+  #
+  # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md#running-nightwatch-tests
+  # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/.env.example
+  DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080 --whitelisted-ips --allowed-origins=chrome"
+  DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: "../"
+  DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/default/files/simpletest"
   #
   # General settings.
   #
