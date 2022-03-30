@@ -33,8 +33,10 @@
 
   # Path to the Drupal doc and web root.
   # Drupal official image create symlink /opt/drupal/web > /var/www/html
+  # In case of a project we remove /opt/drupal and symlink CI_PROJECT_DIR to
+  # /opt/drupal
   DOC_ROOT: "/opt/drupal"
-  WEB_ROOT: "/var/www/html"
+  WEB_ROOT: "/opt/drupal/${DRUPAL_WEB_ROOT}"
 
   # Phpunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).

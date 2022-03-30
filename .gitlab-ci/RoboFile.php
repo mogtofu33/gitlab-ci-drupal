@@ -1,9 +1,10 @@
 <?php
 
 /**
- * Base tasks for setting up a module to test within a full Drupal environment.
+ * Base tasks for CI commands in https://gitlab.com/mog33/gitlab-ci-drupal.
  *
- * This file expects to be called from the root of a Drupal site.
+ * This file expects to be called from the root of a Drupal site based on
+ * official Docker Drupal image.
  *
  * @class RoboFile
  *
@@ -66,7 +67,7 @@ class RoboFile extends Tasks {
    *   $WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
-  protected $webRoot = '/var/www/html';
+  protected $webRoot = '/opt/drupal/web';
 
   /**
    * CI context type.
@@ -201,7 +202,7 @@ class RoboFile extends Tasks {
       $this->webRoot = getenv('WEB_ROOT');
     }
     else {
-      $this->webRoot = $this->ciProjectDir . '/' . $this->drupalWebRoot;
+      $this->webRoot = $this->docRoot . '/' . $this->drupalWebRoot;
     }
 
     // Pull a PHPUNIT_TESTS from the environment, if it exists.
@@ -401,8 +402,8 @@ class RoboFile extends Tasks {
       case "project":
         $this->ciLog("Project include Drupal, symlink to included Drupal.");
         $this->taskFilesystemStack()
-          ->remove($this->webRoot)
-          ->symlink($this->ciProjectDir . '/' . $this->drupalWebRoot, $this->webRoot)
+          ->remove($this->docRoot)
+          ->symlink($this->ciProjectDir, $this->docRoot)
           ->run();
         break;
 
