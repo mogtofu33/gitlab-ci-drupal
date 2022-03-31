@@ -81,28 +81,38 @@
   # List of DIRS_* variables to define dirs to analyze for specific jobs.
   #
   # Code quality dirs, must include your PHP code to check.
-  DIRS_QA: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+  DIRS_QA_PHPCS: "${DRUPAL_WEB_ROOT}/**/custom"
+  DIRS_QA_PHPSTAN: "${DIRS_QA_PHPCS}"
+  DIRS_QA_PHPCPD: "${DIRS_QA_PHPCS}"
+  DIRS_QA_PARALINT: "${DIRS_QA_PHPCS}"
+  DIRS_QA_PHPMD: "${DRUPAL_WEB_ROOT}/modules/custom,${DRUPAL_WEB_ROOT}/themes/custom"
+  #
+  QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
+  QA_IGNORE: "*/vendor/*,*/bootstrap/*,*/tests/*,*/.gitlab-ci/*,Readme.md,style.css,print.css,*Test.php,RoboFile.php"
+  QA_SUFFIX: "php,inc,module,install,test,profile,theme"
+  QA_PHPCPD_MIN_LINES: 5
+  QA_PHPCPD_MIN_TOKEN: 70
   #
   # Eslint / Stylelint files to test.
   #
   # Configuration files, default is Drupal used for core.
-  CONFIG_ESLINT: ${WEB_ROOT}/core/.eslintrc.passing.json
-  CONFIG_STYLELINT: ${WEB_ROOT}/core/.stylelintrc.json
+  CONFIG_ESLINT: ${DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
+  CONFIG_STYLELINT: ${DRUPAL_WEB_ROOT}/core/.stylelintrc.json
   #
   # Space separated for multiple folders.
   # Default is to check files under all custom folders.
-  DIRS_JS: "${WEB_ROOT}/**/custom/**/*.js"
-  DIRS_YAML: "${WEB_ROOT}/**/custom/**/*.yml"
-  DIRS_CSS: "${WEB_ROOT}/**/custom/**/css/*.css"
+  DIRS_JS: "${DRUPAL_WEB_ROOT}/**/custom/**/*.js"
+  DIRS_YAML: "${DRUPAL_WEB_ROOT}/**/custom/**/*.yml"
+  DIRS_CSS: "${DRUPAL_WEB_ROOT}/**/custom/**/css/*.css"
   #
   # Twig templates files to test.
-  DIRS_TWIG: "${WEB_ROOT}/themes/custom"
+  DIRS_TWIG: "${DRUPAL_WEB_ROOT}/themes/custom"
   #
   # phpmetrics / phpstats dirs to include.
   #
   # Comma separated for multiple folders.
   # Default is to check all custom dirs.
-  DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+  DIRS_PHP: "${DRUPAL_WEB_ROOT}/modules/custom,${DRUPAL_WEB_ROOT}/themes/custom"
 
   ##############################################################################
   #
@@ -128,8 +138,6 @@
   SKIP_TEST_NIGHTWATCH: 0
   #
   # Third party tests.
-  # Symfony security check on composer.lock
-  SKIP_TEST_SECURITY: 0
   # Behat tests from behat_tests folder. Demo tests, skip by default.
   SKIP_TEST_BEHAT: 0
   # Accessibility test, skip by default.
@@ -138,6 +146,9 @@
   ##############################################################################
   # Skip PHP QA jobs (phpcs, phpstan, phpmd, phpcpd, parallel-lint)
   SKIP_QA: 0
+  # Symfony security check on composer.lock
+  SKIP_QA_SECURITY: 0
+  SKIP_QA_PHPCS: 0
   #
   ##############################################################################
   # Skip all lint jobs.

@@ -31,7 +31,7 @@ include:
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/05_metrics.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_deploy.yml'
   # [WIP] All reports in one page.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_report.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_html_report.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_release.yml'
 
@@ -43,6 +43,7 @@ include:
 
 stages:
   - build
+  - qa
   - tests
   - metrics
   # [DEPLOY] All deploy jobs can be set here.
@@ -83,6 +84,198 @@ build:
         robo drupal:require-dev $SKIP_TEST_BEHAT
         echo -e "\e[0Ksection_end:`date +%s`:install dev\r\e[0K";
       fi
+  allow_failure: false
+
+security:
+  stage: build
+  rules:
+    - if: '$SKIP_TESTS == "1" || $SKIP_QA_SECURITY == "1"'
+      when: never
+    - when: on_success
+  script:
+    - mkdir -p report-${CI_JOB_NAME}
+    - security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
+  # Allow failure to produce report and warning when we have an error.
+  allow_failure: true
+
+################################################################################
+# Code quality jobs for Drupal 8+ based on PHPQA
+# https://github.com/EdgedesignCZ/phpqa
+# @todo codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
+################################################################################
+
+# php-qa:
+#   stage: qa
+#   extends: .qa_template
+#   rules:
+#     - if: '$SKIP_QA == "1"'
+#       when: never
+#     - when: on_success
+#   script:
+#     # Avoid phpstan failing.
+#     - cd ${DOC_ROOT}
+#     # Check variable TOOLS_QA to select tools.
+#     - phpqa --tools ${TOOLS_QA}
+#         --config ${CI_PROJECT_DIR}/.gitlab-ci
+#         --buildDir "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
+#         --analyzedDirs "${DIRS_QA}"
+#   # Allow failure to produce report and warning, not blocking the pipeline.
+#   allow_failure: true
+
+phpcs:
+  stage: qa
+  extends: .qa_template
+  rules:
+    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPCS == "1"'
+      when: never
+    - when: on_success
+  script:
+    - phpcs
+        --standard=${QA_PHPCS_STANDARD}
+        --ignore=${QA_IGNORE}
+        --extensions=${QA_SUFFIX}
+        --report-junit=phpcs_junit.xml
+        ${DIRS_QA_PHPCS}
+  # Allow failure to produce report and warning, not blocking the pipeline.
+  allow_failure: true
+
+# @todo support --baseline-file
+phpmd:
+  stage: qa
+  extends: .qa_template
+  rules:
+    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPMD == "1"'
+      when: never
+    - when: on_success
+  script:
+    - phpmd
+        ${DIRS_QA_PHPMD}
+        xml
+        .gitlab-ci/.phpmd.xml
+        --exclude ${QA_IGNORE}
+        --suffixes ${QA_SUFFIX}
+        --reportfile report-${CI_JOB_NAME}/phpmd.xml
+    - apt update && apt install -y xsltproc
+    - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd_junit.xslt report-${CI_JOB_NAME}/phpmd.xml
+  # Allow failure to produce report and warning, not blocking the pipeline.
+  allow_failure: true
+
+# @todo support --baseline
+phpstan:
+  stage: qa
+  extends: .qa_template
+  rules:
+    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPSTAN == "1"'
+      when: never
+    - when: on_success
+  script:
+    - phpstan
+        analyze
+        --configuration .gitlab-ci/phpstan.neon
+        --error-format junit
+        ${DIRS_QA_PHPSTAN} >> report-${CI_JOB_NAME}/phpstan_junit.xml
+
+phpcpd:
+  stage: qa
+  extends: .qa_template
+  rules:
+    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPSTAN == "1"'
+      when: never
+    - when: on_success
+  script:
+    - curl -4fsSL https://phar.phpunit.de/phpcpd.phar -o phpcpd.phar
+    - phpcpd
+        --exclude ${QA_IGNORE}
+        --suffix ${QA_SUFFIX}
+        --min-lines ${QA_PHPCPD_MIN_LINES}
+        --min-tokens ${QA_PHPCPD_MIN_TOKEN}
+        --log-pmd "report-${CI_JOB_NAME}/phpcpd_junit.xml"
+        ${DIRS_QA_PHPCPD}
+
+parallel-lint:
+  stage: qa
+  extends: .qa_template
+  rules:
+    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPSTAN == "1"'
+      when: never
+    - when: on_success
+  script:
+    - parallel-lint
+      --exclude vendor
+      --checkstyle
+      ${DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint_junit.xml
+
+################################################################################
+# Code lint jobs for Drupal 9
+################################################################################
+
+# This is a eslint report based on Drupal 9 standards.
+# https://www.drupal.org/docs/develop/standards/javascript
+lint_js:
+  stage: qa
+  extends: .lint_template
+  rules:
+    - if: '$SKIP_LINT == "1" || $SKIP_LINT_JS == "1"'
+      when: never
+    - when: on_success
+  script:
+    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
+        --config ${CONFIG_ESLINT}
+        --ignore-path ${WEB_ROOT}/core/.eslintignore
+        --resolve-plugins-relative-to ${WEB_ROOT}/core
+        --format junit
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
+        "${DIRS_JS}"
+
+# This is a eslint report for Yaml files.
+lint_yaml:
+  stage: qa
+  extends: .lint_template
+  rules:
+    - if: '$SKIP_LINT == "1" || $SKIP_LINT_YAML == "1"'
+      when: never
+    - when: on_success
+  script:
+    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
+        --config ${CONFIG_ESLINT}
+        --ignore-path ${WEB_ROOT}/core/.eslintignore
+        --resolve-plugins-relative-to ${WEB_ROOT}/core
+        --ext .yml
+        --format junit
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
+        "${DIRS_YAML}"
+
+# Drupal 9 rules used here for stylelint to check css.
+# https://www.drupal.org/docs/develop/standards/css
+lint_css:
+  stage: qa
+  extends: .lint_template
+  rules:
+    - if: '$SKIP_LINT == "1" || $SKIP_LINT_CSS == "1"'
+      when: never
+    - when: on_success
+  script:
+    - yarn --cwd ${DRUPAL_WEB_ROOT}/core add stylelint-junit-formatter
+    - node ${WEB_ROOT}/core/node_modules/.bin/stylelint
+        --config ${CONFIG_STYLELINT}
+        --ignore-path ${WEB_ROOT}/core/.stylelintignore
+        --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-junit-formatter
+        --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
+        "${DIRS_CSS}"
+
+# lint_twig:
+#   stage: qa
+#   extends: .lint_template
+#   rules:
+#     - if: '$SKIP_LINT == "1" || $SKIP_LINT_TWIG == "1"'
+#       when: never
+#     - when: on_success
+#   script:
+    # - curl -4fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
+    # Lint report, terminal only.
+    # - php twig-lint lint "${DIRS_TWIG}" 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
+    # - composer require --dev sserbin/twig-linter:@dev
+    # - vendor/bin/twig-linter lint web/**/custom/ --format=junit >> report-${CI_JOB_NAME}/twig_junit.xml
 
 ################################################################################
 # Drupal tests.
@@ -109,7 +302,7 @@ phpunit_unit:
         --configuration ${WEB_ROOT}/core
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-text
-        --log-junit report-${CI_JOB_NAME}/junit-unit-kernel.xml
+        --log-junit report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
         --verbose
   after_script:
     # [CODECOV] integration, need to set up CI environment variable 'CODECOV_TOKEN' to work.
@@ -136,7 +329,7 @@ phpunit_func:
         --testsuite "${PHPUNIT_TESTS}functional"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
-        --log-junit report-${CI_JOB_NAME}/junit-functional.xml
+        --log-junit report-${CI_JOB_NAME}/phpunit-functional_junit.xml
         --verbose
   after_script:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
@@ -162,7 +355,7 @@ phpunit_funcjs:
         --testsuite "${PHPUNIT_TESTS}functional-javascript"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${WEB_ROOT}/core
-        --log-junit report-${CI_JOB_NAME}/junit-functionaljs.xml
+        --log-junit report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
         --verbose
   after_script:
     - mkdir -p report-${CI_JOB_NAME}/browser_output
@@ -208,20 +401,6 @@ nightwatchjs:
 # Third party tools tests.
 ################################################################################
 
-# Symfony security-checker report.
-security:
-  stage: tests
-  extends: .test_template
-  rules:
-    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_SECURITY == "1"'
-      when: never
-    - when: on_success
-  script:
-    - mkdir -p report-${CI_JOB_NAME}
-    - security-checker --no-dev --path=${DOC_ROOT} -format junit >> report-${CI_JOB_NAME}/security_unit.xml
-  # Allow failure to produce report and warning when we have an error.
-  allow_failure: true
-
 # Behat tests from behat_tests/ folder at the root of your project.
 behat:
   stage: tests
@@ -254,100 +433,6 @@ behat:
         --format junit
         --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
         --verbose
-
-################################################################################
-# Code quality jobs for Drupal 8+ based on PHPQA
-# https://github.com/EdgedesignCZ/phpqa
-# @todo codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
-################################################################################
-
-php-qa:
-  stage: tests
-  extends: .qa_template
-  rules:
-    - if: '$SKIP_QA == "1"'
-      when: never
-    - when: on_success
-  script:
-    # Avoid phpstan failing.
-    - cd ${DOC_ROOT}
-    # Check variable TOOLS_QA to select tools.
-    - phpqa --tools ${TOOLS_QA}
-        --config ${CI_PROJECT_DIR}/.gitlab-ci
-        --buildDir "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
-        --analyzedDirs "${DIRS_QA}"
-  # Allow failure to produce report and warning, not blocking the pipeline.
-  allow_failure: true
-
-################################################################################
-# Code lint jobs for Drupal 9
-################################################################################
-
-# This is a eslint report based on Drupal 9 standards.
-# https://www.drupal.org/docs/develop/standards/javascript
-lint_js:
-  stage: tests
-  extends: .lint_template
-  rules:
-    - if: '$SKIP_LINT == "1" || $SKIP_LINT_JS == "1"'
-      when: never
-    - when: always
-  script:
-    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
-        --config ${CONFIG_ESLINT}
-        --ignore-path ${WEB_ROOT}/core/.eslintignore
-        --resolve-plugins-relative-to ${WEB_ROOT}/core
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslintjs_unit.xml"
-        "${DIRS_JS}"
-
-# This is a eslint report for Yaml files.
-lint_yaml:
-  stage: tests
-  extends: .lint_template
-  rules:
-    - if: '$SKIP_LINT == "1" || $SKIP_LINT_YAML == "1"'
-      when: never
-    - when: always
-  script:
-    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
-        --config ${CONFIG_ESLINT}
-        --ignore-path ${WEB_ROOT}/core/.eslintignore
-        --resolve-plugins-relative-to ${WEB_ROOT}/core
-        --ext .yml
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslintyaml_junit.xml"
-        "${DIRS_YAML}"
-
-# Drupal 9 rules used here for stylelint to check css.
-# https://www.drupal.org/docs/develop/standards/css
-lint_css:
-  stage: tests
-  extends: .lint_template
-  rules:
-    - if: '$SKIP_LINT == "1" || $SKIP_LINT_CSS == "1"'
-      when: never
-    - when: always
-  script:
-    - yarn --cwd ${DRUPAL_WEB_ROOT}/core add stylelint-junit-formatter
-    - node ${WEB_ROOT}/core/node_modules/.bin/stylelint
-        --config ${CONFIG_STYLELINT}
-        --ignore-path ${WEB_ROOT}/core/.stylelintignore
-        --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-junit-formatter
-        --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_unit.xml
-        "${DIRS_CSS}"
-
-# lint_twig:
-#   stage: tests
-#   extends: .lint_template
-#   rules:
-#     - if: '$SKIP_LINT == "1" || $SKIP_LINT_TWIG == "1"'
-#       when: never
-#     - when: always
-#   script:
-#     - curl -4fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
-#     # Lint report, terminal only.
-#     - php twig-lint lint "${DIRS_TWIG}" 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.

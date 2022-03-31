@@ -90,7 +90,7 @@ variables:
   # DIRS_PHP: "${CI_PROJECT_DIR}"
   ## Set SKIP_XXX variable to 1 to skip.
   ## Security is for a Drupal project with third party.
-  # SKIP_TEST_SECURITY: 1
+  # SKIP_QA_SECURITY: 1
   ## If you don't have any css files, you can skip with
   # SKIP_LINT_CSS: 1
   ## If you don't have any javascript files, you can skip with
@@ -136,7 +136,7 @@ variables:
   # SKIP_TEST_UNITKERNEL: 1
   # SKIP_TEST_FUNCTIONAL: 1
   # SKIP_TEST_FUNCTIONALJS: 1
-  # SKIP_TEST_SECURITY: 1
+
   #
   ## Tests disabled by default because need a specific setup / configuration.
   #
@@ -155,6 +155,7 @@ variables:
   # NIGHTWATCH_TESTS: --tag my_module
   #
   # SKIP_QA: 1
+  # SKIP_QA_SECURITY: 1
   #
   # SKIP_LINT: 1 # Skip all lint, ignore SKIP_LINT_*.
   # SKIP_LINT_CSS: 1

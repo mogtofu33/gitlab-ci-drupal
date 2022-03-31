@@ -14,7 +14,7 @@
       fi
     # Install packages from core/package.json
     - yarn --cwd ${DRUPAL_WEB_ROOT}/core install
-    # Prepare ci (mirror files in Docker image doc root).
+    # Prepare ci (symlink files in Docker image doc root).
     - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     - robo ci:prepare
     - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} && chmod 777 ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}

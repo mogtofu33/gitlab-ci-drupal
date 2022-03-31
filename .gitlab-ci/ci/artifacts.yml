@@ -11,4 +11,4 @@
       - "report-${CI_JOB_NAME}/"
     # If we have a junit report, include it in the UI.
     reports:
-      junit: "report-${CI_JOB_NAME}/*unit*.xml"
+      junit: "report-${CI_JOB_NAME}/*_junit.xml"
