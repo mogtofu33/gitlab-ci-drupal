@@ -29,9 +29,9 @@ phpcpd:
 phpmetrics:
     # Choose phpunit to use for metrics.
     # Must be copied in the job, see metrics:script.
-    # junit: /tmp/junit-unit-kernel.xml
-    # junit: /tmp/junit-functional.xml
-    # junit: /tmp/junit-functionaljs.xml
+    # junit: /tmp/junit-unit.xml
+    # junit: /tmp/junit-func.xml
+    # junit: /tmp/junit-funcjs.xml
     # Composer usage for a project can slow a lot Phpmetrics.
     # composer: /opt/drupal
 
