@@ -22,4 +22,4 @@
     when: always
     paths:
       - public
-      - dashboard
+      - dashboard/src/data
