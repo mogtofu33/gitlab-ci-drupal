@@ -88,7 +88,9 @@ build:
 
 security:
   stage: build
-  needs: ["build"]
+  needs:
+    - job: build
+      artifacts: true
   rules:
     - if: '$SKIP_TESTS == "1" || $SKIP_QA_SECURITY == "1"'
       when: never
