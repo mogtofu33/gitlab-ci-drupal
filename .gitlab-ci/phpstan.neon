@@ -1,6 +1,6 @@
 parameters:
     # This level is overriden when using phpqa in .phpqa.yml
-    level: 3
+    level: 5
     excludePaths:
         analyseAndScan:
             - *RoboFile.php
