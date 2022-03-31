@@ -88,6 +88,7 @@ build:
 
 security:
   stage: build
+  needs: ["build"]
   rules:
     - if: '$SKIP_TESTS == "1" || $SKIP_QA_SECURITY == "1"'
       when: never

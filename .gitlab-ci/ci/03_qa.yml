@@ -14,7 +14,8 @@
     - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
         composer config -g github-oauth.github.com ${COMPOSER_GITHUB_OAUTH_TOKEN};
       fi
+    - mkdir -p report-${CI_JOB_NAME}
     # Prepare ci (symlink files in Docker image doc root).
     # - if [ ! -f "RoboFile.php" ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     # - robo ci:prepare
-    # - echo -e "\e[0Ksection_end:`date +%s`:qa_prepare\r\e[0K"
+    - echo -e "\e[0Ksection_end:`date +%s`:qa_prepare\r\e[0K"
