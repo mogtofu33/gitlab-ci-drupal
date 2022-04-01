@@ -31,7 +31,7 @@ include:
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/05_metrics.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_deploy.yml'
   # [WIP] All reports in one page.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_html_report.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_reports.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_release.yml'
 
@@ -107,24 +107,6 @@ security:
 # @todo codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
 ################################################################################
 
-# php-qa:
-#   stage: qa
-#   extends: .qa_template
-#   rules:
-#     - if: '$SKIP_QA == "1"'
-#       when: never
-#     - when: on_success
-#   script:
-#     # Avoid phpstan failing.
-#     - cd ${DOC_ROOT}
-#     # Check variable TOOLS_QA to select tools.
-#     - phpqa --tools ${TOOLS_QA}
-#         --config ${CI_PROJECT_DIR}/.gitlab-ci
-#         --buildDir "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}"
-#         --analyzedDirs "${DIRS_QA}"
-#   # Allow failure to produce report and warning, not blocking the pipeline.
-#   allow_failure: true
-
 phpcs:
   stage: qa
   extends: .qa_template
@@ -137,7 +119,7 @@ phpcs:
         --standard=${QA_PHPCS_STANDARD}
         --ignore=${QA_IGNORE}
         --extensions=${QA_SUFFIX}
-        --report-junit=phpcs_junit.xml
+        --report-junit=report-${CI_JOB_NAME}/phpcs_junit.xml
         ${DIRS_QA_PHPCS}
   # Allow failure to produce report and warning, not blocking the pipeline.
   allow_failure: true
@@ -160,7 +142,6 @@ phpmd:
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
     - apt update && apt install -y xsltproc
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd_junit.xslt report-${CI_JOB_NAME}/phpmd.xml
-  # Allow failure to produce report and warning, not blocking the pipeline.
   allow_failure: true
 
 # @todo support --baseline
@@ -178,6 +159,7 @@ phpstan:
         --error-format junit
         ${DIRS_QA_PHPSTAN} >> report-${CI_JOB_NAME}/phpstan_junit.xml
 
+# @todo junit format
 phpcpd:
   stage: qa
   extends: .qa_template
@@ -194,7 +176,9 @@ phpcpd:
         --min-tokens ${QA_PHPCPD_MIN_TOKEN}
         --log-pmd "report-${CI_JOB_NAME}/phpcpd_junit.xml"
         ${DIRS_QA_PHPCPD}
+  allow_failure: true
 
+# @todo junit format
 parallel-lint:
   stage: qa
   extends: .qa_template
@@ -204,9 +188,10 @@ parallel-lint:
     - when: on_success
   script:
     - parallel-lint
-      --exclude vendor
-      --checkstyle
-      ${DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint_junit.xml
+        --exclude vendor
+        --checkstyle
+        ${DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint_junit.xml
+  allow_failure: false
 
 ################################################################################
 # Code lint jobs for Drupal 9
@@ -266,6 +251,7 @@ lint_css:
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
         "${DIRS_CSS}"
 
+# @todo junit format
 # lint_twig:
 #   stage: qa
 #   extends: .lint_template
@@ -274,11 +260,11 @@ lint_css:
 #       when: never
 #     - when: on_success
 #   script:
-    # - curl -4fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
-    # Lint report, terminal only.
-    # - php twig-lint lint "${DIRS_TWIG}" 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
-    # - composer require --dev sserbin/twig-linter:@dev
-    # - vendor/bin/twig-linter lint web/**/custom/ --format=junit >> report-${CI_JOB_NAME}/twig_junit.xml
+#     - curl -4fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
+#     Lint report, terminal only.
+#     - php twig-lint lint "${DIRS_TWIG}" 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
+#     - composer require --dev sserbin/twig-linter:@dev
+#     - vendor/bin/twig-linter lint web/**/custom/ --format=junit >> report-${CI_JOB_NAME}/twig_junit.xml
 
 ################################################################################
 # Drupal tests.
@@ -365,6 +351,7 @@ phpunit_funcjs:
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+# @todo junit format
 nightwatchjs:
   stage: tests
   extends: .test_template
@@ -442,7 +429,7 @@ behat:
 ################################################################################
 
 # Phpmetrics, Phploc, Pdepend report, no pass or failure as it's just informative.
-# @todo phpmetrics with junit report from code-coverage
+# @todo phpmetrics with junit report from code-coverage?
 metrics:
   stage: metrics
   extends: .metrics_template
