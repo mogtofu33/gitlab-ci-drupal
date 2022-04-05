@@ -370,7 +370,7 @@ from your account as a variable in Gitlab UI:
 
 Name | Value
 -|-
-MY_GITLAB_TOKEN | Gitlab token with `read_api`
+CI_GITLAB_TOKEN | Gitlab token with `read_api`
 
 ### Release of code to Gitlab and Drupal.org
 
