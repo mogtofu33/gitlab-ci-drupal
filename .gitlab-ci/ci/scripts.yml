@@ -1,0 +1,35 @@
+.scripts:
+  set-registries:
+    - echo -e "\e[0Ksection_start:`date +%s`:set_registry[collapsed=true]\r\e[0K\e[1;34mCi Set registries and auth"
+    - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
+        composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
+      fi
+    - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
+        composer config -g github-oauth.github.com ${COMPOSER_GITHUB_OAUTH_TOKEN};
+      fi
+    # Support Yarn registry mirror.
+    - if [ ! -z "${YARN_REGISTRY}" ]; then
+        yarn config set registry ${YARN_REGISTRY};
+      fi
+    - echo -e "\e[0Ksection_end:`date +%s`:set_registry\r\e[0K"
+  get-robo:
+    - if [ ! -f RoboFile.php ]; then
+        curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php;
+      fi
+  # Prepare ci (symlink files in Docker image doc root).
+  ci-prepare:
+    - echo -e "\e[0Ksection_start:`date +%s`:ci_prepare[collapsed=true]\r\e[0K\e[1;34m Robo ci:prepare"
+    - if [ ! -f RoboFile.php ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
+    - robo ci:prepare
+    - echo -e "\e[0Ksection_end:`date +%s`:ci_prepare\r\e[0K"
+  # Add a ssh build key if there is a variable CI_BUILD_KEY.
+  ssh-key:
+    - echo -e "\e[0Ksection_start:`date +%s`:ssh_key[collapsed=true]\r\e[0K\e[1;34m Ci build set SSH"
+    - |
+      if [ ! -z "${CI_BUILD_KEY}" ]; then
+        mkdir -p ~/.ssh && chmod 700 ~/.ssh;
+        echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config;
+        echo -e "${CI_BUILD_KEY}" > ~/.ssh/id_rsa;
+        chmod 400 ~/.ssh/id_rsa;
+      fi
+    - echo -e "\e[0Ksection_end:`date +%s`:ssh_key\r\e[0K"

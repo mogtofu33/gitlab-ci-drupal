@@ -24,6 +24,7 @@ include:
   # Include in include must be as remote to work.
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/variables.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/artifacts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/scripts.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/01_build.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/02_test.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/03_qa.yml'
@@ -67,23 +68,13 @@ build:
     - when: always
   script:
     - composer self-update
-    # Validate the composer.json file.
+    # Validate the composer.json file, install project and dev.
     - if [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n;
-      fi
-    # Install the project with core-dev, Drush and Behat if needed.
-    - |
-      if [ -f composer.json ]; then
-        echo -e "\e[0Ksection_start:`date +%s`:install[collapsed=true]\r\e[0K\e[1;34m Composer install\e[0m";
         composer install -n --prefer-dist;
-        echo -e "\e[0Ksection_end:`date +%s`:install\r\e[0K";
+        robo drupal:require-dev $SKIP_TEST_BEHAT;
       fi
-    - |
-      if [ -f composer.json ]; then
-        echo -e "\e[0Ksection_start:`date +%s`:install[collapsed=true]\r\e[0K\e[1;34m Composer install dev\e[0m";
-        robo drupal:require-dev $SKIP_TEST_BEHAT
-        echo -e "\e[0Ksection_end:`date +%s`:install dev\r\e[0K";
-      fi
+    - yarn --cwd ${DRUPAL_WEB_ROOT}/core install
   allow_failure: false
 
 security:
@@ -98,8 +89,6 @@ security:
   script:
     - mkdir -p report-${CI_JOB_NAME}
     - security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
-  # Allow failure to produce report and warning when we have an error.
-  allow_failure: true
 
 ################################################################################
 # Code quality jobs for Drupal 8+ based on PHPQA
@@ -121,8 +110,6 @@ phpcs:
         --extensions=${QA_SUFFIX}
         --report-junit=report-${CI_JOB_NAME}/phpcs_junit.xml
         ${DIRS_QA_PHPCS}
-  # Allow failure to produce report and warning, not blocking the pipeline.
-  allow_failure: true
 
 # @todo support --baseline-file
 phpmd:
@@ -141,7 +128,6 @@ phpmd:
         --suffixes ${QA_SUFFIX}
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
-  allow_failure: true
 
 # @todo support --baseline
 phpstan:
@@ -173,7 +159,6 @@ parallel-lint:
         --checkstyle
         ${DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint.xml
     - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml
-  allow_failure: false
 
 ################################################################################
 # Code lint jobs for Drupal 9
@@ -340,12 +325,6 @@ nightwatchjs:
     - |
       yarn --cwd ${WEB_ROOT}/core upgrade \
       chromedriver@$(curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
-    # Log versions.
-    - |
-      node ${WEB_ROOT}/core/node_modules/.bin/nightwatch --version;
-      node ${WEB_ROOT}/core/node_modules/.bin/chromedriver --version;
-    # Prepare reports.
-    - mkdir -p /tmp/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Prepare variables.
     - envsubst < ${WEB_ROOT}/core/.env.tmpl > ${WEB_ROOT}/core/.env
@@ -383,10 +362,6 @@ behat:
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
     - curl -s -H "Host:localhost" http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.'
-    - echo -e "\e[0Ksection_start:`date +%s`:behat_params[collapsed=true]\r\e[0K\e[1;34m Behat parameters"
-    - echo $BEHAT_PARAMS
-    - cat ${CI_PROJECT_DIR}/behat_tests/behat.yml
-    - echo -e "\e[0Ksection_end:`date +%s`:behat_params\r\e[0K"
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
     - ${DOC_ROOT}/vendor/bin/behat
         --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
