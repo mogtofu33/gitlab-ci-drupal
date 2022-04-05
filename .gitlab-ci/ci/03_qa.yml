@@ -8,3 +8,5 @@
   before_script:
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]
+  # QA can be considered optional.
+  allow_failure: true
