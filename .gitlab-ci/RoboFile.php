@@ -418,10 +418,6 @@ class RoboFile extends Tasks {
       ->noInteraction()
       ->option('with-all-dependencies');
 
-    if ($dir) {
-      $task->workingDir($dir);
-    }
-
     if ($this->verbose) {
       $task->option('verbose');
     }
