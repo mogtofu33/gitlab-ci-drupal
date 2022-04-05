@@ -318,7 +318,6 @@ phpunit_funcjs:
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
-# @todo junit format
 nightwatchjs:
   stage: tests
   extends: .test_template
@@ -352,8 +351,13 @@ nightwatchjs:
     - envsubst < ${WEB_ROOT}/core/.env.tmpl > ${WEB_ROOT}/core/.env
     # Launch Nightwatch tests from core folder.
     - yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
-    - cp -r /tmp/report-${CI_JOB_NAME} ${CI_PROJECT_DIR}/
-    - mv ${CI_PROJECT_DIR}/*.xml ${CI_PROJECT_DIR}/*_junit.xml
+  artifacts:
+    expire_in: 1 week
+    when: always
+    paths:
+      - "report-${CI_JOB_NAME}/"
+    reports:
+      junit: "report-${CI_JOB_NAME}/*.xml"
 
 ################################################################################
 # Third party tools tests.
