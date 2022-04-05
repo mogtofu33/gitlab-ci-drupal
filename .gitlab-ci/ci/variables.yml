@@ -29,19 +29,19 @@
   # Relative path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
   # some distributions.
-  DRUPAL_WEB_ROOT: web
+  CI_DRUPAL_WEB_ROOT: web
 
   # Path to the Drupal doc and web root.
   # Drupal official image create symlink /opt/drupal/web > /var/www/html
   # In case of a project we remove /opt/drupal and symlink CI_PROJECT_DIR to
   # /opt/drupal
-  DOC_ROOT: "/opt/drupal"
-  WEB_ROOT: "/opt/drupal/${DRUPAL_WEB_ROOT}"
+  CI_DOC_ROOT: "/opt/drupal"
+  CI_WEB_ROOT: "/opt/drupal/${CI_DRUPAL_WEB_ROOT}"
 
   # PHPunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
-  PHPUNIT_TESTS: "custom"
+  CI_PHPUNIT_TESTS: "custom"
 
   # Specify a group of tests to run rather than all tests in the suite.
   # PHPUNIT_GROUP: my_group_1,my_group_2
@@ -50,158 +50,162 @@
   # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
   # Add --verbose for a full log from Nightwatch if it fail.
   # Default is to run everything except core. For a module / theme, add your tag.
-  NIGHTWATCH_TESTS: "--skiptags core"
-  # NIGHTWATCH_TESTS: "--tag custom"
+  CI_NIGHTWATCH_TESTS: "--skiptags core"
+  # CI_NIGHTWATCH_TESTS: "--tag custom"
 
   # If not using a db dump, select install profile for Behat tests.
-  BEHAT_INSTALL_PROFILE: "minimal"
+  CI_BEHAT_INSTALL_PROFILE: "minimal"
   # If dump, select 'dump' profile and fill local or remote file.
-  # BEHAT_INSTALL_PROFILE: "dump"
+  # CI_BEHAT_INSTALL_PROFILE: "dump"
   # Support local or remote file with extensions:
   #   .sql, .sql.gz, .pg_dump, .pg_dump.gz
-  BEHAT_INSTALL_DUMP: ""
+  CI_BEHAT_INSTALL_DUMP: ""
 
   # See Phpqa available tools:
   # https://github.com/EdgedesignCZ/phpqa#available-tools
-  # ':0' is the number of errors allowed, default here is very strict.
-  TOOLS_QA: "phpcs:0,phpmd:0,parallel-lint:0,phpstan:0,phpcpd:0"
-  TOOLS_METRICS: "phpmetrics,phploc,pdepend"
+  CI_TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
   # Composer override to use github oauth token.
   # https://getcomposer.org/doc/06-config.md#github-oauth
-  # COMPOSER_GITHUB_OAUTH_TOKEN: ""
+  # CI_COMPOSER_GITHUB_OAUTH_TOKEN: ""
 
   # Composer override to use packagist mirror.
-  # COMPOSER_REPO_PACKAGIST_URL: "https://repo.packagist.org"
+  # CI_COMPOSER_REPO_PACKAGIST_URL: "https://repo.packagist.org"
 
   # Yarn override to use registry mirror.
-  # YARN_REGISTRY: "https://registry.yarnpkg.com"
+  # CI_YARN_REGISTRY: "https://registry.yarnpkg.com"
 
   ##############################################################################
-  # List of DIRS_* variables to define dirs to analyze for specific jobs.
+  # List of CI_DIRS_* variables to define dirs to analyze for specific jobs.
   #
   # Code quality dirs, must include your PHP code to check.
-  DIRS_QA_PHPCS: "${DRUPAL_WEB_ROOT}/**/custom"
-  DIRS_QA_PHPSTAN: "${DIRS_QA_PHPCS}"
-  DIRS_QA_PHPCPD: "${DIRS_QA_PHPCS}"
-  DIRS_QA_PARALINT: "${DIRS_QA_PHPCS}"
-  DIRS_QA_PHPMD: "${DRUPAL_WEB_ROOT}/modules/custom,${DRUPAL_WEB_ROOT}/themes/custom"
+  CI_DIRS_QA_PHPCS: "${CI_DRUPAL_WEB_ROOT}/**/custom"
+  CI_DIRS_QA_PHPSTAN: "${CI_DIRS_QA_PHPCS}"
+  CI_DIRS_QA_PHPCPD: "${CI_DIRS_QA_PHPCS}"
+  CI_DIRS_QA_PARALINT: "${CI_DIRS_QA_PHPCS}"
+  CI_DIRS_QA_PHPMD: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
   #
-  QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
-  QA_IGNORE: "*/vendor/*,*/bootstrap/*,*/tests/*,*/.gitlab-ci/*,Readme.md,style.css,print.css,*Test.php,RoboFile.php"
-  QA_SUFFIX: "php,inc,module,install,test,profile,theme"
-  QA_PHPCPD_MIN_LINES: 5
-  QA_PHPCPD_MIN_TOKEN: 70
+  CI_QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
+  CI_QA_IGNORE: "*/vendor/*,*/bootstrap/*,*/tests/*,*/.gitlab-ci/*,Readme.md,style.css,print.css,*Test.php,RoboFile.php"
+  CI_QA_SUFFIX: "php,inc,module,install,test,profile,theme"
+  CI_QA_PHPCPD_MIN_LINES: 5
+  CI_QA_PHPCPD_MIN_TOKEN: 70
   #
   # Eslint / Stylelint files to test.
   #
   # Configuration files, default is Drupal used for core.
-  CONFIG_ESLINT: ${DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-  CONFIG_STYLELINT: ${DRUPAL_WEB_ROOT}/core/.stylelintrc.json
+  CI_CONFIG_ESLINT: ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
+  CI_CONFIG_STYLELINT: ${CI_DRUPAL_WEB_ROOT}/core/.stylelintrc.json
   #
   # Space separated for multiple folders.
   # Default is to check files under all custom folders.
-  DIRS_JS: "${DRUPAL_WEB_ROOT}/**/custom/**/*.js"
-  DIRS_YAML: "${DRUPAL_WEB_ROOT}/**/custom/**/*.yml"
-  DIRS_CSS: "${DRUPAL_WEB_ROOT}/**/custom/**/css/*.css"
+  CI_DIRS_JS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.js"
+  CI_DIRS_YAML: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.yml"
+  CI_DIRS_CSS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/css/*.css"
   #
   # Twig templates files to test.
-  DIRS_TWIG: "${DRUPAL_WEB_ROOT}/themes/custom"
+  CI_DIRS_TWIG: "${CI_DRUPAL_WEB_ROOT}/themes/custom"
   #
   # phpmetrics / phpstats dirs to include.
   #
   # Comma separated for multiple folders.
   # Default is to check all custom dirs.
-  DIRS_PHP: "${DRUPAL_WEB_ROOT}/modules/custom,${DRUPAL_WEB_ROOT}/themes/custom"
+  CI_DIRS_PHP: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
 
   ##############################################################################
   #
   # Skip Build, if not running any tests or deploy.
-  SKIP_BUILD: 0
+  CI_SKIP_BUILD: 0
   #
   ##############################################################################
+  # Symfony security check on composer.lock
+  CI_SKIP_SECURITY: 0
   # Skip all tests jobs.
-  SKIP_TESTS: 0
+  CI_SKIP_TESTS: 0
   #
   # OR skip single jobs in tests.
   # For tests information see
   # https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8.
   #
   # PHPunit unit,kernel with code coverage and optional Codecove.io support
-  SKIP_TEST_UNITKERNEL: 0
+  CI_SKIP_TEST_UNITKERNEL: 0
   # PHPunit functional tests (browser tests)
-  SKIP_TEST_FUNCTIONAL: 0
+  CI_SKIP_TEST_FUNCTIONAL: 0
   # PHPunit functional javascript tests (browser with javascript tests)
-  SKIP_TEST_FUNCTIONALJS: 0
+  CI_SKIP_TEST_FUNCTIONALJS: 0
   # Nightwatch tests (browser with javascript tests), since Drupal 8.6
   # Currently not fully ready for Drupal so skip by default.
-  SKIP_TEST_NIGHTWATCH: 0
+  CI_SKIP_TEST_NIGHTWATCH: 0
   #
   # Third party tests.
   # Behat tests from behat_tests folder. Demo tests, skip by default.
-  SKIP_TEST_BEHAT: 0
+  CI_SKIP_TEST_BEHAT: 0
   # Accessibility test, skip by default.
-  SKIP_TEST_PA11Y: 0
+  CI_SKIP_TEST_PA11Y: 0
   #
   ##############################################################################
-  # Skip PHP QA jobs (phpcs, phpstan, phpmd, phpcpd, parallel-lint)
-  SKIP_QA: 0
-  # Symfony security check on composer.lock
-  SKIP_QA_SECURITY: 0
-  SKIP_QA_PHPCS: 0
+  # Skip all QA jobs.
+  CI_SKIP_QA: 0
+  #
+  # OR skip single jobs in qa.
+  #
+  CI_SKIP_QA_PHPCS: 0
+  CI_SKIP_QA_PHPMD: 0
+  CI_SKIP_QA_PHPSTAN: 0
+  CI_SKIP_QA_PARALINT: 0
   #
   ##############################################################################
   # Skip all lint jobs.
-  SKIP_LINT: 0
+  CI_SKIP_LINT: 0
   #
   # OR skip single jobs in lint.
   #
   # CSS lint job with stylelint.
-  SKIP_LINT_CSS: 0
+  CI_SKIP_LINT_CSS: 0
   # Javascript lint job with eslint.
-  SKIP_LINT_JS: 0
+  CI_SKIP_LINT_JS: 0
   # Yaml lint job with eslint.
-  SKIP_LINT_YAML: 0
+  CI_SKIP_LINT_YAML: 0
   # Twig lint job using symfony console.
-  SKIP_LINT_TWIG: 0
+  CI_SKIP_LINT_TWIG: 0
   #
   ##############################################################################
   # Skip all metrics jobs (phpmetrics, phploc, pdepend)
-  SKIP_METRICS: 0
+  CI_SKIP_METRICS: 0
   #
   ##############################################################################
 
   ##############################################################################
   # Services used by some jobs (PHPunit, Behat, Nightwatch.js).
   #
-  DB_DRIVER: mysql
-  # DB_DRIVER: pgsql
+  CI_DB_DRIVER: mysql
+  # CI_DB_DRIVER: pgsql
   ## SQLite require specific SIMPLETEST_DB value, see below.
-  # DB_DRIVER: sqlite
+  # CI_DB_DRIVER: sqlite
   #
   # Database service as docker image and tag.
-  SERVICE_DATABASE: "mariadb:10"
-  # SERVICE_DATABASE: "mysql:8"
-  SERVICE_DATABASE_PORT: 3306
-  # SERVICE_DATABASE: "postgres:13-alpine"
-  # SERVICE_DATABASE_PORT: 5432
+  CI_SERVICE_DATABASE: "mariadb:10"
+  # CI_SERVICE_DATABASE: "mysql:8"
+  CI_SERVICE_DATABASE_PORT: 3306
+  # CI_SERVICE_DATABASE: "postgres:13-alpine"
+  # CI_SERVICE_DATABASE_PORT: 5432
   #
-  SERVICE_CHROMEDRIVER: "drupalci/webdriver-chromedriver:production"
-  SERVICE_CHROMEDRIVER_PORT: 9515
-  SERVICE_CHROME: "mogtofu33/chrome-headless:${CI_REF}"
-  SERVICE_CHROME_PORT: 9222
+  CI_SERVICE_CHROMEDRIVER: "drupalci/webdriver-chromedriver:production"
+  CI_SERVICE_CHROMEDRIVER_PORT: 9515
+  CI_SERVICE_CHROME: "mogtofu33/chrome-headless:${CI_REF}"
+  CI_SERVICE_CHROME_PORT: 9222
   #
   ##############################################################################
 
   ##############################################################################
-  # Other variables for CI only that do not need editing in normal usage.
+  # Other variables that do not need editing in normal usage.
   #
   # Required by service:mysql/mariadb.
   MYSQL_DATABASE: drupal
   MYSQL_USER: drupal
   MYSQL_PASSWORD: drupal
   MYSQL_ALLOW_EMPTY_PASSWORD: 1
- # Required by service:pgsql.
+  # Required by service:pgsql.
   POSTGRES_PASSWORD: drupal
   POSTGRES_DB: drupal
   POSTGRES_USER: drupal
@@ -211,10 +215,10 @@
   # This is provided by FF_NETWORK_PER_BUILD.
   # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
   SIMPLETEST_BASE_URL: "http://build"
-  SIMPLETEST_DB: "${DB_DRIVER}://drupal:drupal@db/drupal"
+  SIMPLETEST_DB: "${CI_DB_DRIVER}://drupal:drupal@db/drupal"
   # SIMPLETEST_DB: "sqlite://localhost/:memory:"
   #
-  BROWSERTEST_OUTPUT_DIRECTORY: "${WEB_ROOT}/sites/simpletest"
+  BROWSERTEST_OUTPUT_DIRECTORY: "${CI_WEB_ROOT}/sites/simpletest"
   SYMFONY_DEPRECATIONS_HELPER: "disabled"
   #
   # Functional Javascript tests.
@@ -233,7 +237,7 @@
           ]
         }
       },
-      "http://chrome:${SERVICE_CHROMEDRIVER_PORT}"
+      "http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}"
     ]
   #
   # Behat tests.
@@ -246,14 +250,14 @@
       "extensions" : {
         "Drupal\\DrupalExtension" : {
           "drupal" : {
-            "drupal_root" : "${WEB_ROOT}"
+            "drupal_root" : "${CI_WEB_ROOT}"
           }
         }
       }
     }
   # Chrome options, used by mogtofu33/chrome-headless startup.
   # https://peter.sh/experiments/chromium-command-line-switches/
-  CHROME_OPTS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=${SERVICE_CHROME_PORT}"
+  CHROME_OPTS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=${CI_SERVICE_CHROME_PORT}"
   #
   # Nightwatch settings.
   #
@@ -262,6 +266,7 @@
   DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080"
   DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: "../"
   DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/default/files/simpletest"
+  DRUPAL_NIGHTWATCH_OUTPUT: ${CI_PROJECT_DIR}/report-nightwatchjs
   #
   # General settings.
   #

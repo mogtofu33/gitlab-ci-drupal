@@ -1,15 +1,15 @@
 .scripts:
   set-registries:
     - echo -e "\e[0Ksection_start:`date +%s`:set_registry[collapsed=true]\r\e[0K\e[1;34mCi Set registries and auth"
-    - if [ ! -z ${COMPOSER_REPO_PACKAGIST_URL} ]; then
-        composer config --global repo.packagist composer ${COMPOSER_REPO_PACKAGIST_URL};
+    - if [ ! -z ${CI_COMPOSER_REPO_PACKAGIST_URL} ]; then
+        composer config --global repo.packagist composer ${CI_COMPOSER_REPO_PACKAGIST_URL};
       fi
-    - if [ ! -z "${COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
-        composer config -g github-oauth.github.com ${COMPOSER_GITHUB_OAUTH_TOKEN};
+    - if [ ! -z "${CI_COMPOSER_GITHUB_OAUTH_TOKEN}" ]; then
+        composer config -g github-oauth.github.com ${CI_COMPOSER_GITHUB_OAUTH_TOKEN};
       fi
     # Support Yarn registry mirror.
-    - if [ ! -z "${YARN_REGISTRY}" ]; then
-        yarn config set registry ${YARN_REGISTRY};
+    - if [ ! -z "${CI_YARN_REGISTRY}" ]; then
+        yarn config set registry ${CI_YARN_REGISTRY};
       fi
     - echo -e "\e[0Ksection_end:`date +%s`:set_registry\r\e[0K"
   get-robo:

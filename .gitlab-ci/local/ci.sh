@@ -58,7 +58,7 @@ __install_phpunit() {
     fi
   fi
 
-  _dkexec ${DOC_ROOT}/vendor/bin/phpunit --version
+  _dkexec ${CI_DOC_ROOT}/vendor/bin/phpunit --version
 }
 
 # Standalone Phpunit test for local tests, can set path as argument.
@@ -69,9 +69,9 @@ _phpunit() {
   local __path
 
   if [[ $CI_TYPE == "module" ]]; then
-    __path=${WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}/${_ARGS}
+    __path=${CI_WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}/${_ARGS}
   else
-    __path=${DOC_ROOT}/${_ARGS}
+    __path=${CI_DOC_ROOT}/${_ARGS}
   fi
 
   if ! eval "_exist_dir ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"; then
@@ -91,11 +91,11 @@ _phpunit() {
     fi
   fi
 
-          # --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel,${PHPUNIT_TESTS}functional,${PHPUNIT_TESTS}functional-javascript" \
+          # --testsuite "${CI_PHPUNIT_TESTS}unit,${CI_PHPUNIT_TESTS}kernel,${CI_PHPUNIT_TESTS}functional,${CI_PHPUNIT_TESTS}functional-javascript" \
 
-  _dkexec sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit \
-        --configuration ${WEB_ROOT}/core \
-        --testsuite "${PHPUNIT_TESTS}functional-javascript" \
+  _dkexec sudo -E -u www-data ${CI_DOC_ROOT}/vendor/bin/phpunit \
+        --configuration ${CI_WEB_ROOT}/core \
+        --testsuite "${CI_PHPUNIT_TESTS}functional-javascript" \
         --verbose
         # ${__path}
 }
@@ -106,9 +106,9 @@ _qa() {
   local __path
 
   if [[ -n ${_ARGS} ]]; then
-    __path=${DOC_ROOT}/${_ARGS}
+    __path=${CI_DOC_ROOT}/${_ARGS}
   else
-    __path=${WEB_ROOT}/modules/custom
+    __path=${CI_WEB_ROOT}/modules/custom
   fi
 
   if [ -z "${__tools_qa}" ]; then
@@ -141,22 +141,22 @@ _lint() {
   else
     printf "%s[NOTICE]%s install Yarn\\n""${_dim}" "${_end}"
     docker exec -it ci-drupal \
-      yarn --cwd ${WEB_ROOT}/core install
+      yarn --cwd ${CI_WEB_ROOT}/core install
   fi
 
   printf "\\n%s[INFO]%s Eslint\\n\\n" "${_blu}" "${_end}"
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal \
-    ${WEB_ROOT}/core/node_modules/.bin/eslint \
-      --config ${WEB_ROOT}/core/.eslintrc.passing.json \
-      --resolve-plugins-relative-to ${WEB_ROOT}/core/node_modules \
-      ${DIRS_JS}
+  docker exec -it -w ${CI_WEB_ROOT}/core ci-drupal \
+    ${CI_WEB_ROOT}/core/node_modules/.bin/eslint \
+      --config ${CI_WEB_ROOT}/core/.eslintrc.passing.json \
+      --resolve-plugins-relative-to ${CI_WEB_ROOT}/core/node_modules \
+      ${CI_DIRS_JS}
 
   printf "\\n%s[INFO]%s Stylelint\\n\\n" "${_blu}" "${_end}"
-  docker exec -it -w ${WEB_ROOT}/core ci-drupal \
-    ${WEB_ROOT}/core/node_modules/.bin/stylelint \
-      --config ${WEB_ROOT}/core/.stylelintrc.json \
+  docker exec -it -w ${CI_WEB_ROOT}/core ci-drupal \
+    ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint \
+      --config ${CI_WEB_ROOT}/core/.stylelintrc.json \
       --formatter verbose \
-      ${DIRS_CSS}
+      ${CI_DIRS_CSS}
 
   if ! eval "_exist_file /opt/drupal/twig-lint"; then
     printf "%s[NOTICE]%s Install twig-lint\\n" "${_dim_blu}" "${_end}"
@@ -168,7 +168,7 @@ _lint() {
 
   printf "\\n%s[INFO]%s Twig lint\\n\\n" "${_blu}" "${_end}"
   docker exec -it ci-drupal \
-    php /opt/drupal/twig-lint lint "${DIRS_TWIG}"
+    php /opt/drupal/twig-lint lint "${CI_DIRS_TWIG}"
 }
 
 # Standalone security test.
@@ -194,14 +194,14 @@ _behat() {
     printf "%s[SKIP]%s Drupal install\\n" "${_dim_blu}" "${_end}"
   else
     printf "%s[NOTICE]%s install Drupal\\n""${_dim}" "${_end}"
-    docker exec -it -w ${DOC_ROOT} ci-drupal \
-      ${DOC_ROOT}/vendor/bin/drush --root="${WEB_ROOT}" si -y ${BEHAT_INSTALL_PROFILE} --db-url="${SIMPLETEST_DB}"
+    docker exec -it -w ${CI_DOC_ROOT} ci-drupal \
+      ${CI_DOC_ROOT}/vendor/bin/drush --root="${CI_WEB_ROOT}" si -y ${CI_BEHAT_INSTALL_PROFILE} --db-url="${SIMPLETEST_DB}"
   fi
 
   __install_behat
 
   # _dkexec \
-  #   ${DOC_ROOT}/vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml \
+  #   ${CI_DOC_ROOT}/vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml \
   #     --format progress \
   #     --out std
 }
@@ -234,17 +234,17 @@ _nightwatch() {
   else
     printf "%s[NOTICE]%s install Yarn\\n""${_dim}" "${_end}"
     docker exec -it ci-drupal \
-      yarn --cwd ${WEB_ROOT}/core install
+      yarn --cwd ${CI_WEB_ROOT}/core install
     __version=$(docker exec -t ci-drupal sh -c "google-chrome --product-version | cut -d. -f1")
     _dkexec_bash \
-      "yarn --cwd ${WEB_ROOT}/core upgrade chromedriver@$__version"
+      "yarn --cwd ${CI_WEB_ROOT}/core upgrade chromedriver@$__version"
   fi
 
   # Log versions.night
   _dkexec_bash \
-    "${WEB_ROOT}/core/node_modules/.bin/nightwatch --version"
+    "${CI_WEB_ROOT}/core/node_modules/.bin/nightwatch --version"
   _dkexec_bash \
-    "${WEB_ROOT}/core/node_modules/.bin/chromedriver --version"
+    "${CI_WEB_ROOT}/core/node_modules/.bin/chromedriver --version"
   _dkexec_bash \
     "/usr/bin/google-chrome --version"
 
@@ -257,7 +257,7 @@ _nightwatch() {
 
   # Running tests
   # docker exec -it -u root -w ${CI_PROJECT_DIR} ci-drupal \
-  #   yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
+  #   yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
 
 }
 
@@ -285,15 +285,15 @@ _nightwatch() {
 #   # - cp ./report-phpunit_functionaljs/*.xml /tmp/ || true
 
 #   docker exec -t -w /opt/drupal ci-drupal \
-#     phpqa --tools ${TOOLS_METRICS} \
+#     phpqa --tools ${CI_TOOLS_METRICS} \
 #       --config ${CI_PROJECT_DIR}/.gitlab-ci\
 #       --buildDir ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} \
-#       --analyzedDirs '${DIRS_PHP}'
+#       --analyzedDirs '${CI_DIRS_PHP}'
 # }
 
 # _copy_output() {
 #   _dkexec mkdir -p "${CI_PROJECT_DIR}/report-${1}/browser_output"
-#   docker exec -d -w ${CI_PROJECT_DIR} ci-drupal cp -r ${WEB_ROOT}/sites/simpletest/browser_output/ ${CI_PROJECT_DIR}/report-${1}/
+#   docker exec -d -w ${CI_PROJECT_DIR} ci-drupal cp -r ${CI_WEB_ROOT}/sites/simpletest/browser_output/ ${CI_PROJECT_DIR}/report-${1}/
 #   sleep 1s
 #   _clean_browser_output
 # }
@@ -413,21 +413,21 @@ _env() {
   yq '... comments=""' $__yaml | yq '.variables' >> $__env
 
   # Replace variables.
-  WEB_ROOT=$(yq '.[.default_variables].WEB_ROOT' $__yaml_variables)
-  sed -i "s#\${WEB_ROOT}#${WEB_ROOT}#g" $__env
-  echo '# [fix] Replaced WEB_ROOT' >> $__env
+  CI_WEB_ROOT=$(yq '.[.default_variables].CI_WEB_ROOT' $__yaml_variables)
+  sed -i "s#\${CI_WEB_ROOT}#${CI_WEB_ROOT}#g" $__env
+  echo '# [fix] Replaced CI_WEB_ROOT' >> $__env
 
-  DOC_ROOT=$(yq '.[.default_variables].DOC_ROOT' $__yaml_variables)
-  sed -i "s#\${DOC_ROOT}#${DOC_ROOT}#g" $__env
-  echo '# [fix] Replaced DOC_ROOT' >> $__env
+  CI_DOC_ROOT=$(yq '.[.default_variables].CI_DOC_ROOT' $__yaml_variables)
+  sed -i "s#\${CI_DOC_ROOT}#${CI_DOC_ROOT}#g" $__env
+  echo '# [fix] Replaced CI_DOC_ROOT' >> $__env
 
   SIMPLETEST_DB=$(yq '.[.default_variables].SIMPLETEST_DB' $__yaml_variables)
   sed -i "s#\${SIMPLETEST_DB}#${SIMPLETEST_DB}#g" $__env
   echo '# [fix] Replaced SIMPLETEST_DB' >> $__env
 
-  DB_DRIVER=$(yq '.[.default_variables].DB_DRIVER' $__yaml_variables)
-  sed -i "s#\${DB_DRIVER}#${DB_DRIVER}#g" $__env
-  echo '# [fix] Replaced DB_DRIVER' >> $__env
+  CI_DB_DRIVER=$(yq '.[.default_variables].CI_DB_DRIVER' $__yaml_variables)
+  sed -i "s#\${CI_DB_DRIVER}#${CI_DB_DRIVER}#g" $__env
+  echo '# [fix] Replaced CI_DB_DRIVER' >> $__env
 
   CI_REF=$(yq '.variables.CI_REF' $__yaml)
   sed -i "s#\${CI_REF}#${CI_REF}#g" $__env
@@ -439,9 +439,9 @@ _env() {
   echo '# [fix] drupal version' >> $__env
 
   # Replace some variables by their values from main file.
-  DRUPAL_WEB_ROOT=$(yq '.variables.DRUPAL_WEB_ROOT' $__yaml)
-  sed -i "s#\${DRUPAL_WEB_ROOT}#${DRUPAL_WEB_ROOT}#g" $__env
-  echo '# [fix] Replaced DRUPAL_WEB_ROOT' >> $__env
+  CI_DRUPAL_WEB_ROOT=$(yq '.variables.CI_DRUPAL_WEB_ROOT' $__yaml)
+  sed -i "s#\${CI_DRUPAL_WEB_ROOT}#${CI_DRUPAL_WEB_ROOT}#g" $__env
+  echo '# [fix] Replaced CI_DRUPAL_WEB_ROOT' >> $__env
 
   if [ -f $__yaml_local ]; then
     echo '# [fix] Local override variables .local.yml' >> $__env

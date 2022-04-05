@@ -63,7 +63,7 @@ build:
   stage: build
   extends: .build_template
   rules:
-    - if: '$SKIP_BUILD == "1"'
+    - if: '$CI_SKIP_BUILD == "1"'
       when: never
     - when: always
   script:
@@ -72,9 +72,9 @@ build:
     - if [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n;
         composer install -n --prefer-dist;
-        robo drupal:require-dev $SKIP_TEST_BEHAT;
+        robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
       fi
-    - yarn --cwd ${DRUPAL_WEB_ROOT}/core install
+    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core install
   allow_failure: false
 
 security:
@@ -83,7 +83,7 @@ security:
     - job: build
       artifacts: true
   rules:
-    - if: '$SKIP_TESTS == "1" || $SKIP_QA_SECURITY == "1"'
+    - if: '$CI_SKIP_SECURITY == "1"'
       when: never
     - when: on_success
   script:
@@ -100,32 +100,32 @@ phpcs:
   stage: qa
   extends: .qa_template
   rules:
-    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPCS == "1"'
+    - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PHPCS == "1"'
       when: never
     - when: on_success
   script:
     - phpcs
-        --standard=${QA_PHPCS_STANDARD}
-        --ignore=${QA_IGNORE}
-        --extensions=${QA_SUFFIX}
+        --standard=${CI_QA_PHPCS_STANDARD}
+        --ignore=${CI_QA_IGNORE}
+        --extensions=${CI_QA_SUFFIX}
         --report-junit=report-${CI_JOB_NAME}/phpcs_junit.xml
-        ${DIRS_QA_PHPCS}
+        ${CI_DIRS_QA_PHPCS}
 
 # @todo support --baseline-file
 phpmd:
   stage: qa
   extends: .qa_template
   rules:
-    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPMD == "1"'
+    - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PHPMD == "1"'
       when: never
     - when: on_success
   script:
     - phpmd
-        ${DIRS_QA_PHPMD}
+        ${CI_DIRS_QA_PHPMD}
         xml
         .gitlab-ci/.phpmd.xml
-        --exclude ${QA_IGNORE}
-        --suffixes ${QA_SUFFIX}
+        --exclude ${CI_QA_IGNORE}
+        --suffixes ${CI_QA_SUFFIX}
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
 
@@ -134,7 +134,7 @@ phpstan:
   stage: qa
   extends: .qa_template
   rules:
-    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPSTAN == "1"'
+    - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PHPSTAN == "1"'
       when: never
     - when: on_success
   script:
@@ -142,22 +142,22 @@ phpstan:
         analyze
         --configuration .gitlab-ci/phpstan.neon
         --error-format junit
-        ${DIRS_QA_PHPSTAN} >> report-${CI_JOB_NAME}/phpstan_junit.xml
+        ${CI_DIRS_QA_PHPSTAN} >> report-${CI_JOB_NAME}/phpstan_junit.xml
 
 parallel-lint:
   stage: qa
   extends: .qa_template
   rules:
-    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPSTAN == "1"'
+    - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PARALINT == "1"'
       when: never
     - when: on_success
   script:
     - parallel-lint
         --no-progress
         --exclude vendor
-        -e ${QA_SUFFIX}
+        -e ${CI_QA_SUFFIX}
         --checkstyle
-        ${DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint.xml
+        ${CI_DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint.xml
     - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml
 
 ################################################################################
@@ -170,35 +170,35 @@ lint_js:
   stage: qa
   extends: .lint_template
   rules:
-    - if: '$SKIP_LINT == "1" || $SKIP_LINT_JS == "1"'
+    - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_JS == "1"'
       when: never
     - when: on_success
   script:
-    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
-        --config ${CONFIG_ESLINT}
-        --ignore-path ${WEB_ROOT}/core/.eslintignore
-        --resolve-plugins-relative-to ${WEB_ROOT}/core
+    - node ${CI_WEB_ROOT}/core/node_modules/.bin/eslint
+        --config ${CI_CONFIG_ESLINT}
+        --ignore-path ${CI_WEB_ROOT}/core/.eslintignore
+        --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
-        "${DIRS_JS}"
+        "${CI_DIRS_JS}"
 
 # This is a eslint report for Yaml files.
 lint_yaml:
   stage: qa
   extends: .lint_template
   rules:
-    - if: '$SKIP_LINT == "1" || $SKIP_LINT_YAML == "1"'
+    - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_YAML == "1"'
       when: never
     - when: on_success
   script:
-    - node ${WEB_ROOT}/core/node_modules/.bin/eslint
-        --config ${CONFIG_ESLINT}
-        --ignore-path ${WEB_ROOT}/core/.eslintignore
-        --resolve-plugins-relative-to ${WEB_ROOT}/core
+    - node ${CI_WEB_ROOT}/core/node_modules/.bin/eslint
+        --config ${CI_CONFIG_ESLINT}
+        --ignore-path ${CI_WEB_ROOT}/core/.eslintignore
+        --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
         --ext .yml
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
-        "${DIRS_YAML}"
+        "${CI_DIRS_YAML}"
 
 # Drupal 9 rules used here for stylelint to check css.
 # https://www.drupal.org/docs/develop/standards/css
@@ -206,17 +206,17 @@ lint_css:
   stage: qa
   extends: .lint_template
   rules:
-    - if: '$SKIP_LINT == "1" || $SKIP_LINT_CSS == "1"'
+    - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_CSS == "1"'
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${DRUPAL_WEB_ROOT}/core add stylelint-junit-formatter
-    - node ${WEB_ROOT}/core/node_modules/.bin/stylelint
-        --config ${CONFIG_STYLELINT}
-        --ignore-path ${WEB_ROOT}/core/.stylelintignore
-        --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-junit-formatter
+    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core add stylelint-junit-formatter
+    - node ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint
+        --config ${CI_CONFIG_STYLELINT}
+        --ignore-path ${CI_WEB_ROOT}/core/.stylelintignore
+        --custom-formatter ${CI_WEB_ROOT}/core/node_modules/stylelint-junit-formatter
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
-        "${DIRS_CSS}"
+        "${CI_DIRS_CSS}"
 
 ################################################################################
 # Drupal tests.
@@ -227,20 +227,20 @@ phpunit_unit:
   stage: tests
   extends: .test_template
   rules:
-    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_UNITKERNEL == "1"'
+    - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_UNITKERNEL == "1"'
       when: never
     - when: on_success
   services:
-    - name: ${SERVICE_DATABASE}
+    - name: ${CI_SERVICE_DATABASE}
       alias: db
   script:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
     # Run PHPunit tests for unit, kernel, with coverage report.
-    - XDEBUG_MODE=coverage ${DOC_ROOT}/vendor/bin/phpunit
-        --testsuite "${PHPUNIT_TESTS}unit,${PHPUNIT_TESTS}kernel"
+    - XDEBUG_MODE=coverage ${CI_DOC_ROOT}/vendor/bin/phpunit
+        --testsuite "${CI_PHPUNIT_TESTS}unit,${CI_PHPUNIT_TESTS}kernel"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
-        --configuration ${WEB_ROOT}/core
+        --configuration ${CI_WEB_ROOT}/core
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-text
         --log-junit report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
@@ -258,18 +258,18 @@ phpunit_func:
   stage: tests
   extends: .test_template
   rules:
-    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_FUNCTIONAL == "1"'
+    - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_FUNCTIONAL == "1"'
       when: never
     - when: on_success
   services:
-    - name: ${SERVICE_DATABASE}
+    - name: ${CI_SERVICE_DATABASE}
       alias: db
   script:
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
-        --testsuite "${PHPUNIT_TESTS}functional"
+    - sudo -E -u www-data ${CI_DOC_ROOT}/vendor/bin/phpunit
+        --testsuite "${CI_PHPUNIT_TESTS}functional"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
-        --configuration ${WEB_ROOT}/core
+        --configuration ${CI_WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/phpunit-functional_junit.xml
         --verbose
   after_script:
@@ -280,22 +280,22 @@ phpunit_funcjs:
   stage: tests
   extends: .test_template
   rules:
-    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_FUNCTIONALJS == "1"'
+    - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_FUNCTIONALJS == "1"'
       when: never
     - when: on_success
   services:
-    - name: ${SERVICE_DATABASE}
+    - name: ${CI_SERVICE_DATABASE}
       alias: db
-    - name: ${SERVICE_CHROMEDRIVER}
+    - name: ${CI_SERVICE_CHROMEDRIVER}
       alias: chrome
   script:
     # Check Chromedriver.
-    - curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
+    - curl -s http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${DOC_ROOT}/vendor/bin/phpunit
-        --testsuite "${PHPUNIT_TESTS}functional-javascript"
+    - sudo -E -u www-data ${CI_DOC_ROOT}/vendor/bin/phpunit
+        --testsuite "${CI_PHPUNIT_TESTS}functional-javascript"
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
-        --configuration ${WEB_ROOT}/core
+        --configuration ${CI_WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
         --verbose
   after_script:
@@ -307,29 +307,29 @@ nightwatchjs:
   stage: tests
   extends: .test_template
   rules:
-    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_NIGHTWATCH == "1"'
+    - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_NIGHTWATCH == "1"'
       when: never
     - when: on_success
   services:
-    - name: ${SERVICE_DATABASE}
+    - name: ${CI_SERVICE_DATABASE}
       alias: db
-    - name: ${SERVICE_CHROMEDRIVER}
+    - name: ${CI_SERVICE_CHROMEDRIVER}
       alias: chrome
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
     # Install packages from Drupal.
-    - yarn --cwd ${WEB_ROOT}/core install
+    - yarn --cwd ${CI_WEB_ROOT}/core install
     # Ensure chrome is running.
-    - curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
+    - curl -s http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # Update chromedriver as Drupal package.json can be late on chrome version.
     - |
-      yarn --cwd ${WEB_ROOT}/core upgrade \
-      chromedriver@$(curl -s http://chrome:${SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
+      yarn --cwd ${CI_WEB_ROOT}/core upgrade \
+      chromedriver@$(curl -s http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Prepare variables.
-    - envsubst < ${WEB_ROOT}/core/.env.tmpl > ${WEB_ROOT}/core/.env
+    - envsubst < ${CI_WEB_ROOT}/core/.env.tmpl > ${CI_WEB_ROOT}/core/.env
     # Launch Nightwatch tests from core folder.
-    - yarn --cwd ${WEB_ROOT}/core test:nightwatch ${NIGHTWATCH_TESTS}
+    - yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
   artifacts:
     expire_in: 1 week
     when: always
@@ -347,23 +347,23 @@ behat:
   stage: tests
   extends: .test_template
   rules:
-    - if: '$SKIP_TESTS == "1" || $SKIP_TEST_BEHAT == "1"'
+    - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_BEHAT == "1"'
       when: never
     - when: on_success
   services:
-    - name: ${SERVICE_DATABASE}
+    - name: ${CI_SERVICE_DATABASE}
       alias: db
-    - name: ${SERVICE_CHROME}
+    - name: ${CI_SERVICE_CHROME}
       alias: chrome
   script:
-    - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal ${BEHAT_INSTALL_PROFILE}"
+    - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal ${CI_BEHAT_INSTALL_PROFILE}"
     # Install Drupal with the selected profile.
-    - robo drupal:install ${BEHAT_INSTALL_PROFILE} ${BEHAT_INSTALL_DUMP}
+    - robo drupal:install ${CI_BEHAT_INSTALL_PROFILE} ${CI_BEHAT_INSTALL_DUMP}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
-    - curl -s -H "Host:localhost" http://chrome:${SERVICE_CHROME_PORT}/json/version | jq '.'
+    - curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_CHROME_PORT}/json/version | jq '.'
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
-    - ${DOC_ROOT}/vendor/bin/behat
+    - ${CI_DOC_ROOT}/vendor/bin/behat
         --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
         --format progress
         --out std
@@ -381,14 +381,14 @@ metrics:
   stage: metrics
   extends: .metrics_template
   rules:
-    - if: '$SKIP_METRICS == "1"'
+    - if: '$CI_SKIP_METRICS == "1"'
       when: never
     - when: always
   script:
-    - phpqa --tools ${TOOLS_METRICS}
+    - phpqa --tools ${CI_TOOLS_METRICS}
         --config ${CI_PROJECT_DIR}/.gitlab-ci
         --buildDir "report-${CI_JOB_NAME}"
-        --analyzedDirs "${DIRS_PHP}"
+        --analyzedDirs "${CI_DIRS_PHP}"
 
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci

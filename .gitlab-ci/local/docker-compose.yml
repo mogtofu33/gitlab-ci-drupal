@@ -27,10 +27,10 @@ services:
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
       - ../../:${CI_PROJECT_DIR}
       # Mount the parent folder as a group of modules or project for local test.
-      # - ../../:${DOC_ROOT}
+      # - ../../:${CI_DOC_ROOT}
       # [OPTIONAL] composer cache folder to speed up the process.
       - ${HOME}/.cache/composer:/var/www/.composer/cache
-    # working_dir: ${DOC_ROOT}
+    # working_dir: ${CI_DOC_ROOT}
     # Mimic Gitlab-ci.
     working_dir: /builds
     container_name: ci-drupal
@@ -38,25 +38,25 @@ services:
       - .env
 
   db:
-    image: ${SERVICE_DATABASE}
+    image: ${CI_SERVICE_DATABASE}
     expose:
-      - "${SERVICE_DATABASE_PORT}"
+      - "${CI_SERVICE_DATABASE_PORT}"
     container_name: ci-db
     env_file:
       - .env
 
   # chrome:
-  #   image: ${SERVICE_CHROMEDRIVER}
+  #   image: ${CI_SERVICE_CHROMEDRIVER}
   #   expose:
-  #     - "${SERVICE_CHROMEDRIVER_PORT}"
+  #     - "${CI_SERVICE_CHROMEDRIVER_PORT}"
   #   container_name: ci-chromedriver
   #   env_file:
   #     - .env
 
   chrome:
-    image: ${SERVICE_CHROME}
+    image: ${CI_SERVICE_CHROME}
     expose:
-      - "${SERVICE_CHROME_PORT}"
+      - "${CI_SERVICE_CHROME_PORT}"
     container_name: ci-chrome
     env_file:
       - .env

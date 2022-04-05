@@ -33,7 +33,7 @@ class RoboFile extends Tasks {
    * Database connection information.
    *
    * @var string
-   *   The database driver. This can be overridden by specifying a $DB_DRIVER.
+   *   The database driver. This can be overridden by specifying a $CI_DB_DRIVER.
    *   Default is to the ci variables used with db service.
    */
   protected $dbDriver = 'mysql';
@@ -53,7 +53,7 @@ class RoboFile extends Tasks {
    *
    * @var string
    *   The docroot folder of Drupal. This can be overridden by specifying a
-   *   $DOC_ROOT environment variable.
+   *   $CI_DOC_ROOT environment variable.
    *   Default is to the ci image value.
    */
   protected $docRoot = '/opt/drupal';
@@ -63,7 +63,7 @@ class RoboFile extends Tasks {
    *
    * @var string
    *   The webroot folder of Drupal. This can be overridden by specifying a
-   *   $DRUPAL_WEB_ROOT environment variable.
+   *   $CI_DRUPAL_WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
   protected $drupalWebRoot = 'web';
@@ -73,7 +73,7 @@ class RoboFile extends Tasks {
    *
    * @var string
    *   The webroot folder of Drupal. This can be overridden by specifying a
-   *   $WEB_ROOT environment variable.
+   *   $CI_WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
   protected $webRoot = '/opt/drupal/web';
@@ -149,11 +149,11 @@ class RoboFile extends Tasks {
   protected $ciRemoteRef = "";
 
   /**
-   * PHPUNIT_TESTS context.
+   * CI_PHPUNIT_TESTS context.
    *
    * @var string
    *   The type of PHPunit tests. This can be overridden by specifying
-   *   a $PHPUNIT_TESTS environment variable.
+   *   a $CI_PHPUNIT_TESTS environment variable.
    */
   protected $phpunitTests = "custom";
 
@@ -199,29 +199,29 @@ class RoboFile extends Tasks {
     if (filter_var(getenv('SIMPLETEST_DB'), FILTER_VALIDATE_URL)) {
       $this->dbUrl = getenv('SIMPLETEST_DB');
     }
-    if (getenv('DB_DRIVER')) {
-      $this->dbDriver = getenv('DB_DRIVER');
+    if (getenv('CI_DB_DRIVER')) {
+      $this->dbDriver = getenv('CI_DB_DRIVER');
     }
 
-    // Pull a DOC_ROOT from the environment, if it exists.
-    if (getenv('DOC_ROOT')) {
-      $this->docRoot = getenv('DOC_ROOT');
+    // Pull a CI_DOC_ROOT from the environment, if it exists.
+    if (getenv('CI_DOC_ROOT')) {
+      $this->docRoot = getenv('CI_DOC_ROOT');
     }
-    // Pull a DRUPAL_WEB_ROOT from the environment, if it exists.
-    if (getenv('DRUPAL_WEB_ROOT')) {
-      $this->drupalWebRoot = getenv('DRUPAL_WEB_ROOT');
+    // Pull a CI_DRUPAL_WEB_ROOT from the environment, if it exists.
+    if (getenv('CI_DRUPAL_WEB_ROOT')) {
+      $this->drupalWebRoot = getenv('CI_DRUPAL_WEB_ROOT');
     }
-    // Pull a WEB_ROOT from the environment, if it exists.
-    if (getenv('WEB_ROOT')) {
-      $this->webRoot = getenv('WEB_ROOT');
+    // Pull a CI_WEB_ROOT from the environment, if it exists.
+    if (getenv('CI_WEB_ROOT')) {
+      $this->webRoot = getenv('CI_WEB_ROOT');
     }
     else {
       $this->webRoot = $this->docRoot . '/' . $this->drupalWebRoot;
     }
 
-    // Pull a PHPUNIT_TESTS from the environment, if it exists.
-    if (getenv('PHPUNIT_TESTS')) {
-      $this->phpunitTests = getenv('PHPUNIT_TESTS');
+    // Pull a CI_PHPUNIT_TESTS from the environment, if it exists.
+    if (getenv('CI_PHPUNIT_TESTS')) {
+      $this->phpunitTests = getenv('CI_PHPUNIT_TESTS');
     }
 
   }
@@ -287,10 +287,10 @@ class RoboFile extends Tasks {
   /**
    * Add Drupal dev third party for dev.
    *
-   * @param string $SKIP_TEST_BEHAT
+   * @param string $CI_SKIP_TEST_BEHAT
    *   (optional) Skip behat flag to check if we install behat dependency.
    */
-  public function drupalRequireDev($SKIP_TEST_BEHAT = "1") {
+  public function drupalRequireDev($CI_SKIP_TEST_BEHAT = "1") {
     if (!file_exists($this->ciProjectDir . '/vendor/bin/drush')) {
       $this->composerRequire()
           ->dependency('drush/drush', '>10')
@@ -300,7 +300,7 @@ class RoboFile extends Tasks {
       ->dependency('drupal/core-dev', '~' . $this->ciDrupalVersion)
       ->dependency('phpspec/prophecy-phpunit', '^2');
 
-    if ($SKIP_TEST_BEHAT == "0") {
+    if ($CI_SKIP_TEST_BEHAT == "0") {
       $task
         ->dependency('drupal/drupal-extension', '~4.1')
         ->dependency('dmore/behat-chrome-extension', '^1.3')
@@ -387,7 +387,7 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Import a dump file in db based on DB_DRIVER.
+   * Import a dump file in db based on CI_DB_DRIVER.
    *
    * @param string $filename
    *   Local path to filename dump.

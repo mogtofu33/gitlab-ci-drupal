@@ -18,13 +18,13 @@
     key: "drupal-${CI_COMMIT_REF_NAME}"
     paths:
       - vendor
-      - ${DRUPAL_WEB_ROOT}
+      - ${CI_DRUPAL_WEB_ROOT}
   artifacts:
     expire_in: 1 week
     paths:
       # Build files for next steps and deploy/release.
       - vendor
-      - ${DRUPAL_WEB_ROOT}
+      - ${CI_DRUPAL_WEB_ROOT}
       - composer.json
       - composer.lock
       # Files from this project.

@@ -13,6 +13,6 @@
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]
     # Set permissions for tests.
-    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites/default/files/simpletest
-    - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites
-    - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY} ${WEB_ROOT}/sites
+    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites/default/files/simpletest
+    - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites
+    - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites

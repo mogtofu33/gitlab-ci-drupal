@@ -143,8 +143,8 @@ tests Nightwatch will run:
 
 Name | Value | Detail
 -|-|-
-NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag
-NIGHTWATCH_TESTS | --skiptags core | All tests except core.
+CI_NIGHTWATCH_TESTS | --tag my_module | Only my module tests if set a @tag
+CI_NIGHTWATCH_TESTS | --skiptags core | All tests except core.
 
 ### Behat tests
 
@@ -160,13 +160,13 @@ To install Drupal from a db dump, you need a dump file located in a dump folder 
 
 This dump file must follow a naming convention: `dump-DRUPAL_VERSION_PROFILE.sql`, where:
 - `DRUPAL_VERSION` is your drupal version, eg: 9.2 or 9.3
-- `PROFILE` is your profile name set as `BEHAT_INSTALL_PROFILE`
+- `PROFILE` is your profile name set as `CI_BEHAT_INSTALL_PROFILE`
 
-To choose the Drupal profile for installation, you can set the `BEHAT_INSTALL_PROFILE` variable.
+To choose the Drupal profile for installation, you can set the `CI_BEHAT_INSTALL_PROFILE` variable.
 
 Name | Value
 -|-
-BEHAT_INSTALL_PROFILE | minimal
+CI_BEHAT_INSTALL_PROFILE | minimal
 
 For Behat, Selenium is not needed thanks to the
 [Behat Chrome extension.](https://gitlab.com/DMore/behat-chrome-extension.git).
@@ -197,10 +197,10 @@ There is a Gitlab variable to select the tests and optional group:
 
 Name | Value
 -|-
-PHPUNIT_TESTS | custom
+CI_PHPUNIT_TESTS | custom
 PHPUNIT_GROUP | my_group_tests
 
-Set `PHPUNIT_TESTS` _empty_ to run all tests.
+Set `CI_PHPUNIT_TESTS` _empty_ to run all tests.
 
 To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml) in your project
 and adapt for your tests.
@@ -328,8 +328,8 @@ In case you want to set a different url for packagist or set a _Github oauth tok
 
 Name | Detail | Default
 -|-|-
-COMPOSER_REPO_PACKAGIST_URL | https://getcomposer.org/doc/01-basic-usage.md#packagist | https?://repo.packagist.org
-COMPOSER_GITHUB_OAUTH_TOKEN | https://getcomposer.org/doc/06-config.md#github-oauth |
+CI_COMPOSER_REPO_PACKAGIST_URL | https://getcomposer.org/doc/01-basic-usage.md#packagist | https?://repo.packagist.org
+CI_COMPOSER_GITHUB_OAUTH_TOKEN | https://getcomposer.org/doc/06-config.md#github-oauth |
 
 _Note_: The Github token must be a private variable.
 
@@ -339,7 +339,7 @@ In case you want to set a different url for yarn registry, you can set variables
 
 Name | Default
 -|-
-YARN_REGISTRY | https://registry.yarnpkg.com
+CI_YARN_REGISTRY | https://registry.yarnpkg.com
 
 ### All in one report
 

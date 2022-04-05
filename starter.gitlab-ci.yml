@@ -58,12 +58,12 @@ variables:
   # Relative path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
   # some distributions.
-  DRUPAL_WEB_ROOT: web
+  CI_DRUPAL_WEB_ROOT: web
 
   # Phpunit tests to run, default provide only custom code or if this variable
   # is empty all tests (including Drupal core).
   # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
-  PHPUNIT_TESTS: "custom"
+  CI_PHPUNIT_TESTS: "custom"
 
   # Specify a group of tests to run rather than all tests in the suite.
   # PHPUNIT_GROUP: my_group_1,my_group_2
@@ -79,26 +79,26 @@ variables:
   # CI_TYPE: module
   ## Code quality dirs, must include your PHP code to check.
   ## Phpstan need autoloading, that's why we use web_root.
-  # DIRS_QA: "${WEB_ROOT}/modules/custom"
+  # CI_DIRS_QA: "${CI_WEB_ROOT}/modules/custom"
   ## Eslint / Stylelint files to test.
-  # DIRS_JS: "${CI_PROJECT_DIR}/js/*.js"
-  # DIRS_YAML: "${CI_PROJECT_DIR}/*.yml"
-  # DIRS_CSS: "${CI_PROJECT_DIR}/css/*.css"
+  # CI_DIRS_JS: "${CI_PROJECT_DIR}/js/*.js"
+  # CI_DIRS_YAML: "${CI_PROJECT_DIR}/*.yml"
+  # CI_DIRS_CSS: "${CI_PROJECT_DIR}/css/*.css"
   ## Twig files to test.
-  # DIRS_TWIG: "${CI_PROJECT_DIR}/templates"
+  # CI_DIRS_TWIG: "${CI_PROJECT_DIR}/templates"
   ## phpmetrics / phpstats dirs to include.
-  # DIRS_PHP: "${CI_PROJECT_DIR}"
-  ## Set SKIP_XXX variable to 1 to skip.
+  # CI_DIRS_PHP: "${CI_PROJECT_DIR}"
+  ## Set CI_SKIP_XXX variable to 1 to skip.
   ## Security is for a Drupal project with third party.
-  # SKIP_QA_SECURITY: 1
+  # CI_SKIP_SECURITY: 1
   ## If you don't have any css files, you can skip with
-  # SKIP_LINT_CSS: 1
+  # CI_SKIP_LINT_CSS: 1
   ## If you don't have any javascript files, you can skip with
-  # SKIP_LINT_JS: 1
+  # CI_SKIP_LINT_JS: 1
   ## If you don't want to check yaml files, you can skip with
-  # SKIP_LINT_YAML: 1
+  # CI_SKIP_LINT_YAML: 1
   ## If you don't have any twig files, you can skip with
-  # SKIP_LINT_TWIG: 1
+  # CI_SKIP_LINT_TWIG: 1
   #
   ##############################################################################
 
@@ -106,71 +106,73 @@ variables:
   # As a sample here is a list of some variables, see documentation for more
   # variables.
   #
-  ## List of DIRS_* variables to define dirs to analyze for specific jobs.
+  ## List of CI_DIRS_* variables to define dirs to analyze for specific jobs.
   ## Code quality dirs, must include your PHP code to check.
   #
-  # DIRS_QA: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+  # CI_DIRS_QA: "${CI_WEB_ROOT}/modules/custom,${CI_WEB_ROOT}/themes/custom"
   #
   ## Eslint / Stylelint files to test.
   ## Space separated for multiple folders.
   ## Default is to check files under all custom folders.
   #
-  # DIRS_JS: "${WEB_ROOT}/**/custom/**/*.js"
-  # DIRS_YAML: "${WEB_ROOT}/**/custom/**/*.yml"
-  # DIRS_CSS: "${WEB_ROOT}/**/custom/**/css/*.css"
+  # CI_DIRS_JS: "${CI_WEB_ROOT}/**/custom/**/*.js"
+  # CI_DIRS_YAML: "${CI_WEB_ROOT}/**/custom/**/*.yml"
+  # CI_DIRS_CSS: "${CI_WEB_ROOT}/**/custom/**/css/*.css"
   #
   ## Twig files to test, recursive.
   #
-  # DIRS_TWIG: "${WEB_ROOT}/themes/custom"
+  # CI_DIRS_TWIG: "${CI_WEB_ROOT}/themes/custom"
   #
   ## Phpmetrics / Phpstats dirs to include.
   ## Default is to check all dirs.
   #
-  # DIRS_PHP: "${WEB_ROOT}/modules/custom,${WEB_ROOT}/themes/custom"
+  # CI_DIRS_PHP: "${CI_WEB_ROOT}/modules/custom,${CI_WEB_ROOT}/themes/custom"
   #
-  ## List of SKIP_* variables, uncomment to skip a job.
+  ## List of CI_SKIP_* variables, uncomment to skip a job.
   #
-  # SKIP_BUILD: 1 # if not running any tests or deploy.
+  # CI_SKIP_BUILD: 1 # if not running any tests or deploy.
   #
-  # SKIP_TESTS: 1 # Skip all tests, ignore SKIP_TEST_*.
-  # SKIP_TEST_UNITKERNEL: 1
-  # SKIP_TEST_FUNCTIONAL: 1
-  # SKIP_TEST_FUNCTIONALJS: 1
-
+  # CI_SKIP_SECURITY: 1
+  #
+  # CI_SKIP_TESTS: 1 # Skip all tests, ignore CI_SKIP_TEST_*.
+  # CI_SKIP_TEST_UNITKERNEL: 1
+  # CI_SKIP_TEST_FUNCTIONAL: 1
+  # CI_SKIP_TEST_FUNCTIONALJS: 1
   #
   ## Tests disabled by default because need a specific setup / configuration.
   #
   ## Only needed if you have Behat tests, comment or set to 0 to enable.
   ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#behat-tests
-  SKIP_TEST_BEHAT: 1
+  CI_SKIP_TEST_BEHAT: 1
   ## Can use a profile setup or a sql dump file.
-  # BEHAT_INSTALL_PROFILE: "minimal"
-  # BEHAT_INSTALL_PROFILE: "dump"
-  # BEHAT_INSTALL_DUMP: "path/relative/to/project/root/dump.sql.zip"
+  # CI_BEHAT_INSTALL_PROFILE: "minimal"
+  # CI_BEHAT_INSTALL_PROFILE: "dump"
+  # CI_BEHAT_INSTALL_DUMP: "path/relative/to/project/root/dump.sql.zip"
   #
   ## Only if you have Nightwatch tests in your code.
   ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
-  SKIP_TEST_NIGHTWATCH: 1
+  CI_SKIP_TEST_NIGHTWATCH: 1
   ## Default is '--skiptags core', add your tag.
-  # NIGHTWATCH_TESTS: --tag my_module
+  # CI_NIGHTWATCH_TESTS: --tag my_module
   #
-  # SKIP_QA: 1
-  # SKIP_QA_SECURITY: 1
+  # CI_SKIP_QA: 1 # Skip all qa, ignore CI_SKIP_QA_*.
+  # CI_SKIP_QA_PHPCS: 1
+  # CI_SKIP_QA_PHPMD: 1
+  # CI_SKIP_QA_PHPSTAN: 1
+  # CI_SKIP_QA_PARALINT: 1
   #
-  # SKIP_LINT: 1 # Skip all lint, ignore SKIP_LINT_*.
-  # SKIP_LINT_CSS: 1
-  # SKIP_LINT_JS: 1
-  # SKIP_LINT_YAML: 1
-  # SKIP_LINT_TWIG: 1
+  # CI_SKIP_LINT: 1 # Skip all lint, ignore CI_SKIP_LINT_*.
+  # CI_SKIP_LINT_CSS: 1
+  # CI_SKIP_LINT_JS: 1
+  # CI_SKIP_LINT_YAML: 1
+  # CI_SKIP_LINT_TWIG: 1
   #
-  # SKIP_METRICS: 1
+  # CI_SKIP_METRICS: 1
   #
   ## QA and Metrics tools.
   ## See Phpqa available tools: https://github.com/EdgedesignCZ/phpqa#available-tools
-  ## ':0' is the number of errors allowed, default here is very strict.
   #
-  # TOOLS_QA: "phpcs:0,phpmd:0,parallel-lint:0,phpstan:0,phpcpd:0"
-  # TOOLS_METRICS: "phpmetrics,phploc,pdepend"
+  # CI_TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
 ################################################################################
 # Advanced usage with this file, see doc.
