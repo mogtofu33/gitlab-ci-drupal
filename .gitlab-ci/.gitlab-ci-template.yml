@@ -27,12 +27,10 @@ include:
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/scripts.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/01_build.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/02_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/03_qa.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/04_lint.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/05_metrics.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_deploy.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/03_base_jobs.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/04_deploy.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_release.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/04_release.yml'
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
@@ -66,12 +64,13 @@ build:
     - when: always
   script:
     - composer self-update
-    # Validate the composer.json file, install project and dev.
+    # Validate the composer.json file, install project.
     - if [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n;
         composer install -n --prefer-dist;
-        robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
       fi
+    # Install dev tools and node modules.
+    - robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
     - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core install
   allow_failure: false
 
@@ -89,14 +88,13 @@ security:
     - security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
 
 ################################################################################
-# Code quality jobs for Drupal 8+ based on PHPQA
-# https://github.com/EdgedesignCZ/phpqa
+# Code quality jobs for Drupal 9+
 # @todo codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
 ################################################################################
 
 phpcs:
   stage: qa
-  extends: .qa_template
+  extends: .job_template
   rules:
     - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PHPCS == "1"'
       when: never
@@ -109,44 +107,45 @@ phpcs:
         --report-junit=report-${CI_JOB_NAME}/phpcs_junit.xml
         ${CI_DIRS_QA_PHPCS}
 
-# @todo support --baseline-file
 phpmd:
   stage: qa
-  extends: .qa_template
+  extends: .job_template
   rules:
     - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PHPMD == "1"'
       when: never
     - when: on_success
   script:
-    - phpmd
-        ${CI_DIRS_QA_PHPMD}
-        xml
-        .gitlab-ci/.phpmd.xml
+    - phpmd ${CI_DIRS_QA_PHPMD} xml ${CI_QA_CONFIG_PHPMD}
         --exclude ${CI_QA_IGNORE}
         --suffixes ${CI_QA_SUFFIX}
-        --reportfile report-${CI_JOB_NAME}/phpmd.xml
+        $([[ -z "${CI_QA_PHPMD_BASELINE}" ]] && echo "" || echo "--baseline-file ${CI_QA_PHPMD_BASELINE}")
+        --reportfile report-$xsltproc{CI_JOB_NAME}/phpmd.xml
+  after_script:
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
 
-# @todo support --baseline
 phpstan:
   stage: qa
-  extends: .qa_template
+  extends: .job_template
   rules:
     - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PHPSTAN == "1"'
       when: never
     - when: on_success
   script:
-    - phpstan
-        analyze
-        --configuration .gitlab-ci/phpstan.neon
+    - phpstan analyze
+        --no-progress
+        --configuration ${CI_QA_CONFIG_PHPSTAN}
         --error-format junit
         ${CI_DIRS_QA_PHPSTAN} >> report-${CI_JOB_NAME}/phpstan_junit.xml
 
-parallel-lint:
+################################################################################
+# Code linter jobs for Drupal 9+
+################################################################################
+
+lint_php:
   stage: qa
-  extends: .qa_template
+  extends: .job_template
   rules:
-    - if: '$CI_SKIP_QA == "1" || $CI_SKIP_QA_PARALINT == "1"'
+    - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_PHP == "1"'
       when: never
     - when: on_success
   script:
@@ -155,18 +154,17 @@ parallel-lint:
         --exclude vendor
         -e ${CI_QA_SUFFIX}
         --checkstyle
-        ${CI_DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint.xml
+        ${CI_DIRS_LINT_PHP} >> report-${CI_JOB_NAME}/parallel-lint.xml
+  after_script:
     - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml
-
-################################################################################
-# Code lint jobs for Drupal 9
-################################################################################
+  # Detect critical error and should not be ignored.
+  allow_failure: false
 
 # This is a eslint report based on Drupal 9 standards.
 # https://www.drupal.org/docs/develop/standards/javascript
 lint_js:
   stage: qa
-  extends: .lint_template
+  extends: .job_template
   rules:
     - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_JS == "1"'
       when: never
@@ -174,35 +172,35 @@ lint_js:
   script:
     - node ${CI_WEB_ROOT}/core/node_modules/.bin/eslint
         --config ${CI_CONFIG_ESLINT}
-        --ignore-path ${CI_WEB_ROOT}/core/.eslintignore
+        --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
-        "${CI_DIRS_JS}"
+        "${CI_DIRS_LINT_JS}"
 
 # This is a eslint report for Yaml files.
 lint_yaml:
   stage: qa
-  extends: .lint_template
+  extends: .job_template
   rules:
     - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_YAML == "1"'
       when: never
     - when: on_success
   script:
     - node ${CI_WEB_ROOT}/core/node_modules/.bin/eslint
-        --config ${CI_CONFIG_ESLINT}
-        --ignore-path ${CI_WEB_ROOT}/core/.eslintignore
+        --config ${CI_CONFIG_ESLINT_YAML}
+        --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
         --ext .yml
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
-        "${CI_DIRS_YAML}"
+        "${CI_DIRS_LINT_YAML}"
 
 # Drupal 9 rules used here for stylelint to check css.
 # https://www.drupal.org/docs/develop/standards/css
 lint_css:
   stage: qa
-  extends: .lint_template
+  extends: .job_template
   rules:
     - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_CSS == "1"'
       when: never
@@ -211,10 +209,10 @@ lint_css:
     - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core add stylelint-junit-formatter
     - node ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint
         --config ${CI_CONFIG_STYLELINT}
-        --ignore-path ${CI_WEB_ROOT}/core/.stylelintignore
+        --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
         --custom-formatter ${CI_WEB_ROOT}/core/node_modules/stylelint-junit-formatter
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
-        "${CI_DIRS_CSS}"
+        "${CI_DIRS_LINT_CSS}"
 
 ################################################################################
 # Drupal tests.
@@ -228,25 +226,21 @@ phpunit_unit:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_UNITKERNEL == "1"'
       when: never
     - when: on_success
-  services:
-    - name: ${CI_SERVICE_DATABASE}
-      alias: db
   script:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml
     # Run PHPunit tests for unit, kernel, with coverage report.
     - XDEBUG_MODE=coverage ${CI_DOC_ROOT}/vendor/bin/phpunit
         --testsuite "${CI_PHPUNIT_TESTS}unit,${CI_PHPUNIT_TESTS}kernel"
-        $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
-        --configuration ${CI_WEB_ROOT}/core
+        $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
+        --configuration ${CI_PHPUNIT_CONFIGURATION}
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-text
         --log-junit report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
-        --verbose --debug
   after_script:
-    # [CODECOV] integration, need to set up CI environment variable 'CODECOV_TOKEN' to work.
+    # [CODECOV] integration, need to set up CI environment variable 'CI_CODECOV_TOKEN' to work.
     # see https://codecov.io
-    - if [ ! -z ${CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
+    - if [ ! -z ${CI_CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
         bash <(curl -s https://codecov.io/bash) -f "report-${CI_JOB_NAME}/coverage.xml" || true;
       fi
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
@@ -259,17 +253,13 @@ phpunit_func:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_FUNCTIONAL == "1"'
       when: never
     - when: on_success
-  services:
-    - name: ${CI_SERVICE_DATABASE}
-      alias: db
   script:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ${CI_DOC_ROOT}/vendor/bin/phpunit
         --testsuite "${CI_PHPUNIT_TESTS}functional"
-        $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
-        --configuration ${CI_WEB_ROOT}/core
+        $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
+        --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit report-${CI_JOB_NAME}/phpunit-functional_junit.xml
-        --verbose --debug
   after_script:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
@@ -285,17 +275,16 @@ phpunit_funcjs:
     - name: ${CI_SERVICE_DATABASE}
       alias: db
     - name: ${CI_SERVICE_CHROMEDRIVER}
-      alias: chrome
+      alias: chromedriver
   script:
     # Check Chromedriver.
-    - curl -s http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
+    - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data ${CI_DOC_ROOT}/vendor/bin/phpunit
         --testsuite "${CI_PHPUNIT_TESTS}functional-javascript"
-        $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
-        --configuration ${CI_WEB_ROOT}/core
+        $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
+        --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
-        --verbose --debug
   after_script:
     - mkdir -p report-${CI_JOB_NAME}/browser_output
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
@@ -305,34 +294,30 @@ nightwatchjs:
   stage: tests
   extends: .test_template
   rules:
-    - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_NIGHTWATCH == "1"'
+    - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_NIGHTWATCHJS == "1"'
       when: never
     - when: on_success
   services:
     - name: ${CI_SERVICE_DATABASE}
       alias: db
     - name: ${CI_SERVICE_CHROMEDRIVER}
-      alias: chrome
+      alias: chromedriver
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
     # Install packages from Drupal.
     - yarn --cwd ${CI_WEB_ROOT}/core install
     # Ensure chrome is running.
-    - curl -s http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
+    - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # Update chromedriver as Drupal package.json can be late on chrome version.
     - |
       yarn --cwd ${CI_WEB_ROOT}/core upgrade \
-      chromedriver@$(curl -s http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
+      chromedriver@$(curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Prepare variables.
     - envsubst < ${CI_WEB_ROOT}/core/.env.tmpl > ${CI_WEB_ROOT}/core/.env
     # Launch Nightwatch tests from core folder.
     - yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
   artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-      - "report-${CI_JOB_NAME}/"
     reports:
       junit: "report-${CI_JOB_NAME}/Tests/*.xml"
 
@@ -373,20 +358,18 @@ behat:
 # Code metrics, would probably make sense only for a tag release.
 ################################################################################
 
-# Phpmetrics, Phploc, Pdepend report, no pass or failure as it's just informative.
-# @todo phpmetrics with junit report from code-coverage?
+# Metrics tools defined in .phpqa.yml file from CI_METRICS_CONFIG_PHPQA.
 metrics:
   stage: metrics
-  extends: .metrics_template
+  extends: .job_template
   rules:
     - if: '$CI_SKIP_METRICS == "1"'
       when: never
     - when: always
   script:
-    - phpqa --tools ${CI_TOOLS_METRICS}
-        --config ${CI_PROJECT_DIR}/.gitlab-ci
+    - phpqa --config ${CI_METRICS_CONFIG_PHPQA}
         --buildDir "report-${CI_JOB_NAME}"
-        --analyzedDirs "${CI_DIRS_PHP}"
+        --analyzedDirs "${CI_DIRS_PHP_METRICS}"
 
 ################################################################################
 # Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci

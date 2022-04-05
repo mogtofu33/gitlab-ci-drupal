@@ -1,56 +1,11 @@
 # Default common config for Phpqa.
 # For more options see:
 #   https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml
-phpcs:
-    standard:
-        - Drupal
-        - DrupalPractice
-    ignoreWarnings: true
-    # https://github.com/squizlabs/PHP_CodeSniffer/wiki/Reporting
-    reports:
-        cli:
-            - full
-        file:
-            # checkstyle is always included and overridden
-            checkstyle: checkstyle.xml
-            junit: phpcs-unit.xml
-
-phpmd:
-    standard: .phpmd.xml
-    ignoreParsingErrors: true
-
-pdepend:
-    # Must be copied in the job, see metrics:script.
-    # coverageReport: /tmp/coverage.xml
-
-phpcpd:
-    minLines: 5
-    minTokens: 70
-
-phpmetrics:
-    # Choose phpunit to use for metrics.
-    # Must be copied in the job, see metrics:script.
-    # junit: /tmp/junit-unit.xml
-    # junit: /tmp/junit-func.xml
-    # junit: /tmp/junit-funcjs.xml
-    # Composer usage for a project can slow a lot Phpmetrics.
-    # composer: /opt/drupal
-
-phpstan:
-    # https://phpstan.org/user-guide/rule-levels
-    level: 5
-    # https://phpstan.org/config-reference
-    # https://github.com/mglaman/phpstan-drupal#usage
-    standard: phpstan.neon
-
-# Php file extensions to parse.
 phpqa:
+    tools: phpmetrics,phploc,pdepend
     ignoredDirs: "vendor,bootstrap,tests,.gitlab-ci"
     ignoredFiles: "Readme.md,style.css,print.css,*Test.php,RoboFile.php"
-    # report: true
-    # verbose: true
     execution: parallel
-    # execution: no-parallel
     extensions:
         - php
         - inc
@@ -59,3 +14,13 @@ phpqa:
         - test
         - profile
         - theme
+
+pdepend:
+    # coverageReport: /tmp/coverage.xml
+
+phpmetrics:
+    # junit: /tmp/junit-unit.xml
+    # junit: /tmp/junit-func.xml
+    # junit: /tmp/junit-funcjs.xml
+    ## Composer usage for a project can slow a lot Phpmetrics.
+    # composer: /opt/drupal

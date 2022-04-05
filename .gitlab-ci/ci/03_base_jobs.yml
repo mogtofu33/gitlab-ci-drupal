@@ -2,7 +2,7 @@
 # Common definition for all qa jobs.
 ################################################################################
 
-.qa_template:
+.job_template:
   extends: .artifacts_reports
   dependencies:
     - build

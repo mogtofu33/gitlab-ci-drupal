@@ -2,22 +2,39 @@
 
 Jobs are grouped by stages, to override stages, edit your `.gitlab-ci.yml` file.
 
+For example to add a deploy stage:
+
+```yaml
+stages:
+  - build
+  - qa
+  - tests
+  - metrics
+  # Add new stages.
+  - deploy to testing
+  - deploy to production
+```
+
 ### Available jobs
 
-Name | Detail | Drupal install | Report
+Name | Detail | Report
 ---|---|---|:---:
-Build | If a project : `composer install`, can be used to add build steps (composer run-script, grunt, webpack, yarn...) | No | No
-Unit, kernel and coverage | Phpunit unit and kernel tests with coverage. Codecov.io support see [Codecov.io support](/advanced-usage/#codecovio-support-in-phpunit-code-coverage) | No | xml and html
-Functional | Phpunit functional test (Browser based tests) | No | xml and html
-Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | Yes (included) | xml and html
-Nightwatch Js | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | Yes (included) | text and html
-Security | Symfony security-checker, look at versions in composer.lock | No | text
-Behat tests | Support Behat tests from `behat_tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | Yes | html
-Code quality | Code sniffer with _Drupal standards_, _Drupal Best practice_s standard. Phpstan, Phpmd, Phpcpd | No | html
-Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules) | No | html
-Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules) | No | text
-Php metrics | Code metrics ans stats in a nice html report with phpmetrics, phploc, pdepend | No | html
-Deploy to... | Sample of deploy jobs with ssh to a host | No | No
+Build | If a project : `composer install`, can be used to add build steps (composer run-script, grunt, webpack, yarn...) | No
+Security | Symfony security-checker, look at versions in composer.lock | junit xml
+PHPcs | Code sniffer with _Drupal standards_, _Drupal Best practice_ | junit xml
+PHPMD | Code analysis with PHPMD | junit xml
+PHPStan | Static code analysis with PHPStan | junit xml
+PHP lint | Lint PHP code with PHP Parallel lint | junit xml
+Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules by default) | junit xml
+Yaml lint | Yaml check with eslint) | junit xml
+Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules by default) | junit xml
+Unit, kernel | Phpunit unit and kernel tests with coverage. Codecov.io support see [Codecov.io support](/advanced-usage/#codecovio-support-in-phpunit-code-coverage) | junit xml
+Functional | Phpunit functional test (Browser based tests) | junit xml
+Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | junit xml
+NightwatchJs | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | junit xml
+Behat tests | Support Behat tests from `behat_tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | junit xml
+Php metrics | Code metrics ans stats in a nice html report with phpmetrics, phploc, pdepend | Html report from job
+Deploy to... | Sample of deploy jobs with ssh to a host | No
 
 ### CI image tools
 
@@ -33,20 +50,19 @@ Nothing could be done without a bunch of awesome humans building awesome tools.
 - [Security-checker](https://github.com/fabpot/local-php-security-checker)
 - [Behat](http://behat.org/en/latest)
 
-Code quality is done using the wonderful Phpqa, a tool that integrate other Php
-quality and analysis tools:
+Code quality is done using the wonderful PHP projects:
+- [Phploc](https://github.com/sebastianbergmann/phploc)
+- [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
+- [Phpmd](https://github.com/phpmd/phpmd)
+- [PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
+- [Pdepend](https://pdepend.org/)
+- [Phpmetrics](https://www.phpmetrics.org)
+- [Phpstan](https://github.com/phpstan/phpstan)
+- [Phpstan for Drupal code](https://github.com/mglaman/phpstan-drupal)
 
+Code metrics is done using the wonderful Phpqa, a tool that integrate other Php
+tools:
 - [Phpqa](https://github.com/EdgedesignCZ/phpqa)
-  - [Phploc](https://github.com/sebastianbergmann/phploc)
-  - [Phpcpd](https://github.com/sebastianbergmann/phpcpd)
-  - [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
-  - [Phpmd](https://github.com/phpmd/phpmd)
-  - [PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
-  - [Pdepend](https://pdepend.org/)
-  - [Phpmetrics](https://www.phpmetrics.org)
-  - [Phpstan](https://github.com/phpstan/phpstan)
-  - [Phpstan for Drupal code](https://github.com/mglaman/phpstan-drupal)
-
 ### Custom configuration
 
 You can override any config by copying the file from `.gitlab-ci` folder on your project.
@@ -88,11 +104,11 @@ Some examples of common tasks:
 
 // Download a remote file:
 $myFile = 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/README.md';
-if ($this->taskExec("curl -fsSL $myFile -o $this->docRoot . '/ReAdMe.md")->run()->wasSuccessful()) {
+if ($this->taskExec("curl -fsSL $myFile -o $this->docRoot . '/README.md")->run()->wasSuccessful()) {
   $this->say('File downloaded!');
 }
 
-// Run a gulp task.:
+// Run a gulp task.
 $this->taskGulpRun()
   ->dir($this->webRoot . 'themes/my_theme_with_gulp_task')
   ->run();
@@ -102,7 +118,7 @@ $this->taskGulpRun()
 $this->taskComposerRequire()
   ->noInteraction()
   ->noAnsi()
-  ->workingDir($this->docRoot);
+  ->workingDir($this->docRoot)
   ->dependency('drupal/webform', '^5.13')
   ->run();
 
@@ -134,9 +150,8 @@ The CI will use this key for any external authentication.
 
 ### Nightwatch.js
 
-Since Drupal 8.6, [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch) is included as a Javascript test framework.
-
-For now it is not really ready to be used as a replacement for _functional Javascript_, but soon...
+Since Drupal 8.6, [Nightwatch.js](https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch)
+is included as a Javascript test framework.
 
 There is a variable in this project that you can set in Gitlab to select the
 tests Nightwatch will run:
@@ -156,26 +171,22 @@ tests.
 
 #### Drupal installation
 
-To install Drupal from a db dump, you need a dump file located in a dump folder at the root of your project.
+To install Drupal from a db dump, you need to set `CI_BEHAT_INSTALL_DUMP` variable to a local or remote dump file.
 
-This dump file must follow a naming convention: `dump-DRUPAL_VERSION_PROFILE.sql`, where:
-- `DRUPAL_VERSION` is your drupal version, eg: 9.2 or 9.3
-- `PROFILE` is your profile name set as `CI_BEHAT_INSTALL_PROFILE`
+The dump file must be a SQL export (no pg_dump) and can be compressed with gzip or zip.
 
 To choose the Drupal profile for installation, you can set the `CI_BEHAT_INSTALL_PROFILE` variable.
 
 Name | Value
 -|-
 CI_BEHAT_INSTALL_PROFILE | minimal
+CI_BEHAT_INSTALL_DUMP | my-dump.sql.zip
 
 For Behat, Selenium is not needed thanks to the
 [Behat Chrome extension.](https://gitlab.com/DMore/behat-chrome-extension.git).
 
-Html output of the Behat report is done thanks to
-[Behat Html formatter plugin](https://github.com/dutchiexl/BehatHtmlFormatterPlugin).
-
 If you need different configuration for Behat, you can look and override variable
-`BEHAT_PARAMS` in `variables_test.yml`
+`BEHAT_PARAMS` in [.gitlab-ci/ci/variables.yml](.gitlab-ci/ci/variables.yml)
 
 ### PHPunit tests
 
@@ -185,22 +196,22 @@ tests in Drupal 8/9, see
 [Type of tests in Drupal 8/9](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
 The tests configuration is defined in [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml).
+You can set a specific configuration file with `CI_PHPUNIT_CONFIGURATION`.
 
-There is 2 set of tests location:
+This project include a specific phpunit configuration:
 
 - Custom modules and themes only, those are prefixed with `custom` in `phpunit.xml`, as `customunit, customkernel, customfunctional, customfunctional-javascript`
   - All `tests/` from `modules/custom/**` and `themes/custom/**`
-- Drupal core tests, will look in all folders, defined as `unit, kernel, functional, functional-javascript`
-are not really used and test coverage do not match this scenario.
 
 There is a Gitlab variable to select the tests and optional group:
 
 Name | Value
 -|-
 CI_PHPUNIT_TESTS | custom
-PHPUNIT_GROUP | my_group_tests
+CI_PHPUNIT_GROUP | my_group_tests
+CI_PHPUNIT_CONFIGURATION | configuration file, default `.gitlab-ci/phpunit.xml`
 
-Set `CI_PHPUNIT_TESTS` _empty_ to run all tests.
+If `CI_PHPUNIT_TESTS` is _empty_ all tests will be run.
 
 To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml) in your project
 and adapt for your tests.
@@ -210,20 +221,23 @@ and adapt for your tests.
 Code coverage job support [Codecov.io](https://codecov.io/).
 
 After creating an account on [Codecov.io](https://codecov.io/), create from the
-**Gitlab UI** _> Settings > CI/CD > Variables_ a variable `CODECOV_TOKEN` with
+**Gitlab UI** _> Settings > CI/CD > Variables_ a variable `CI_CODECOV_TOKEN` with
 your token value.
 
 ### Code Quality
 
-All rules try to match a [Drupal 8 / 9](https://www.drupal.org) project.
+All rules try to match a [Drupal 9](https://www.drupal.org) project.
 
-To adapt some rules, first look at `.gitlab-ci/.phpqa.yml`, `.gitlab-ci/.phpmd.xml`, `.gitlab-ci/phpstan.neon`.
+To adapt some rules, first look at `.gitlab-ci/.phpmd.xml`, `.gitlab-ci/phpstan.neon`.
 
-Copy those files in your project `.gitlab-ci` folder to override.
+Copy those files in your project and configure variables to override.
 
-More options see:
+Name | Value
+-|-
+CI_QA_CONFIG_PHPSTAN | .gitlab-ci/phpstan.neon
+CI_QA_CONFIG_PHPMD | .gitlab-ci/.phpmd.xml
 
-- [Phpqa configuration](https://github.com/EdgedesignCZ/phpqa#advanced-configuration---phpqayml)
+More details see:
 - [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
 - [Phpstan phpstan.neon](https://phpstan.org/config-reference)
 - [Phpmd phpmd.xml](https://phpmd.org/rules/index.html)
@@ -231,11 +245,11 @@ More options see:
 #### Phpstan
 
 As a starting point to adapt Phpstan rules for your code, copy the `.gitlab-ci/phpstan.neon` file from this project
-to your `.gitlab-ci/`.
+to your `.gitlab-ci/` or to the root of your project and change `CI_QA_CONFIG_PHPSTAN`.
 
 ##### Ignore errors
 
-To ignore some errors as false positive for Drupal, create a `ignoreErrors:` section in your phpstan.neon file.
+To ignore some errors as false positive for Drupal, create a `ignoreErrors:` section in your `phpstan.neon` file.
 
 Ignore errors that are not in your code will still trigger errors because of unmatched, uncomment
 `reportUnmatchedIgnoredErrors: false` to ignore unmatched ignored errors.
@@ -291,11 +305,16 @@ Eslint is based on the official
 Stylelint is based on the official
 [Drupal 8/9 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
-Both provide a html report that you can browse from within Gitlab CI.
+You can adapt rules and ignore for each jobs.
 
-_Note:_ As this project is meant for Drupal, there is no override for these files.
-To setup your own rules for your css and js file you need to override these jobs
-and include your own config file.
+Name | Value
+-|-
+CI_CONFIG_ESLINT | ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
+CI_CONFIG_ESLINT_IGNORE | ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
+CI_CONFIG_ESLINT_YAML | ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
+CI_CONFIG_ESLINT_IGNORE_YAML | ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
+CI_CONFIG_STYLELINT | ${CI_DRUPAL_WEB_ROOT}/core/.stylelintrc.json
+CI_CONFIG_STYLELINT_IGNORE | ${CI_WEB_ROOT}/core/.stylelintignore
 
 ### Metrics jobs
 
@@ -303,24 +322,7 @@ Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org),
 [Phploc](https://github.com/sebastianbergmann/phploc) and
 [Pdepend](https://pdepend.org/).
 
-_Note:_ Currently this project do not support analyzing coverage for Pdepend
-and junit report from Phpunit tests for Phpmetrics.
-
-When a test failed, a screen capture is recorded in the reports.
-
-#### Drupal installation
-
-To install Drupal from a db dump, you need a dump file located in a dump folder at the root of your project.
-
-This dump file must follow a naming convention: `dump-DRUPAL_VERSION_PROFILE.sql`, where:
-- `DRUPAL_VERSION` is your drupal version, eg: 9.2 or 9.3
-- `PROFILE` is your profile name set as `PA11Y_INSTALL_PROFILE`
-
-To choose the Drupal profile for installation, you can set the `PA11Y_INSTALL_PROFILE` variable.
-
-Name | Value
--|-|
-PA11Y_INSTALL_PROFILE | minimal
+PHPqa is used to provide a HTML report that you can access from the job artifacts and kept by default 1 week.
 
 ### Composer config
 
@@ -331,7 +333,7 @@ Name | Detail | Default
 CI_COMPOSER_REPO_PACKAGIST_URL | https://getcomposer.org/doc/01-basic-usage.md#packagist | https?://repo.packagist.org
 CI_COMPOSER_GITHUB_OAUTH_TOKEN | https://getcomposer.org/doc/06-config.md#github-oauth |
 
-_Note_: The Github token must be a private variable.
+_Note_: The Github token MUST be a private variable.
 
 ### Yarn config
 
@@ -340,37 +342,6 @@ In case you want to set a different url for yarn registry, you can set variables
 Name | Default
 -|-
 CI_YARN_REGISTRY | https://registry.yarnpkg.com
-
-### All in one report
-
-[WIP]
-
-A report of all tests in one job can be used through a simple dashboard job.
-
-To test it, add this to your `.gitlab-ci.yml` file.
-
-```yaml
-stages:
-  - build
-  - tests
-  - metrics
-  - reports
-
-pages:
-  stage: reports
-  extends: .simple_dashboard
-  rules:
-    - when: always
-```
-
-This report can include some status if you add a Gitlab token with `read_api`
-from your account as a variable in Gitlab UI:
-
-* Gitlab CI UI > settings > CI/CD
-
-Name | Value
--|-
-CI_GITLAB_TOKEN | Gitlab token with `read_api`
 
 ### Release of code to Gitlab and Drupal.org
 
@@ -466,12 +437,13 @@ deploy image:
     DOCKER_DRIVER: overlay2
     DOCKER_BUILDKIT: 1
   before_script:
-    # Clean dev modules from Drupal
+    # Clean dev modules from Drupal.
     - composer --no-dev update
+    - rm -rf ${CI_DRUPAL_WEB_ROOT}/core/node_modules
     - docker --version
   script:
     # Create docker image and include our Drupal code.
-    - docker build --compress --tag $- docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG ./.gitlab-ci
+    - docker build --compress --tag $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG ./.gitlab-ci
     - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME
     # Sample to push to Docker Hub.
     - docker tag $CI_REGISTRY_IMAGE/$IMAGE_NAME $RELEASE_IMAGE/$IMAGE_NAME

@@ -115,9 +115,9 @@ class RoboFile extends Tasks {
    */
   protected $ciFiles = [
     'core' => [
+      '.env.tmpl',
       '.eslintignore',
       '.stylelintignore',
-      '.env.tmpl',
       'phpunit.xml',
     ],
     'ci' => [
@@ -304,7 +304,6 @@ class RoboFile extends Tasks {
       $task
         ->dependency('drupal/drupal-extension', '~4.1')
         ->dependency('dmore/behat-chrome-extension', '^1.3')
-        ->dependency('emuse/behat-html-formatter', '0.2.*')
         ->dependency('friends-of-behat/mink-extension', '^2.6')
         ->dependency('dmore/chrome-mink-driver', '2.8.1-beta1');
     }

@@ -15,17 +15,10 @@ I would like to:
 - Add a variable for artifacts expire_in value, when this is merged:
 https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/1893
 
-- Replace chromedriver with Drupal official image `drupalci/webdriver-chromedriver:production`
-
-- Replace Apache webserver by PHP built in
+- Replace Yarn and node commands with a docker service
 
 - Add a matrix option like Travis to test against multiple Php versions and
 databases when [Gitlab-Ci support it](https://gitlab.com/gitlab-org/gitlab/issues/23405)
-
-- Add support for SQLite and PgSQL database:
-  - https://gitlab.com/drupalspoons/composer-plugin/-/blob/2.9.0/templates/.gitlab-ci.yml#L120
-
-- Add SQLite `:memory:`, see https://www.drupal.org/node/3137842
 
 - Add Codequality report as:
   - https://docs.gitlab.com/ee/ci/yaml/artifacts_reports.html#artifactsreportscobertura

@@ -44,7 +44,11 @@
   CI_PHPUNIT_TESTS: "custom"
 
   # Specify a group of tests to run rather than all tests in the suite.
-  # PHPUNIT_GROUP: my_group_1,my_group_2
+  # CI_PHPUNIT_GROUP: my_group_1,my_group_2
+
+  # Folder with the phpunit.xml file, default is to copy the file from
+  # ./gitlab-ci/ folder to the Drupal core folder.
+  CI_PHPUNIT_CONFIGURATION: ${CI_WEB_ROOT}/core
 
   # Nightwatch.js tests to run.
   # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
@@ -58,12 +62,8 @@
   # If dump, select 'dump' profile and fill local or remote file.
   # CI_BEHAT_INSTALL_PROFILE: "dump"
   # Support local or remote file with extensions:
-  #   .sql, .sql.gz, .pg_dump, .pg_dump.gz
+  # .sql, .sql.gz, .sql.zip
   CI_BEHAT_INSTALL_DUMP: ""
-
-  # See Phpqa available tools:
-  # https://github.com/EdgedesignCZ/phpqa#available-tools
-  CI_TOOLS_METRICS: "phpmetrics,phploc,pdepend"
 
   # Composer override to use github oauth token.
   # https://getcomposer.org/doc/06-config.md#github-oauth
@@ -76,41 +76,46 @@
   # CI_YARN_REGISTRY: "https://registry.yarnpkg.com"
 
   ##############################################################################
-  # List of CI_DIRS_* variables to define dirs to analyze for specific jobs.
+  # List of variables to set some specific configuration and files to validate.
   #
   # Code quality dirs, must include your PHP code to check.
   CI_DIRS_QA_PHPCS: "${CI_DRUPAL_WEB_ROOT}/**/custom"
-  CI_DIRS_QA_PHPSTAN: "${CI_DIRS_QA_PHPCS}"
-  CI_DIRS_QA_PHPCPD: "${CI_DIRS_QA_PHPCS}"
-  CI_DIRS_QA_PARALINT: "${CI_DIRS_QA_PHPCS}"
+  CI_DIRS_QA_PHPSTAN: "${CI_DRUPAL_WEB_ROOT}/**/custom"
   CI_DIRS_QA_PHPMD: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
+  CI_DIRS_LINT_PHP: "${CI_DRUPAL_WEB_ROOT}/**/custom"
   #
-  CI_QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
   CI_QA_IGNORE: "*/vendor/*,*/bootstrap/*,*/tests/*,*/.gitlab-ci/*,Readme.md,style.css,print.css,*Test.php,RoboFile.php"
   CI_QA_SUFFIX: "php,inc,module,install,test,profile,theme"
-  CI_QA_PHPCPD_MIN_LINES: 5
-  CI_QA_PHPCPD_MIN_TOKEN: 70
   #
-  # Eslint / Stylelint files to test.
+  CI_QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
+  #
+  CI_QA_CONFIG_PHPSTAN: .gitlab-ci/phpstan.neon
+  CI_QA_CONFIG_PHPMD: .gitlab-ci/phpstan.neon
+  # For PHPMD, generate and include a baseline file, path relative to the root.
+  # @see https://phpmd.org/documentation/
+  # CI_QA_PHPMD_BASELINE: phpmd.baseline.xml
+  #
+  # Eslint / Stylelint settings.
   #
   # Configuration files, default is Drupal used for core.
   CI_CONFIG_ESLINT: ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
+  CI_CONFIG_ESLINT_IGNORE: ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
+  CI_CONFIG_ESLINT_YAML: ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
+  CI_CONFIG_ESLINT_IGNORE_YAML: ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
   CI_CONFIG_STYLELINT: ${CI_DRUPAL_WEB_ROOT}/core/.stylelintrc.json
+  CI_CONFIG_STYLELINT_IGNORE: ${CI_DRUPAL_WEB_ROOT}/core/.stylelintignore
   #
   # Space separated for multiple folders.
-  # Default is to check files under all custom folders.
-  CI_DIRS_JS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.js"
-  CI_DIRS_YAML: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.yml"
-  CI_DIRS_CSS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/css/*.css"
+  CI_DIRS_LINT_JS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.js"
+  CI_DIRS_LINT_YAML: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.yml"
+  CI_DIRS_LINT_CSS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/css/*.css"
   #
-  # Twig templates files to test.
-  CI_DIRS_TWIG: "${CI_DRUPAL_WEB_ROOT}/themes/custom"
+  # Metrics settings.
   #
-  # phpmetrics / phpstats dirs to include.
-  #
+  # Folder containing .phpqa.yml file.
+  CI_METRICS_CONFIG_PHPQA: ${CI_PROJECT_DIR}/.gitlab-ci
   # Comma separated for multiple folders.
-  # Default is to check all custom dirs.
-  CI_DIRS_PHP: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
+  CI_DIRS_PHP_METRICS: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
 
   ##############################################################################
   #
@@ -118,30 +123,22 @@
   CI_SKIP_BUILD: 0
   #
   ##############################################################################
-  # Symfony security check on composer.lock
+  # Security check on composer.lock
   CI_SKIP_SECURITY: 0
+  #
   # Skip all tests jobs.
   CI_SKIP_TESTS: 0
   #
   # OR skip single jobs in tests.
-  # For tests information see
-  # https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8.
   #
-  # PHPunit unit,kernel with code coverage and optional Codecove.io support
+  # PHPunit unit,kernel with code coverage and optional Codecove.io support.
   CI_SKIP_TEST_UNITKERNEL: 0
-  # PHPunit functional tests (browser tests)
   CI_SKIP_TEST_FUNCTIONAL: 0
-  # PHPunit functional javascript tests (browser with javascript tests)
   CI_SKIP_TEST_FUNCTIONALJS: 0
-  # Nightwatch tests (browser with javascript tests), since Drupal 8.6
-  # Currently not fully ready for Drupal so skip by default.
-  CI_SKIP_TEST_NIGHTWATCH: 0
+  CI_SKIP_TEST_NIGHTWATCHJS: 0
   #
-  # Third party tests.
-  # Behat tests from behat_tests folder. Demo tests, skip by default.
+  # Behat tests from behat_tests folder.
   CI_SKIP_TEST_BEHAT: 0
-  # Accessibility test, skip by default.
-  CI_SKIP_TEST_PA11Y: 0
   #
   ##############################################################################
   # Skip all QA jobs.
@@ -152,7 +149,6 @@
   CI_SKIP_QA_PHPCS: 0
   CI_SKIP_QA_PHPMD: 0
   CI_SKIP_QA_PHPSTAN: 0
-  CI_SKIP_QA_PARALINT: 0
   #
   ##############################################################################
   # Skip all lint jobs.
@@ -160,14 +156,10 @@
   #
   # OR skip single jobs in lint.
   #
-  # CSS lint job with stylelint.
+  CI_SKIP_LINT_PHP: 0
   CI_SKIP_LINT_CSS: 0
-  # Javascript lint job with eslint.
   CI_SKIP_LINT_JS: 0
-  # Yaml lint job with eslint.
   CI_SKIP_LINT_YAML: 0
-  # Twig lint job using symfony console.
-  CI_SKIP_LINT_TWIG: 0
   #
   ##############################################################################
   # Skip all metrics jobs (phpmetrics, phploc, pdepend)
@@ -180,7 +172,8 @@
   #
   CI_DB_DRIVER: mysql
   # CI_DB_DRIVER: pgsql
-  ## SQLite require specific SIMPLETEST_DB value, see below.
+  # SQLite require specific SIMPLETEST_DB value and a minimal database service
+  # like busybox.
   # CI_DB_DRIVER: sqlite
   #
   # Database service as docker image and tag.
@@ -237,7 +230,7 @@
           ]
         }
       },
-      "http://chrome:${CI_SERVICE_CHROMEDRIVER_PORT}"
+      "http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}"
     ]
   #
   # Behat tests.
@@ -259,7 +252,7 @@
   # https://peter.sh/experiments/chromium-command-line-switches/
   CHROME_OPTS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=${CI_SERVICE_CHROME_PORT}"
   #
-  # Nightwatch settings.
+  # NightwatchJS settings.
   #
   # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md#running-nightwatch-tests
   # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/.env.example

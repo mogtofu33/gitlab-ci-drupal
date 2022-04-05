@@ -1,9 +1,9 @@
 # This is a sample configuration working with https://gitlab.com/mog33/gitlab-ci-drupal
 default:
   suites:
-    # Name must have suffix unit, so junit report will be behatunit.xml
-    # Gitlab CI will check for a *unit.xml file.
-    defaultunit:
+    # Name must have suffix unit, so junit report will be test_junit.xml
+    # Gitlab CI will check for a *_junit.xml file.
+    test_junit:
       contexts:
         - FeatureContext
         - Drupal\DrupalExtension\Context\DrupalContext
@@ -14,7 +14,6 @@ default:
   extensions:
     DMore\ChromeExtension\Behat\ServiceContainer\ChromeExtension: ~
 
-    # Settings for CI.
     Behat\MinkExtension:
       browser_name: chrome
       base_url: http://build

@@ -1,10 +1,10 @@
-# Gitlab CI for Drupal 8 / 9
+# Gitlab CI for Drupal 9 / 10
 
 <img src="https://www.drupal.org/files/druplicon-small.png" width="175" style="margin-right:10%;">
 <img src="https://about.gitlab.com/images/ci/gitlab-ci-cd-logo_2x.png" width="175">
 
 [Gitlab CI](https://docs.gitlab.com/ee/ci/README.html) for a
-[Drupal 8 / 9](https://www.drupal.org) module / theme or full project.
+[Drupal](https://www.drupal.org) module / theme or full project.
 
 Include **Build**, **Testing**, **Code quality**, **Metrics** and more...
 
@@ -15,7 +15,8 @@ Current branch **4.x-dev** is based on an include behavior, ie you don't have to
 ## Prerequisites
 
 - Gitlab CI with a [runner that support docker](https://docs.gitlab.com/runner/)
-- Minimal understanding of [Gitlab CI](https://about.gitlab.com/stages-devops-lifecycle/continuous-integration/) and [Gitlab CI Yaml](https://docs.gitlab.com/ee/ci/yaml)
+- Minimal understanding of [Gitlab CI](https://about.gitlab.com/stages-devops-lifecycle/continuous-integration/)
+and [Gitlab CI Yaml](https://docs.gitlab.com/ee/ci/yaml)
 
 ## Documentation
 
@@ -27,8 +28,7 @@ Current branch **4.x-dev** is based on an include behavior, ie you don't have to
 
 Push your module / theme to a Gitlab with CI and runners enabled.
 
-[Gitlab.com](https://gitlab.com) offer some CI pipeline minutes/month on free
-accounts.
+[Gitlab.com](https://gitlab.com) offer some CI pipeline minutes/month on free accounts.
 
 - Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/starter.gitlab-ci.yml)
 file as a `.gitlab-ci.yml` at the root of your Drupal module or theme
@@ -53,8 +53,7 @@ For more option and details see the [full documentation](https://mog33.gitlab.io
 
 Push your project to a Gitlab with CI and runners enabled.
 
-[Gitlab.com](https://gitlab.com) offer some CI pipeline minutes/month on free
-accounts.
+[Gitlab.com](https://gitlab.com) offer some CI pipeline minutes/month on free accounts.
 
 Assuming your project include a `composer.json` file from the
 [Drupal project](https://www.drupal.org/docs/develop/using-composer/using-composer-to-install-drupal-and-manage-dependencies).
@@ -67,7 +66,7 @@ Assuming your project include a `composer.json` file from the
 
 - Put your custom code in the `web/modules/custom` and `web/themes/custom` folders of your project.
 
-- Create and push your branch, see the pipeline running for basic code standard and lint.
+- Create and push your branch, see the pipeline running for basic code standard, lint, tests and metrics.
 
 External project demo: https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-project
 

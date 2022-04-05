@@ -6,6 +6,9 @@
   extends: .artifacts_reports
   dependencies:
     - build
+  services:
+    - name: ${CI_SERVICE_DATABASE}
+      alias: db
   before_script:
     # Start Apache first to ensure it's running.
     - apache2-foreground&
