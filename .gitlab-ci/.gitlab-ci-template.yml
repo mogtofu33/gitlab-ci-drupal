@@ -233,7 +233,7 @@ phpunit_unit:
       alias: db
   script:
     # Prepare report folders for coverage.
-    - mkdir -p report-${CI_JOB_NAME}/coverage-xml report-${CI_JOB_NAME}/coverage-html
+    - mkdir -p report-${CI_JOB_NAME}/coverage-xml
     # Run PHPunit tests for unit, kernel, with coverage report.
     - XDEBUG_MODE=coverage ${CI_DOC_ROOT}/vendor/bin/phpunit
         --testsuite "${CI_PHPUNIT_TESTS}unit,${CI_PHPUNIT_TESTS}kernel"
@@ -242,7 +242,7 @@ phpunit_unit:
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-text
         --log-junit report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
-        --verbose
+        --verbose --debug
   after_script:
     # [CODECOV] integration, need to set up CI environment variable 'CODECOV_TOKEN' to work.
     # see https://codecov.io
@@ -269,7 +269,7 @@ phpunit_func:
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${CI_WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/phpunit-functional_junit.xml
-        --verbose
+        --verbose --debug
   after_script:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
@@ -295,7 +295,7 @@ phpunit_funcjs:
         $([[ -z "${PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${PHPUNIT_GROUP}")
         --configuration ${CI_WEB_ROOT}/core
         --log-junit report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
-        --verbose
+        --verbose --debug
   after_script:
     - mkdir -p report-${CI_JOB_NAME}/browser_output
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "report-${CI_JOB_NAME}/browser_output" || true
