@@ -124,8 +124,9 @@ class RoboFile extends Tasks {
       '.phpmd.xml',
       '.phpqa.yml',
       'phpstan.neon',
-      'phpmd_junit.xslt',
       'settings.local.php',
+      'checkstyle2junit.xslt',
+      'phpmd2junit.xslt',
     ],
   ];
 

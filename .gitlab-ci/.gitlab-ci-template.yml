@@ -140,8 +140,7 @@ phpmd:
         --exclude ${QA_IGNORE}
         --suffixes ${QA_SUFFIX}
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
-    - apt update && apt install -y xsltproc
-    - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd_junit.xslt report-${CI_JOB_NAME}/phpmd.xml
+    - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
   allow_failure: true
 
 # @todo support --baseline
@@ -159,26 +158,6 @@ phpstan:
         --error-format junit
         ${DIRS_QA_PHPSTAN} >> report-${CI_JOB_NAME}/phpstan_junit.xml
 
-# @todo junit format
-phpcpd:
-  stage: qa
-  extends: .qa_template
-  rules:
-    - if: '$SKIP_QA == "1" || $SKIP_QA_PHPSTAN == "1"'
-      when: never
-    - when: on_success
-  script:
-    - curl -4fsSL https://phar.phpunit.de/phpcpd.phar -o phpcpd.phar
-    - phpcpd
-        --exclude ${QA_IGNORE}
-        --suffix ${QA_SUFFIX}
-        --min-lines ${QA_PHPCPD_MIN_LINES}
-        --min-tokens ${QA_PHPCPD_MIN_TOKEN}
-        --log-pmd "report-${CI_JOB_NAME}/phpcpd_junit.xml"
-        ${DIRS_QA_PHPCPD}
-  allow_failure: true
-
-# @todo junit format
 parallel-lint:
   stage: qa
   extends: .qa_template
@@ -188,9 +167,12 @@ parallel-lint:
     - when: on_success
   script:
     - parallel-lint
+        --no-progress
         --exclude vendor
+        -e ${QA_SUFFIX}
         --checkstyle
-        ${DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint_junit.xml
+        ${DIRS_QA_PARALINT} >> report-${CI_JOB_NAME}/parallel-lint.xml
+    - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml
   allow_failure: false
 
 ################################################################################
@@ -250,21 +232,6 @@ lint_css:
         --custom-formatter ${WEB_ROOT}/core/node_modules/stylelint-junit-formatter
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
         "${DIRS_CSS}"
-
-# @todo junit format
-# lint_twig:
-#   stage: qa
-#   extends: .lint_template
-#   rules:
-#     - if: '$SKIP_LINT == "1" || $SKIP_LINT_TWIG == "1"'
-#       when: never
-#     - when: on_success
-#   script:
-#     - curl -4fsSL https://asm89.github.io/d/twig-lint.phar -o twig-lint
-#     Lint report, terminal only.
-#     - php twig-lint lint "${DIRS_TWIG}" 2>&1 | tee ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/lint_twig.txt
-#     - composer require --dev sserbin/twig-linter:@dev
-#     - vendor/bin/twig-linter lint web/**/custom/ --format=junit >> report-${CI_JOB_NAME}/twig_junit.xml
 
 ################################################################################
 # Drupal tests.
