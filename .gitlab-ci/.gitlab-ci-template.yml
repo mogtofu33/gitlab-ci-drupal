@@ -31,10 +31,8 @@ include:
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/04_lint.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/05_metrics.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_deploy.yml'
-  # [WIP] All reports in one page.
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_reports.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_release.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/06_release.yml'
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.

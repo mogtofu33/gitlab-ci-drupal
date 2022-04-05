@@ -16,7 +16,7 @@
 #
 ################################################################################
 
-# The ref is relative to the version of the project to use.
+# The 'ref' is relative to the version of the project to use.
 include:
   # If hosted on gitlab.com.
   - project: 'mog33/gitlab-ci-drupal'
@@ -24,6 +24,11 @@ include:
     file: '/.gitlab-ci/.gitlab-ci-template.yml'
   # If hosted on an other Gitlab instance.
   # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
+
+  # Use a Workflow template matching your needs side of CI_SKIP_* variables.
+  # See https://docs.gitlab.com/ee/ci/yaml/workflow.html#workflowrules-templates
+  - template: 'Workflows/Branch-Pipelines.gitlab-ci.yml'
+  # - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
 
 # If needed by your Gitlab-ci instance, you can set global tags for all jobs.
 # default:
