@@ -18,7 +18,7 @@
     key: "drupal-${CI_COMMIT_REF_NAME}"
     paths:
       - vendor
-      - ${CI_DRUPAL_WEB_ROOT}
+      - ${CI_DRUPAL_WEB_ROOT}/core
   artifacts:
     expire_in: 1 week
     paths:
