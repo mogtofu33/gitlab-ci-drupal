@@ -23,13 +23,3 @@
     paths:
       - public
       - dashboard/src/data
-
-.aggregate_artifacts:
-  image: alpine:latest
-  script:
-    - mkdir -p ./reports/
-    - cp -r ./report-*/ ./reports/
-  artifacts:
-    when: always
-    paths:
-      - reports

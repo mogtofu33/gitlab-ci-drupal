@@ -4,8 +4,7 @@
 
 .qa_template:
   extends: .artifacts_reports
-  dependencies:
-    - build
+  dependencies: build
   before_script:
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]

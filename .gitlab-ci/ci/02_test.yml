@@ -3,13 +3,12 @@
 ################################################################################
 
 .test_template:
-  extends:
-    - .artifacts_reports
-  dependencies:
-    - build
+  extends: .artifacts_reports
+  dependencies: build
   before_script:
-    # Start Apache.
+    # Start Apache first to ensure it's running.
     - apache2-foreground&
+    # Common ci scripts.
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]
     # Set permissions for tests.

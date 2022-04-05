@@ -5,15 +5,15 @@
 .build_template:
   before_script:
     - !reference [.scripts, set-registries]
+    # Add build ssh key to access private repositories or servers.
+    - !reference [.scripts, build-ssh-key]
     - !reference [.scripts, get-robo]
-    - !reference [.scripts, ssh-key]
     # Call any extra build script from ./.gitlab-ci/build.php
     - robo ci:build before_build
   after_script:
     # Call any extra build script from ./.gitlab-ci/build.php
     - robo ci:build
     - !reference [.scripts, ci-prepare]
-  # On build we cache the composer and web folders to speed up the tests.
   cache:
     key: "drupal-${CI_COMMIT_REF_NAME}"
     paths:

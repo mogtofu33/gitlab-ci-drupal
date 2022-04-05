@@ -1,6 +1,6 @@
 .scripts:
   set-registries:
-    - echo -e "\e[0Ksection_start:`date +%s`:set_registry[collapsed=true]\r\e[0K\e[1;34mCi Set registries and auth"
+    - echo -e "\e[0Ksection_start:`date +%s`:set_registry[collapsed=true]\r\e[0K\e[1;34m Ci set registries and auth"
     - if [ ! -z ${CI_COMPOSER_REPO_PACKAGIST_URL} ]; then
         composer config --global repo.packagist composer ${CI_COMPOSER_REPO_PACKAGIST_URL};
       fi
@@ -21,9 +21,10 @@
     - echo -e "\e[0Ksection_start:`date +%s`:ci_prepare[collapsed=true]\r\e[0K\e[1;34m Robo ci:prepare"
     - if [ ! -f RoboFile.php ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
     - robo ci:prepare
+    - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} && chmod 777 ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:ci_prepare\r\e[0K"
   # Add a ssh build key if there is a variable CI_BUILD_KEY.
-  ssh-key:
+  build-ssh-key:
     - echo -e "\e[0Ksection_start:`date +%s`:ssh_key[collapsed=true]\r\e[0K\e[1;34m Ci build set SSH"
     - |
       if [ ! -z "${CI_BUILD_KEY}" ]; then
