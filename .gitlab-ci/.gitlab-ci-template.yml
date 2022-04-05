@@ -357,7 +357,7 @@ nightwatchjs:
     paths:
       - "report-${CI_JOB_NAME}/"
     reports:
-      junit: "report-${CI_JOB_NAME}/*.xml"
+      junit: "report-${CI_JOB_NAME}/Tests/*.xml"
 
 ################################################################################
 # Third party tools tests.
