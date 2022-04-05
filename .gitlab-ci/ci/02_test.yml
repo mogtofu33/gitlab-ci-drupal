@@ -4,7 +4,8 @@
 
 .test_template:
   extends: .artifacts_reports
-  dependencies: build
+  dependencies:
+    - build
   before_script:
     # Start Apache first to ensure it's running.
     - apache2-foreground&

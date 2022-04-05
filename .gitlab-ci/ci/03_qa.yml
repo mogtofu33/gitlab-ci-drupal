@@ -4,9 +4,10 @@
 
 .qa_template:
   extends: .artifacts_reports
-  dependencies: build
+  dependencies:
+    - build
   before_script:
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]
-  # QA can be considered optional.
+  # Allow failure to produce report and warning, not a critical job.
   allow_failure: true

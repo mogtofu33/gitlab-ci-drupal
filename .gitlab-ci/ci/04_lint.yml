@@ -4,7 +4,8 @@
 
 .lint_template:
   extends: .artifacts_reports
-  dependencies: build
+  dependencies:
+    - build
   before_script:
     - !reference [.scripts, ci-prepare]
   # Allow failure to produce report and warning, not a critical job.
