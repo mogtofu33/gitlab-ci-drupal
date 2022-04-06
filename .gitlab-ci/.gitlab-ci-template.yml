@@ -336,7 +336,7 @@ behat:
     - name: ${CI_SERVICE_CHROME}
       alias: chrome
   script:
-    - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal ${CI_BEHAT_INSTALL_PROFILE}"
+    - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal"
     # Install Drupal with the selected profile.
     - robo drupal:install ${CI_BEHAT_INSTALL_PROFILE} ${CI_BEHAT_INSTALL_DUMP}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
