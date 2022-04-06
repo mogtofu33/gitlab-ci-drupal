@@ -209,7 +209,7 @@ Name | Value
 -|-
 CI_PHPUNIT_TESTS | custom
 CI_PHPUNIT_GROUP | my_group_tests
-CI_PHPUNIT_CONFIGURATION | configuration file, default `.gitlab-ci/phpunit.xml`
+CI_PHPUNIT_CONFIGURATION | configuration file, default `web/core/`
 
 If `CI_PHPUNIT_TESTS` is _empty_ all tests will be run.
 

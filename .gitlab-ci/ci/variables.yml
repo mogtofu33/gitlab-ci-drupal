@@ -48,7 +48,7 @@
 
   # Folder with the phpunit.xml file, default is to copy the file from
   # ./gitlab-ci/ folder to the Drupal core folder.
-  CI_PHPUNIT_CONFIGURATION: ${CI_WEB_ROOT}/core
+  CI_PHPUNIT_CONFIGURATION: ${CI_DRUPAL_WEB_ROOT}/core
 
   # Nightwatch.js tests to run.
   # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
@@ -89,8 +89,8 @@
   #
   CI_QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
   #
-  CI_QA_CONFIG_PHPSTAN: .gitlab-ci/phpstan.neon
-  CI_QA_CONFIG_PHPMD: .gitlab-ci/phpstan.neon
+  CI_QA_CONFIG_PHPSTAN: .gitlab-ci/
+  CI_QA_CONFIG_PHPMD: .gitlab-ci/.phpmd.xml
   # For PHPMD, generate and include a baseline file, path relative to the root.
   # @see https://phpmd.org/documentation/
   # CI_QA_PHPMD_BASELINE: phpmd.baseline.xml
