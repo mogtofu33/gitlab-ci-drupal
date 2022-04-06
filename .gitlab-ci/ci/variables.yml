@@ -89,7 +89,9 @@
   #
   CI_QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
   #
+  # Folder containing phpstan.neon file.
   CI_QA_CONFIG_PHPSTAN: .gitlab-ci/
+  # PHPMD rules file.
   CI_QA_CONFIG_PHPMD: .gitlab-ci/.phpmd.xml
   # For PHPMD, generate and include a baseline file, path relative to the root.
   # @see https://phpmd.org/documentation/
@@ -113,7 +115,7 @@
   # Metrics settings.
   #
   # Folder containing .phpqa.yml file.
-  CI_METRICS_CONFIG_PHPQA: ${CI_PROJECT_DIR}/.gitlab-ci
+  CI_METRICS_CONFIG_PHPQA: .gitlab-ci
   # Comma separated for multiple folders.
   CI_DIRS_PHP_METRICS: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
 
