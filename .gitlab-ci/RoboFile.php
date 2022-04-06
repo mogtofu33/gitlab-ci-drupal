@@ -271,7 +271,7 @@ class RoboFile extends Tasks {
       ->chmod($dir, 0777, 0000, TRUE)
       ->run();
 
-    if ('dump' === $profile && $dump) {
+    if ($dump) {
       if ($filename = $this->drupalPrepareDump($dump)) {
         $this->drupalImportDump($filename);
       }
