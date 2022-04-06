@@ -118,8 +118,8 @@ phpmd:
     - phpmd ${CI_DIRS_QA_PHPMD} xml ${CI_QA_CONFIG_PHPMD}
         --exclude ${CI_QA_IGNORE}
         --suffixes ${CI_QA_SUFFIX}
+        --reportfile report-${CI_JOB_NAME}/phpmd.xml
         $([[ -z "${CI_QA_PHPMD_BASELINE}" ]] && echo "" || echo "--baseline-file ${CI_QA_PHPMD_BASELINE}")
-        --reportfile report-$xsltproc{CI_JOB_NAME}/phpmd.xml
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
 
