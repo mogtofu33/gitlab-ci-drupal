@@ -100,6 +100,8 @@ variables:
   #
   ## List of CI_SKIP_* variables, uncomment to skip a job.
   #
+  # CI_SKIP_BUILD: 1 # If only QA/Lint or metrics, build can be optional.
+  #
   # CI_SKIP_SECURITY: 1
   #
   # CI_SKIP_TESTS: 1 # Skip all tests, ignore CI_SKIP_TEST_*.
