@@ -59,8 +59,7 @@
 
   # If not using a db dump, select install profile for Behat tests.
   CI_BEHAT_INSTALL_PROFILE: "minimal"
-  # If dump, select 'dump' profile and fill local or remote file.
-  # CI_BEHAT_INSTALL_PROFILE: "dump"
+  # If a dump is provided, profile will be ignored.
   # Support local or remote file with extensions:
   # .sql, .sql.gz, .sql.zip
   CI_BEHAT_INSTALL_DUMP: ""
@@ -91,9 +90,6 @@
   #
   CI_QA_CONFIG_PHPSTAN: .gitlab-ci/phpstan.neon
   CI_QA_CONFIG_PHPMD: .gitlab-ci/.phpmd.xml
-  # For PHPMD, generate and include a baseline file, path relative to the root.
-  # @see https://phpmd.org/documentation/
-  # CI_QA_PHPMD_BASELINE: phpmd.baseline.xml
   #
   # Eslint / Stylelint settings.
   #

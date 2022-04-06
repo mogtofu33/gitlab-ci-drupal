@@ -230,7 +230,8 @@ All rules try to match a [Drupal 9](https://www.drupal.org) project.
 
 To adapt some rules, first look at `.gitlab-ci/.phpmd.xml`, `.gitlab-ci/phpstan.neon`.
 
-Copy those files in your project and configure variables to override.
+Copy those files in your project and configure variables to override or place in a specific
+folder and adapt variables below.
 
 Name | Value
 -|-
@@ -242,6 +243,11 @@ More details see:
 - [Phpstan phpstan.neon](https://phpstan.org/config-reference)
 - [Phpmd phpmd.xml](https://phpmd.org/rules/index.html)
 
+#### PHPMD
+
+If a generated baseline file is on the same level as phpmd.xml, it will be included, see
+https://phpmd.org/documentation/
+
 #### Phpstan
 
 As a starting point to adapt Phpstan rules for your code, copy the `.gitlab-ci/phpstan.neon` file from this project
@@ -250,6 +256,8 @@ to your `.gitlab-ci/` or to the root of your project and change `CI_QA_CONFIG_PH
 ##### Ignore errors
 
 To ignore some errors as false positive for Drupal, create a `ignoreErrors:` section in your `phpstan.neon` file.
+
+See https://phpstan.org/user-guide/ignoring-errors
 
 Ignore errors that are not in your code will still trigger errors because of unmatched, uncomment
 `reportUnmatchedIgnoredErrors: false` to ignore unmatched ignored errors.
@@ -281,14 +289,22 @@ Sample of common errors to ignore:
         - '#Call to an undefined method Drupal\\Core\\Access\\AccessResultInterface\:\:setCacheMaxAge\(\).#'
 ```
 
+##### Baseline
+
+To include a baseline file you must adapt `phpstan.neon` with your baseline file.
+
+See https://phpstan.org/user-guide/baseline
+
 ##### Autoloading
 
 Phpstan autoloading is based on the project autoloading for Drupal. Contrib modules or themes
 folders are not included in the Phpstan analysis. Above level 5, this will trigger a lot of
 unknown type hint from Phpstan.
 
-To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project to your `.gitlab-ci/`
-folder and add the parameter [scanDirectories or scanFiles](https://phpstan.org/user-guide/discovering-symbols#third-party-code-outside-of-composer-dependencies),
+To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project fill a
+`CI_QA_CONFIG_PHPSTAN` variable to point the ci to this configuration.
+
+Then add the parameter [scanDirectories or scanFiles](https://phpstan.org/user-guide/discovering-symbols#third-party-code-outside-of-composer-dependencies),
 with absolute path based on `/opt/drupal/web` for example:
 
 ```yaml
@@ -424,29 +440,17 @@ deploy ssh:
 ```yaml
 deploy image:
   stage: deploy
-  image: docker:20
-  services:
-    - docker:20-dind
+  extends: .deploy_ssh
   variables:
-    IMAGE_NAME: "${IMAGE_NAME:-"drupal"}"
+    IMAGE_NAME: "${CI_DEPLOY_IMAGE_NAME}"
     IMAGE_TAG: "${CI_COMMIT_SHORT_SHA}"
-    RELEASE_REGISTRY: docker.io
-    RELEASE_IMAGE: index.docker.io/$RELEASE_USER
-    # Docker in Docker variables.
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_BUILDKIT: 1
-  before_script:
-    # Clean dev modules from Drupal.
-    - composer --no-dev update
-    - rm -rf ${CI_DRUPAL_WEB_ROOT}/core/node_modules
-    - docker --version
   script:
     # Create docker image and include our Drupal code.
-    - docker build --compress --tag $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG ./.gitlab-ci
+    - docker build --compress --tag $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG --file ./.gitlab-ci/Dockerfile
     - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME
+    - docker ps
     # Sample to push to Docker Hub.
-    - docker tag $CI_REGISTRY_IMAGE/$IMAGE_NAME $RELEASE_IMAGE/$IMAGE_NAME
-    - echo "$RELEASE_PASSWORD" | docker login $RELEASE_REGISTRY --username $RELEASE_USER --password-stdin
-    - docker push $RELEASE_IMAGE/$IMAGE_NAME
+    # - docker tag $CI_REGISTRY_IMAGE/$IMAGE_NAME $RELEASE_IMAGE/$IMAGE_NAME
+    # - echo "$RELEASE_PASSWORD" | docker login $RELEASE_REGISTRY --username $RELEASE_USER --password-stdin
+    # - docker push $RELEASE_IMAGE/$IMAGE_NAME
 ```

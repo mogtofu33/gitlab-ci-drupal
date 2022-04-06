@@ -1,5 +1,9 @@
+# Generate and include a baseline file relative to this file.
+# @see https://phpstan.org/user-guide/baseline
+# includes:
+#     - phpstan-baseline.neon
 parameters:
-    level: 5
+    level: 3
     excludePaths:
         analyseAndScan:
             - *RoboFile.php
@@ -7,4 +11,3 @@ parameters:
             - */Tests/*
     inferPrivatePropertyTypeFromConstructor: true
     checkMissingIterableValueType: false
-

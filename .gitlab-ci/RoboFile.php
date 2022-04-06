@@ -589,7 +589,7 @@ class RoboFile extends Tasks {
     }
 
     // Drush needs an absolute path to the webroot.
-    $task = $this->taskExec($this->ciProjectDir . '/vendor/bin/drush')
+    $task = $this->taskExec($this->docRoot . '/vendor/bin/drush')
       ->option('root', $this->webRoot, '=');
 
     if ($this->verbose) {

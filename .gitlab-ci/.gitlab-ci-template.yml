@@ -119,7 +119,6 @@ phpmd:
         --exclude ${CI_QA_IGNORE}
         --suffixes ${CI_QA_SUFFIX}
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
-        $([[ -z "${CI_QA_PHPMD_BASELINE}" ]] && echo "" || echo "--baseline-file ${CI_QA_PHPMD_BASELINE}")
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
 
@@ -304,8 +303,6 @@ nightwatchjs:
       alias: chromedriver
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:nightwatch_install[collapsed=true]\r\e[0K\e[1;34m Install NightwatchJs"
-    # Install packages from Drupal.
-    - yarn --cwd ${CI_WEB_ROOT}/core install
     # Ensure chrome is running.
     - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # Update chromedriver as Drupal package.json can be late on chrome version.
@@ -346,7 +343,7 @@ behat:
     # Test Chrome is running properly.
     - curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_CHROME_PORT}/json/version | jq '.'
     # Run the behat tests from the 'behat_tests/' folder at the root of the project.
-    - ${CI_DOC_ROOT}/vendor/bin/behat
+    - vendor/bin/behat
         --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
         --format progress
         --out std

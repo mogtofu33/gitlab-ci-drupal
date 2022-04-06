@@ -40,3 +40,20 @@
     # Add our private key.
     - echo -e "${ENV_KEY}" > ~/.ssh/id_rsa
     - chmod 400 ~/.ssh/id_rsa
+
+# Basic deploy as a Docker image containing the current Drupal.
+.deploy_docker:
+  image: docker:20
+  services:
+    - docker:20-dind
+  variables:
+    RELEASE_REGISTRY: docker.io
+    RELEASE_IMAGE: index.docker.io/${RELEASE_USER}
+    # Docker in Docker variables.
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_BUILDKIT: 1
+  before_script:
+    # Clean dev modules from Drupal.
+    - composer --no-dev update
+    - rm -rf ${CI_DRUPAL_WEB_ROOT}/core/node_modules

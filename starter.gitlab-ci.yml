@@ -116,7 +116,9 @@ variables:
   CI_SKIP_TEST_BEHAT: 1
   ## Can use a profile setup or a sql dump file.
   # CI_BEHAT_INSTALL_PROFILE: "minimal"
-  # CI_BEHAT_INSTALL_PROFILE: "dump"
+  ## If a dump is provided, profile will be ignored.
+  ## Support local or remote file with extensions:
+  ## .sql, .sql.gz, .sql.zip
   # CI_BEHAT_INSTALL_DUMP: "path/relative/to/project/root/dump.sql.zip"
   # CI_BEHAT_INSTALL_DUMP: "http://url/to/dump.sql.zip"
   #
@@ -125,7 +127,7 @@ variables:
   ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
   CI_SKIP_TEST_NIGHTWATCHJS: 1
   ## Default is '--skiptags core', add your tag.
-  # CI_NIGHTWATCH_TESTS: --tag my_module
+  # CI_NIGHTWATCH_TESTS: "--tag my_module"
   #
   # CI_SKIP_QA: 1 # Skip all qa, ignore CI_SKIP_QA_*.
   # CI_SKIP_QA_PHPCS: 1
