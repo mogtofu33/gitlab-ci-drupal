@@ -89,9 +89,7 @@
   #
   CI_QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
   #
-  # Folder containing phpstan.neon file.
-  CI_QA_CONFIG_PHPSTAN: .gitlab-ci/
-  # PHPMD rules file.
+  CI_QA_CONFIG_PHPSTAN: .gitlab-ci/phpstan.neon
   CI_QA_CONFIG_PHPMD: .gitlab-ci/.phpmd.xml
   # For PHPMD, generate and include a baseline file, path relative to the root.
   # @see https://phpmd.org/documentation/
