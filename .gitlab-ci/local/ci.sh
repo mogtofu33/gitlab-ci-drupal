@@ -5,306 +5,12 @@
 # environment with docker-compose.
 
 ###############################################################################
-# Local only tests, not included in Gitlab ci and more flexible.
-###############################################################################
-__get_robofile() {
-  if [ ! -f "RoboFile.php" ]; then
-    _dkexec_bash "curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php;"
-  fi
-}
-
-__build() {
-  # before_script
-  __get_robofile
-  _dkexec_bash "robo ci:build before_build"
-
-  # script
-  _dkexec_bash "composer self-update;"
-  if [ "${CI_TYPE}" == "project" ]; then
-    if eval "_exist_file ${CI_PROJECT_DIR}/composer.json"; then
-      _dkexec_bash "composer validate --no-check-all --no-check-publish -n;"
-      _dkexec_bash "composer install -n --prefer-dist;"
-      _dkexec_bash "composer require -n --dev \
-        'drupal/core-dev:~${CI_DRUPAL_VERSION}' \
-        drush/drush \
-        'phpspec/prophecy-phpunit:^2'"
-      _dkexec_bash "composer require -n --dev \
-        'drupal/drupal-extension:~4.1' \
-        'dmore/behat-chrome-extension:^1.3' \
-        'emuse/behat-html-formatter:0.2.*' \
-        'friends-of-behat/mink-extension:^2.6';"
-    fi
-  fi
-
-  # after_script
-  _dkexec_bash "robo ci:build"
-  # _dkexec_bash "robo ci:prepare"
-}
-
-__install_phpunit() {
-  if ! eval "_exist_file /opt/drupal/vendor/bin/phpunit"; then
-    if [ "${CI_TYPE}" == "project" ]; then
-      if eval "_exist_file /opt/drupal/composer.json"; then
-        _dkexec_bash "composer require --no-ansi -n -d /opt/drupal --dev 'drupal/core-dev:~${CI_DRUPAL_VERSION}';"
-      fi
-    fi
-  fi
-
-  if ! eval "_exist_dir /opt/drupal/vendor/phpspec/prophecy-phpunit"; then
-    if [ "${CI_TYPE}" == "project" ]; then
-      if eval "_exist_file /opt/drupal/composer.json"; then
-        _dkexec_bash "composer require --no-ansi -n -d /opt/drupal --dev 'phpspec/prophecy-phpunit:^2';"
-      fi
-    fi
-  fi
-
-  _dkexec ${CI_DOC_ROOT}/vendor/bin/phpunit --version
-}
-
-# Standalone Phpunit test for local tests, can set path as argument.
-# Usage:
-#   phpunit web/core/modules/action/tests/src/Unit
-_phpunit() {
-  # __install_phpunit
-  local __path
-
-  if [[ $CI_TYPE == "module" ]]; then
-    __path=${CI_WEB_ROOT}/modules/custom/${CI_PROJECT_NAME}/${_ARGS}
-  else
-    __path=${CI_DOC_ROOT}/${_ARGS}
-  fi
-
-  if ! eval "_exist_dir ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"; then
-    printf "%s[NOTICE]%s Create dir %s\\n" "${_dim}" "${_end}" "${BROWSERTEST_OUTPUT_DIRECTORY}"
-    _dkexec_bash "mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output"
-    _dkexec_bash "chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} && chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY}"
-  fi
-
-  if ! eval "_exist_file /opt/drupal/web/core/phpunit.xml"; then
-    if [ -f "$_DIR/../phpunit.xml" ]; then
-      printf "%s[NOTICE]%s Using .gitlab-ci/phpunit.xml\\n" "${_dim}" "${_end}"
-      _dkexec_bash "cp -u /builds/.gitlab-ci/phpunit.xml /opt/drupal/web/core"
-    else
-      printf "%s[NOTICE]%s Get remote phpunit.xml\\n" "${_dim}" "${_end}"
-      curl -fsSL "${CI_REMOTE_FILES}/phpunit.xml" -o "$_DIR/../phpunit.xml"
-      _dkexec_bash "cp -u /builds/.gitlab-ci/phpunit.xml /opt/drupal/web/core"
-    fi
-  fi
-
-          # --testsuite "${CI_PHPUNIT_TESTS}unit,${CI_PHPUNIT_TESTS}kernel,${CI_PHPUNIT_TESTS}functional,${CI_PHPUNIT_TESTS}functional-javascript" \
-
-  _dkexec sudo -E -u www-data ${CI_DOC_ROOT}/vendor/bin/phpunit \
-        --configuration ${CI_WEB_ROOT}/core \
-        --testsuite "${CI_PHPUNIT_TESTS}functional-javascript" \
-        --verbose
-        # ${__path}
-}
-
-# Standalone qa test, can set path as argument and tools with option "-qa".
-_qa() {
-
-  local __path
-
-  if [[ -n ${_ARGS} ]]; then
-    __path=${CI_DOC_ROOT}/${_ARGS}
-  else
-    __path=${CI_WEB_ROOT}/modules/custom
-  fi
-
-  if [ -z "${__tools_qa}" ]; then
-    local __tools_qa=${TOOLS_QA}
-  fi
-
-  if [ ! -f "$_DIR/../.phpmd.xml" ]; then
-    printf "%s[NOTICE]%s Get remote .phpmd.xml\\n" "${_dim}" "${_end}"
-    curl -fsSL "$CI_REMOTE_FILES/.phpmd.xml" -o "$_DIR/../.phpmd.xml"
-  fi
-  if [ ! -f "$_DIR/../.phpqa.yml" ]; then
-    printf "%s[NOTICE]%s Get remote .phpqa.yml\\n" "${_dim}" "${_end}"
-    curl -fsSL "$CI_REMOTE_FILES/.phpqa.yml" -o "$_DIR/../.phpqa.yml"
-  fi
-  if [ ! -f "$_DIR/../phpstan.neon" ]; then
-    printf "%s[NOTICE]%s Get remote phpstan.neon\\n" "${_dim}" "${_end}"
-    curl -fsSL "$CI_REMOTE_FILES/phpstan.neon" -o "$_DIR/../phpstan.neon"
-  fi
-
-  printf "%s[NOTICE]%s qa: %s %s\\n" "${_dim}" "${_end}" "${__tools_qa}" "${__path}"
-
-  _dkexec phpqa --tools ${__tools_qa} \
-        --config ${CI_PROJECT_DIR}/.gitlab-ci \
-        --analyzedDirs ${__path}
-}
-
-_lint() {
-  if [ $__skip_install = 1 ]; then
-    printf "%s[SKIP]%s Yarn install\\n" "${_dim_blu}" "${_end}"
-  else
-    printf "%s[NOTICE]%s install Yarn\\n""${_dim}" "${_end}"
-    docker exec -it ci-drupal \
-      yarn --cwd ${CI_WEB_ROOT}/core install
-  fi
-
-  printf "\\n%s[INFO]%s Eslint\\n\\n" "${_blu}" "${_end}"
-  docker exec -it -w ${CI_WEB_ROOT}/core ci-drupal \
-    ${CI_WEB_ROOT}/core/node_modules/.bin/eslint \
-      --config ${CI_WEB_ROOT}/core/.eslintrc.passing.json \
-      --resolve-plugins-relative-to ${CI_WEB_ROOT}/core/node_modules \
-      ${CI_DIRS_JS}
-
-  printf "\\n%s[INFO]%s Stylelint\\n\\n" "${_blu}" "${_end}"
-  docker exec -it -w ${CI_WEB_ROOT}/core ci-drupal \
-    ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint \
-      --config ${CI_WEB_ROOT}/core/.stylelintrc.json \
-      --formatter verbose \
-      ${CI_DIRS_CSS}
-
-  if ! eval "_exist_file /opt/drupal/twig-lint"; then
-    printf "%s[NOTICE]%s Install twig-lint\\n" "${_dim_blu}" "${_end}"
-    docker exec -it ci-drupal \
-      curl -fsSL https://asm89.github.io/d/twig-lint.phar -o /opt/drupal/twig-lint
-  else
-    printf "%s[SKIP]%s twig-lint already installed\\n" "${_dim_blu}" "${_end}"
-  fi
-
-  printf "\\n%s[INFO]%s Twig lint\\n\\n" "${_blu}" "${_end}"
-  docker exec -it ci-drupal \
-    php /opt/drupal/twig-lint lint "${CI_DIRS_TWIG}"
-}
-
-# Standalone security test.
-_security() {
-  printf "\\n%s[INFO]%s Perform job 'Security report' (security_checker)\\n\\n" "${_blu}" "${_end}"
-
-  _dkexec security-checker --path=/opt/drupal/ -format markdown
-}
-
-_behat() {
-  # Starting Chrome.
-  if [[ $(docker exec ci-drupal ps | grep chrome) ]]; then
-    printf "%s[NOTICE]%s Chrome already running\\n" "${_dim}" "${_end}"
-  else
-    printf "%s[NOTICE]%s Start Chrome\\n" "${_dim}" "${_end}"
-    docker exec -d ci-drupal /scripts/start-chrome.sh&
-    sleep 2s
-  fi
-
-  docker exec -t ci-drupal curl -s http://localhost:9222/json/version | jq '.'
-
-  if [ $__skip_install = 1 ]; then
-    printf "%s[SKIP]%s Drupal install\\n" "${_dim_blu}" "${_end}"
-  else
-    printf "%s[NOTICE]%s install Drupal\\n""${_dim}" "${_end}"
-    docker exec -it -w ${CI_DOC_ROOT} ci-drupal \
-      ${CI_DOC_ROOT}/vendor/bin/drush --root="${CI_WEB_ROOT}" si -y ${CI_BEHAT_INSTALL_PROFILE} --db-url="${SIMPLETEST_DB}"
-  fi
-
-  __install_behat
-
-  # _dkexec \
-  #   ${CI_DOC_ROOT}/vendor/bin/behat --config ${CI_PROJECT_DIR}/behat_tests/behat.yml \
-  #     --format progress \
-  #     --out std
-}
-
-__install_behat() {
-  if ! eval "_exist_file /opt/drupal/vendor/bin/behat"; then
-    printf "%s[NOTICE]%s Install Behat\\n" "${_dim_blu}" "${_end}"
-    _dkexec composer require -d /opt/drupal --no-ansi -n --dev \
-      "drupal/drupal-extension:~4.1" \
-      "dmore/behat-chrome-extension:^1.3" \
-      "emuse/behat-html-formatter:0.2.*" \
-      "friends-of-behat/mink-extension:^2.6";
-  else
-    printf "%s[SKIP]%s Behat already installed\\n" "${_dim_blu}" "${_end}"
-  fi
-
-  if ! eval "_exist_file /opt/drupal/vendor/bin/drush"; then
-    printf "%s[NOTICE]%s Install Drush\\n" "${_dim_blu}" "${_end}"
-    _dkexec composer require --no-ansi -n drush/drush
-  else
-    printf "%s[SKIP]%s Drush already installed\\n" "${_dim_blu}" "${_end}"
-  fi
-}
-
-# Replicate test nightwatch-js .gitlab-ci/.gitlab-ci-template.yml
-_nightwatch() {
-
-  if [ $__skip_install = 1 ]; then
-    printf "%s[SKIP]%s Yarn install\\n" "${_dim_blu}" "${_end}"
-  else
-    printf "%s[NOTICE]%s install Yarn\\n""${_dim}" "${_end}"
-    docker exec -it ci-drupal \
-      yarn --cwd ${CI_WEB_ROOT}/core install
-    __version=$(docker exec -t ci-drupal sh -c "google-chrome --product-version | cut -d. -f1")
-    _dkexec_bash \
-      "yarn --cwd ${CI_WEB_ROOT}/core upgrade chromedriver@$__version"
-  fi
-
-  # Log versions.night
-  _dkexec_bash \
-    "${CI_WEB_ROOT}/core/node_modules/.bin/nightwatch --version"
-  _dkexec_bash \
-    "${CI_WEB_ROOT}/core/node_modules/.bin/chromedriver --version"
-  _dkexec_bash \
-    "/usr/bin/google-chrome --version"
-
-  if [ ! -f "$_DIR/../.env" ]; then
-    printf "%s[NOTICE]%s Get remote .env\\n" "${_dim}" "${_end}"
-    curl -fsSL ${CI_REMOTE_FILES}/.env -o "$_DIR/../.env"
-  fi
-
-  docker cp "$_DIR/../.env" ci-drupal:/opt/drupal/web/core/.env
-
-  # Running tests
-  # docker exec -it -u root -w ${CI_PROJECT_DIR} ci-drupal \
-  #   yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
-
-}
-
-####### Metrics jobs
-
-# _metrics_template() {
-#   if [ $__skip_prepare = 1 ]; then
-#     printf "%s[SKIP]%s .metrics_template\\n" "${_dim_blu}" "${_end}"
-#   else
-#     printf "%s[NOTICE]%s Replicate .metrics_template\\n" "${_dim}" "${_end}"
-
-#     # before_script
-#     _get_robo_file
-#     _do_ci_prepare
-#   fi
-# }
-
-# _metrics() {
-#   printf "\\n%s[INFO]%s Perform job 'Php metrics' (metrics)\\n\\n" "${_blu}" "${_end}"
-#   local CI_JOB_NAME="metrics"
-
-#   # @todo: test copy xml files
-#   # - cp ./report-phpunit_unit-kernel/*.xml /tmp/ || true
-#   # - cp ./report-phpunit_functional/*.xml /tmp/ || true
-#   # - cp ./report-phpunit_functionaljs/*.xml /tmp/ || true
-
-#   docker exec -t -w /opt/drupal ci-drupal \
-#     phpqa --tools ${CI_TOOLS_METRICS} \
-#       --config ${CI_PROJECT_DIR}/.gitlab-ci\
-#       --buildDir ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} \
-#       --analyzedDirs '${CI_DIRS_PHP}'
-# }
-
-# _copy_output() {
-#   _dkexec mkdir -p "${CI_PROJECT_DIR}/report-${1}/browser_output"
-#   docker exec -d -w ${CI_PROJECT_DIR} ci-drupal cp -r ${CI_WEB_ROOT}/sites/simpletest/browser_output/ ${CI_PROJECT_DIR}/report-${1}/
-#   sleep 1s
-#   _clean_browser_output
-# }
-
-###############################################################################
 # Docker helpers commands.
 ###############################################################################
 
 _dkexec() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
+    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; debug "$@"; fi
     # docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
     docker exec -it ci-drupal "$@" || true
   fi
@@ -312,7 +18,7 @@ _dkexec() {
 
 _dkexec_bash() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; echo "$@"; fi
+    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; debug "$@"; fi
     # docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
     docker exec -it ci-drupal bash -c "$@"
   fi
@@ -328,142 +34,6 @@ _exist_file() {
 
 _exist_dir() {
   [ $(docker exec -t ci-drupal sh -c "[ -d ${1} ] && echo true") ]
-}
-
-_init_variables() {
-  _env
-
-  source $__env
-
-  _clean_env
-}
-
-_clean_env() {
-  if [ -f "$_DIR/variables.yml" ]; then
-    rm -f "$_DIR/variables.yml"
-  fi
-}
-
-_env() {
-
-  if [ -f "$_DIR/../../starter.gitlab-ci.yml" ]; then
-    debug "Use local starter.gitlab-ci.yml"
-    __yaml="$_DIR/../../starter.gitlab-ci.yml"
-  elif [ -f "$_DIR/../../.gitlab-ci.yml" ]; then
-    debug "Use local .gitlab-ci.yml"
-    __yaml="$_DIR/../../.gitlab-ci.yml"
-  else
-    printf "%s[ERROR]%s Missing .gitlab-ci.yml or starter.gitlab-ci.yml!\\n" "${_red}" "${_end}"
-    exit 1
-  fi
-
-  if [ -f "$_DIR/../ci/variables.yml" ]; then
-    debug "Use local variables.yml"
-    __yaml_variables="$_DIR/../ci/variables.yml"
-  elif [ -f "$_DIR/variables.yml" ]; then
-    debug "Use local downloaded variables.yml"
-    __yaml_variables="$_DIR/variables.yml"
-  else
-    debug "Use remote variables.yml"
-    curl -fsSL "${CI_REMOTE_FILES}/ci/variables.yml" -o "$_DIR/variables.yml"
-    __yaml_variables="$_DIR/variables.yml"
-  fi
-
-  __yaml_local="$_DIR/.local.yml"
-  __env="$_DIR/.env"
-
-  _check_yq
-
-  debug "Generate .env file..."
-
-  CI_PROJECT_DIR="/builds"
-
-  if [ -f $__env ]; then
-    rm -f $__env
-  fi
-
-  touch $__env
-
-  echo "# This file is auto generated, do not edit." >> $__env
-  echo "# To update launch:" >> $__env
-  echo "# ${_ME} env" >> $__env
-
-  echo 'CI_PROJECT_NAME: my-project' >> $__env
-  echo "CI_PROJECT_DIR: ${CI_PROJECT_DIR}" >> $__env
-
-  yq '... comments=""' $__yaml_variables | yq '.[.default_variables]' >> $__env
-
-  # Fix MINK_DRIVER_ARGS_WEBDRIVER, remove spaces and escape \.
-  sed -i '/MINK_DRIVER_ARGS_WEBDRIVER/d' $__env
-  MINK_DRIVER_ARGS_WEBDRIVER=$(yq '.[.default_variables].MINK_DRIVER_ARGS_WEBDRIVER' $__yaml_variables)
-  MINK_DRIVER_ARGS_WEBDRIVER="$(echo -e "${MINK_DRIVER_ARGS_WEBDRIVER}" | tr -d '[:space:]')"
-  MINK_DRIVER_ARGS_WEBDRIVER=$(sed 's#\\#\\\\#g' <<< $MINK_DRIVER_ARGS_WEBDRIVER)
-  echo '# [fix] Fixed MINK_DRIVER_ARGS_WEBDRIVER' >> $__env
-  echo 'MINK_DRIVER_ARGS_WEBDRIVER='${MINK_DRIVER_ARGS_WEBDRIVER} >> $__env
-
-  # Fix BEHAT_PARAMS, remove spaces and escape \.
-  sed -i '/BEHAT_PARAMS/d' $__env
-  BEHAT_PARAMS=$(yq '.[.default_variables].BEHAT_PARAMS' $__yaml_variables)
-  BEHAT_PARAMS="$(echo -e "${BEHAT_PARAMS}" | tr -d '[:space:]')"
-  BEHAT_PARAMS=$(sed 's#\\#\\\\#g' <<< $BEHAT_PARAMS)
-  echo '# [fix] Fixed BEHAT_PARAMS' >> $__env
-  echo 'BEHAT_PARAMS='${BEHAT_PARAMS} >> $__env
-
-  echo '# [fix] Override variables from '$__yaml >> $__env
-  yq '... comments=""' $__yaml | yq '.variables' >> $__env
-
-  # Replace variables.
-  CI_WEB_ROOT=$(yq '.[.default_variables].CI_WEB_ROOT' $__yaml_variables)
-  sed -i "s#\${CI_WEB_ROOT}#${CI_WEB_ROOT}#g" $__env
-  echo '# [fix] Replaced CI_WEB_ROOT' >> $__env
-
-  CI_DOC_ROOT=$(yq '.[.default_variables].CI_DOC_ROOT' $__yaml_variables)
-  sed -i "s#\${CI_DOC_ROOT}#${CI_DOC_ROOT}#g" $__env
-  echo '# [fix] Replaced CI_DOC_ROOT' >> $__env
-
-  SIMPLETEST_DB=$(yq '.[.default_variables].SIMPLETEST_DB' $__yaml_variables)
-  sed -i "s#\${SIMPLETEST_DB}#${SIMPLETEST_DB}#g" $__env
-  echo '# [fix] Replaced SIMPLETEST_DB' >> $__env
-
-  CI_DB_DRIVER=$(yq '.[.default_variables].CI_DB_DRIVER' $__yaml_variables)
-  sed -i "s#\${CI_DB_DRIVER}#${CI_DB_DRIVER}#g" $__env
-  echo '# [fix] Replaced CI_DB_DRIVER' >> $__env
-
-  CI_REF=$(yq '.variables.CI_REF' $__yaml)
-  sed -i "s#\${CI_REF}#${CI_REF}#g" $__env
-  echo '# [fix] Fixed CI_REF' >> $__env
-  echo 'CI_IMAGE_REF="'${CI_REF}'"' >> $__env
-
-  CI_DRUPAL_VERSION=$(yq '.variables.CI_DRUPAL_VERSION.value' $__yaml)
-  sed -i "s#CI_DRUPAL_VERSION:\(.*\)#CI_DRUPAL_VERSION=${CI_DRUPAL_VERSION}#g" $__env
-  echo '# [fix] drupal version' >> $__env
-
-  # Replace some variables by their values from main file.
-  CI_DRUPAL_WEB_ROOT=$(yq '.variables.CI_DRUPAL_WEB_ROOT' $__yaml)
-  sed -i "s#\${CI_DRUPAL_WEB_ROOT}#${CI_DRUPAL_WEB_ROOT}#g" $__env
-  echo '# [fix] Replaced CI_DRUPAL_WEB_ROOT' >> $__env
-
-  if [ -f $__yaml_local ]; then
-    echo '# [fix] Local override variables .local.yml' >> $__env
-    yq $__yaml_local >> $__env
-  fi
-
-  # Fix env file format.
-  _yml_to_env_fixes $__env
-}
-
-_yml_to_env_fixes() {
-  # Remove obsolete values.
-  sed -i '/^extends:/d' $__env
-  # Delete empty lines.
-  sed -i '/^$/d' $__env
-  # Delete lines starting with spaces.
-  sed -i '/^ /d' $__env
-  # Replace : by =.
-  sed -i 's#: #=#g' $__env
-  # Treat 1 / 0 options without double quotes.
-  sed -i 's#"1"#1#g' $__env
-  sed -i 's#"0"#0#g' $__env
 }
 
 _up() {
@@ -487,6 +57,7 @@ _down() {
 
 _reboot() {
   _down
+  _init_variables
   _up
 }
 
@@ -503,8 +74,7 @@ _check_yq() {
 }
 
 ###############################################################################
-# Dispatch
-###############################################################################
+# DispatchCI_QA_CONFIG_PHPMD#######################################
 
 __dispatch() {
   local cmd="_${_CMD}"
@@ -571,6 +141,8 @@ _DIR="$( cd -P "$( dirname "$_SOURCE" )" && pwd )"
 
 IFS=$'\n\t'
 
+source $_DIR/_commands.sh
+
 ###############################################################################
 # Environment
 ###############################################################################
@@ -599,19 +171,29 @@ _print_help() {
   Usage:
     ${_ME} qa
 
-  Standalone local tests (no reports, cli only):
-    phpunit                         Run a phpunit test.
-    qa                              Run a qa test.
+  Standalone local tests:
+    build                           Run ci build.
+    phpunit                         Run all phpunit tests.
+    unit                            Run phpunit unit tests.
+    kernel                          Run phpunit kernel tests.
+    func                            Run phpunit functional tests.
+    funcjs                          Run phpunit functional javascript tests.
+    qa                              Run all qa tests.
+    phpcs                           Run phpcs.
+    phpmd                           Run phpmd.
+    phpstan                         Run phpstan.
     lint                            Run a lint.
     security                        Run a security test.
     behat                           Run a behat test, if behat_tests folder exist.
 
   Standalone local options
-    -qa|--tools-qa                  Standalone local qa tools, default $TOOLS_QA.
-    --skip-install                  Skip install steps (Behat, Lint).
+    --skip-install                  Skip install steps (Behat).
 
   Options
     -h|--help                       Print help.
+    -v|--verbose                    Verbose output.
+    --debug                         Debug output.
+    --debug-fail                    Debug stop on error.
 HEREDOC
 }
 
@@ -727,10 +309,11 @@ _end=$'\e[0m'
 # Initialize program option variables.
 _PRINT_HELP=0
 _USE_DEBUG=0
+_VERBOSE=0
 
 # Initialize additional expected option variables.
 __skip_install=0
-__tools_qa=""
+# __tools_qa=""
 
 CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci"
 
@@ -745,6 +328,9 @@ do
     -h|--help)
       _PRINT_HELP=1
       ;;
+    -v|--verbose)
+      _VERBOSE=1
+      ;;
     --debug)
       _USE_DEBUG=1
       ;;
@@ -756,10 +342,10 @@ do
     --skip-install)
       __skip_install=1
       ;;
-    -qa|--tools-qa)
-      __tools_qa="$(__get_option_value "${__arg}" "${__val:-}")"
-      shift
-      ;;
+    # -qa|--tools-qa)
+    #   __tools_qa="$(__get_option_value "${__arg}" "${__val:-}")"
+    #   shift
+    #   ;;
     --endopts)
       # Terminate option parsing.
       break

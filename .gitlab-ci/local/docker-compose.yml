@@ -11,7 +11,7 @@
 version: '3'
 
 services:
-  drupal:
+  build:
     # Drupal included from official docker image + ci tools. Edit in .env file.
     # see https://gitlab.com/mog33/drupal8ci
     image: mogtofu33/drupal8ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
@@ -21,6 +21,7 @@ services:
     links:
       - db
       - chrome
+      - chromedriver
     volumes:
       # Mount the parent folder as a module.
       # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
@@ -45,13 +46,13 @@ services:
     env_file:
       - .env
 
-  # chrome:
-  #   image: ${CI_SERVICE_CHROMEDRIVER}
-  #   expose:
-  #     - "${CI_SERVICE_CHROMEDRIVER_PORT}"
-  #   container_name: ci-chromedriver
-  #   env_file:
-  #     - .env
+  chromedriver:
+    image: ${CI_SERVICE_CHROMEDRIVER}
+    expose:
+      - "${CI_SERVICE_CHROMEDRIVER_PORT}"
+    container_name: ci-chromedriver
+    env_file:
+      - .env
 
   chrome:
     image: ${CI_SERVICE_CHROME}
@@ -60,19 +61,3 @@ services:
     container_name: ci-chrome
     env_file:
       - .env
-
-  # node:
-  #   image: node:alpine
-  #   container_name: ci-node
-  #   ports:
-  #     - 3000
-  #   volumes:
-  #     - ../:/home/node/app
-  #   command: tail -f /dev/null
-  #   working_dir: /home/node/app
-  #   user: "node"
-  #   env_file:
-  #     - .env
-
-# volumes:
-#   database_data:

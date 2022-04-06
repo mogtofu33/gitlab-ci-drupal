@@ -92,12 +92,3 @@ One time:
 ```bash
 .gitlab-ci/local/ci.sh qa
 ```
-
-Run a qa single tool test:
-
-One time:
-
-```bash
-.gitlab-ci/local/ci.sh qa -qa "phpmd"
-.gitlab-ci/local/ci.sh qa -qa "phpqa"
-```

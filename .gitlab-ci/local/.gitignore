@@ -1,5 +1,4 @@
 # Local script tests.
 .local.yml
 .env
-variables_test.yml
 variables.yml
