@@ -70,8 +70,12 @@ build:
         composer install -n --prefer-dist;
       fi
     # Install dev tools and node modules.
-    - robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
-    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core install
+    - if [ -f composer.json ]; then
+        robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
+      fi
+    - if [ -f ${CI_DRUPAL_WEB_ROOT}/core/package.json ]; then
+        yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core install;
+      fi
   allow_failure: false
 
 security:
@@ -83,9 +87,13 @@ security:
     - if: '$CI_SKIP_SECURITY == "1"'
       when: never
     - when: on_success
+  before_script:
+    - _url=$(curl -sSL https://api.github.com/repos/fabpot/local-php-security-checker/releases/latest | grep browser_download_url | grep linux_amd64 | awk '{ print $2 }' | sed 's/"//g')
+    - curl -sSL $_url -o php-security-checker
+    - chmod +x php-security-checker
   script:
     - mkdir -p report-${CI_JOB_NAME}
-    - security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
+    - php-security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
 
 ################################################################################
 # Code quality jobs for Drupal 9+
