@@ -258,7 +258,7 @@ class RoboFile extends Tasks {
    *
    * @param string $profile
    *   (optional) The profile to install, default to minimal.
-   * @param string $dump
+   * @param ?string $dump
    *   (optional) Dump file if profile is 'dump'.
    */
   public function drupalInstall($profile = 'minimal', $dump = NULL) {
@@ -291,12 +291,23 @@ class RoboFile extends Tasks {
    *   (optional) Skip behat flag to check if we install behat dependency.
    */
   public function drupalRequireDev($CI_SKIP_TEST_BEHAT = "1") {
-    if (!file_exists($this->ciProjectDir . '/vendor/bin/drush')) {
-      $this->composerRequire()
+    if (!file_exists($this->ciProjectDir . '/composer.json') && 'project' === $this->ciType) {
+      $this->io()->error("Missing composer.json file at the root of this project.");
+      return;
+    }
+
+    $_docRoot = $this->ciProjectDir;
+    if ('project' !== $this->ciType) {
+      $_docRoot = $this->docRoot;
+    }
+
+    if (!file_exists($_docRoot . '/vendor/bin/drush')) {
+      $this->composerRequire($_docRoot)
           ->dependency('drush/drush', '>10')
           ->run();
     }
-    $task = $this->composerRequire()
+
+    $task = $this->composerRequire($_docRoot)
       ->dependency('drupal/core-dev', '~' . $this->ciDrupalVersion)
       ->dependency('phpspec/prophecy-phpunit', '^2');
 
@@ -409,13 +420,20 @@ class RoboFile extends Tasks {
   /**
    * Helper for preparing a composer require task.
    *
+   * @param ?string $dir
+   *   Working dir for composer command.
+   *
    * @return \Robo\Task\Composer\RequireDependency
    *   Robo composer require task with some specific settings.
    */
-  private function composerRequire() {
+  private function composerRequire($dir = NULL) {
     $task = $this->taskComposerRequire()
       ->noInteraction()
       ->option('with-all-dependencies');
+
+    if ($dir) {
+      $task->workingDir($dir);
+    }
 
     if ($this->verbose) {
       $task->option('verbose');
