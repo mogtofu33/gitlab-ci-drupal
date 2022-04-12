@@ -42,7 +42,7 @@ include:
 
 variables:
   # This is mandatory to get default variables from:
-  # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/ci/variables.yml
+  # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml
   extends: .default_variables
   # Docker image used for ci, should be the same as include above.
   CI_REF: "4.x-dev"

@@ -188,7 +188,7 @@ For Behat, Selenium is not needed thanks to the
 [Behat Chrome extension.](https://gitlab.com/DMore/behat-chrome-extension.git).
 
 If you need different configuration for Behat, you can look and override variable
-`BEHAT_PARAMS` in [.gitlab-ci/ci/variables.yml](.gitlab-ci/ci/variables.yml)
+`BEHAT_PARAMS` in [.gitlab-ci/template/variables.yml](.gitlab-ci/template/variables.yml)
 
 ### PHPunit tests
 
@@ -360,7 +360,7 @@ Gitlab release, waiting for:
 
 * https://gitlab.com/gitlab-org/release-cli/-/blob/master/docs/index.md#using-this-tool-in-gitlab-ci
 
-Drupal release based on semantic-release not yet implemented, wip in `.gitlab-ci/ci/06_release.yml`
+Drupal release based on semantic-release not yet implemented, wip in `.gitlab-ci/template/04_release.yml`
 
 ### Deploy
 
