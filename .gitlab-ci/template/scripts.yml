@@ -20,7 +20,7 @@
   ci-prepare:
     - echo -e "\e[0Ksection_start:`date +%s`:ci_prepare[collapsed=true]\r\e[0K\e[1;34m Robo ci:prepare"
     - if [ ! -f RoboFile.php ]; then curl -fsSL ${CI_REMOTE_FILES}/RoboFile.php -o RoboFile.php; fi
-    - robo ci:prepare
+    - robo ci:prepare ${CI_JOB_NAME}
     - mkdir -p ${CI_PROJECT_DIR}/report-${CI_JOB_NAME} && chmod 777 ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
     - echo -e "\e[0Ksection_end:`date +%s`:ci_prepare\r\e[0K"
   # Add a ssh build key if there is a variable CI_BUILD_KEY.

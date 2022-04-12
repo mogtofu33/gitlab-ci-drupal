@@ -194,10 +194,15 @@ class RoboFile extends Tasks {
 
   /**
    * Get files and prepare folders for CI.
+   *
+   * @param string $job
+   *   CI job name.
    */
-  public function ciPrepare() {
+  public function ciPrepare($job = '') {
     $this->ciGetConfigFiles();
-    $this->ciPreparePhpunit();
+    if (FALSE !== strpos($job, 'phpunit')) {
+      $this->ciPreparePhpunit();
+    }
     $this->ciPrepareFolders();
   }
 
@@ -506,6 +511,7 @@ class RoboFile extends Tasks {
   private function ciPreparePhpunit() {
     if (!file_exists($this->ciProjectDir . '/phpunit.xml')) {
       $this->ciNotice('No phpunit.xml file at the root of the project, using default file.');
+      return;
     }
     $this->taskFilesystemStack()
       ->copy(
