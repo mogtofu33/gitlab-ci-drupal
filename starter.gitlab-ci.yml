@@ -21,9 +21,9 @@ include:
   # If hosted on gitlab.com.
   - project: 'mog33/gitlab-ci-drupal'
     ref: 4.x-dev
-    file: '/.gitlab-ci/.gitlab-ci-template.yml'
+    file: '/.gitlab-ci/jobs.gitlab-ci.yml'
   # If hosted on an other Gitlab instance.
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/.gitlab-ci-template.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/jobs.gitlab-ci.yml'
 
   # Use a Workflow template matching your needs side of CI_SKIP_* variables.
   # See https://docs.gitlab.com/ee/ci/yaml/workflow.html#workflowrules-templates
@@ -55,10 +55,7 @@ variables:
   # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
   # some distributions.
   CI_DRUPAL_WEB_ROOT: web
-  # Phpunit tests to run, default provide only custom code or if this variable
-  # is empty all tests (including Drupal core).
-  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
-  CI_PHPUNIT_TESTS: "custom"
+
   # Specify a group of tests to run rather than all tests in the suite.
   # CI_PHPUNIT_GROUP: my_group_1,my_group_2
 
