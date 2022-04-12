@@ -505,7 +505,7 @@ class RoboFile extends Tasks {
    */
   private function ciPreparePhpunit() {
     if (!file_exists($this->ciProjectDir . '/phpunit.xml')) {
-      $this->io()->error('Missing phpunit.xml file at the root of the project.');
+      $this->ciNotice('No phpunit.xml file at the root of the project, using default file.');
     }
     $this->taskFilesystemStack()
       ->copy(
