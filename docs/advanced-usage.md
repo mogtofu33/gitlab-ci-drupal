@@ -136,7 +136,8 @@ You can use private repositories in your `composer.json` adding a ssh private ke
 
 See https://getcomposer.org/doc/05-repositories.md#using-private-repositories
 
-The `CI_BUILD_KEY` is an arbitrary named variable for this project to be able to have a private key during the ci job of build that identify the ci user when trying to access a remote address with ssh support.
+The `CI_BUILD_KEY` is an arbitrary named variable for this project to be able to have a private key during the ci job of
+build that identify the ci user when trying to access a remote address with ssh support.
 
 The CI will access the private module by `SSH` using a private key created from this variable `CI_BUILD_KEY`.
 
@@ -144,7 +145,8 @@ The private key can not have a password so for obvious security reason you must 
 
 1. Generate a ssh key, see [documentation](https://gitlab.com/help/ssh/README)
 2. On the *private* Gitlab project (Settings > Repository > Deploy keys) create a Deploy key and paste the __public__ key
-3. On the Gitlab where the CI is running (Settings > CI/CD > VARIABLES), add a variable with key `CI_BUILD_KEY` and for value the __private__ part of the key, set the *protect* option depending your use case, do not mask it will never appear in logs
+3. On the Gitlab where the CI is running (Settings > CI/CD > VARIABLES), add a variable with key `CI_BUILD_KEY` and for
+  value the __private__ part of the key, set the *protect* option depending your use case, do not mask it will never appear in logs
 
 The CI will use this key for any external authentication.
 
@@ -196,25 +198,16 @@ tests in Drupal 8/9, see
 [Type of tests in Drupal 8/9](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
 The tests configuration is defined in [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml).
-You can set a specific configuration file with `CI_PHPUNIT_CONFIGURATION`.
+You can set your own specific configuration file with `CI_PHPUNIT_CONFIGURATION` or for a project simply have a `web/core/phpunit.xml` file.
 
-This project include a specific phpunit configuration:
-
-- Custom modules and themes only, those are prefixed with `custom` in `phpunit.xml`, as `customunit, customkernel, customfunctional, customfunctional-javascript`
-  - All `tests/` from `modules/custom/**` and `themes/custom/**`
+This project include a specific phpunit configuration, tests are performed only for files from `modules/custom/**` and `themes/custom/**`.
 
 There is a Gitlab variable to select the tests and optional group:
 
 Name | Value
 -|-
-CI_PHPUNIT_TESTS | custom
 CI_PHPUNIT_GROUP | my_group_tests
-CI_PHPUNIT_CONFIGURATION | configuration file, default `web/core/`
-
-If `CI_PHPUNIT_TESTS` is _empty_ all tests will be run.
-
-To override the configuration you can copy [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml) in your project
-and adapt for your tests.
+CI_PHPUNIT_CONFIGURATION | configuration file folder, default `web/core/`
 
 ### Codecov.io support
 
