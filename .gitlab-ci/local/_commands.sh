@@ -85,25 +85,25 @@ _phpunit() {
 
 _unit() {
   printf "\\n%s[INFO]%s PHPUnit unit\\n\\n" "${_blu}" "${_end}"
-  __phpunit_test_suite="${CI_PHPUNIT_TESTS}unit"
+  __phpunit_test_suite="unit"
   __phpunit_exec
 }
 
 _kernel() {
   printf "\\n%s[INFO]%s PHPUnit kernel\\n\\n" "${_blu}" "${_end}"
-  __phpunit_test_suite="${CI_PHPUNIT_TESTS}kernel"
+  __phpunit_test_suite="kernel"
   __phpunit_exec
 }
 
 _func() {
   printf "\\n%s[INFO]%s PHPUnit functional\\n\\n" "${_blu}" "${_end}"
-  __phpunit_test_suite="${CI_PHPUNIT_TESTS}functional"
+  __phpunit_test_suite="functional"
   __phpunit_exec
 }
 
 _funcjs() {
   printf "\\n%s[INFO]%s PHPUnit functional-javascript\\n\\n" "${_blu}" "${_end}"
-  __phpunit_test_suite="${CI_PHPUNIT_TESTS}functional-javascript"
+  __phpunit_test_suite="functional-javascript"
   __phpunit_exec
 }
 
@@ -225,7 +225,7 @@ _nightwatch() {
   _dkexec yarn --cwd ${CI_WEB_ROOT}/core upgrade \
       chromedriver@$(curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
 
-  _dkexec_bash "envsubst < ${CI_WEB_ROOT}/core/.env.tmpl > ${CI_WEB_ROOT}/core/.env"
+  _dkexec_bash "envsubst < ${CI_WEB_ROOT}/core/.env.tpl > ${CI_WEB_ROOT}/core/.env"
 
   # Running tests
   _dkexec yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}

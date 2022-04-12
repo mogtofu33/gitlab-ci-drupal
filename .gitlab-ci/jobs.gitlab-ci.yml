@@ -91,8 +91,8 @@ security:
     - _url=$(curl -sSL https://api.github.com/repos/fabpot/local-php-security-checker/releases/latest | grep browser_download_url | grep linux_amd64 | awk '{ print $2 }' | sed 's/"//g')
     - curl -sSL $_url -o php-security-checker
     - chmod +x php-security-checker
-  script:
     - mkdir -p report-${CI_JOB_NAME}
+  script:
     - php-security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
 
 ################################################################################
@@ -238,7 +238,7 @@ phpunit_unit:
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml
     # Run PHPunit tests for unit, kernel, with coverage report.
     - XDEBUG_MODE=coverage vendor/bin/phpunit
-        --testsuite "${CI_PHPUNIT_TESTS}unit,${CI_PHPUNIT_TESTS}kernel"
+        --testsuite "unit,kernel"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
@@ -263,7 +263,7 @@ phpunit_func:
   script:
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data vendor/bin/phpunit
-        --testsuite "${CI_PHPUNIT_TESTS}functional"
+        --testsuite "functional"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit report-${CI_JOB_NAME}/phpunit-functional_junit.xml
@@ -288,7 +288,7 @@ phpunit_funcjs:
     - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # For functional tests the user need to be the web server user.
     - sudo -E -u www-data vendor/bin/phpunit
-        --testsuite "${CI_PHPUNIT_TESTS}functional-javascript"
+        --testsuite "functional-javascript"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
@@ -319,7 +319,7 @@ nightwatchjs:
       chromedriver@$(curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Prepare variables.
-    - envsubst < ${CI_WEB_ROOT}/core/.env.tmpl > ${CI_WEB_ROOT}/core/.env
+    - envsubst < .gitlab-ci/env.tpl > ${CI_WEB_ROOT}/core/.env
     # Launch Nightwatch tests from core folder.
     - yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
   artifacts:

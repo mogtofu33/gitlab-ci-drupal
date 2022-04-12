@@ -38,11 +38,6 @@
   CI_DOC_ROOT: "/opt/drupal"
   CI_WEB_ROOT: "/opt/drupal/${CI_DRUPAL_WEB_ROOT}"
 
-  # PHPunit tests to run, default provide only custom code or if this variable
-  # is empty all tests (including Drupal core).
-  # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#phpunit-tests
-  CI_PHPUNIT_TESTS: "custom"
-
   # Specify a group of tests to run rather than all tests in the suite.
   # CI_PHPUNIT_GROUP: my_group_1,my_group_2
 
@@ -95,11 +90,12 @@
   #
   # Configuration files, default is Drupal used for core.
   CI_CONFIG_ESLINT: ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-  CI_CONFIG_ESLINT_IGNORE: ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
   CI_CONFIG_ESLINT_YAML: ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-  CI_CONFIG_ESLINT_IGNORE_YAML: ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
   CI_CONFIG_STYLELINT: ${CI_DRUPAL_WEB_ROOT}/core/.stylelintrc.json
-  CI_CONFIG_STYLELINT_IGNORE: ${CI_DRUPAL_WEB_ROOT}/core/.stylelintignore
+  # Ignore files relative to project root. Default will be downloaded from this project.
+  CI_CONFIG_ESLINT_IGNORE: ${CI_PROJECT_DIR}/.eslintignore
+  CI_CONFIG_ESLINT_IGNORE_YAML: ${CI_PROJECT_DIR}/.eslintignore
+  CI_CONFIG_STYLELINT_IGNORE: ${CI_PROJECT_DIR}/.stylelintignore
   #
   # Space separated for multiple folders.
   CI_DIRS_LINT_JS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.js"

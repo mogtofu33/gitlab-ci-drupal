@@ -27,7 +27,7 @@ class RoboFile extends Tasks {
    * @var bool
    *   Enable verbosity for this code.
    */
-  protected $verbose = FALSE;
+  protected $ciVerbose = FALSE;
 
   /**
    * Database connection information.
@@ -36,7 +36,7 @@ class RoboFile extends Tasks {
    *   The database driver. This can be overridden by specifying a $CI_DB_DRIVER.
    *   Default is to the ci variables used with db service.
    */
-  protected $dbDriver = 'mysql';
+  protected $ciDbDriver = 'mysql';
 
   /**
    * Database connection information.
@@ -56,7 +56,7 @@ class RoboFile extends Tasks {
    *   $CI_DOC_ROOT environment variable.
    *   Default is to the ci image value.
    */
-  protected $docRoot = '/opt/drupal';
+  protected $ciDocRoot = '/opt/drupal';
 
   /**
    * Drupal webroot folder.
@@ -66,7 +66,7 @@ class RoboFile extends Tasks {
    *   $CI_DRUPAL_WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
-  protected $drupalWebRoot = 'web';
+  protected $ciDrupalWebRoot = 'web';
 
   /**
    * Drupal webroot folder.
@@ -76,7 +76,7 @@ class RoboFile extends Tasks {
    *   $CI_WEB_ROOT environment variable.
    *   Default is to the ci image value.
    */
-  protected $webRoot = '/opt/drupal/web';
+  protected $ciWebRoot = '/opt/drupal/web';
 
   /**
    * CI context type.
@@ -114,20 +114,16 @@ class RoboFile extends Tasks {
    *   (.gitlab-ci/).
    */
   protected $ciFiles = [
-    'core' => [
-      '.env.tmpl',
-      '.eslintignore',
-      '.stylelintignore',
-      'phpunit.xml',
-    ],
-    'ci' => [
-      '.phpmd.xml',
-      '.phpqa.yml',
-      'phpstan.neon',
-      'settings.local.php',
-      'checkstyle2junit.xslt',
-      'phpmd2junit.xslt',
-    ],
+    'conf/.env.tpl' => '.gitlab-ci/env.tpl',
+    'conf/checkstyle2junit.xslt' => '.gitlab-ci/checkstyle2junit.xslt',
+    'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
+    'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
+    '.eslintignore' => '.eslintignore',
+    '.stylelintignore' => '.stylelintignore',
+    'phpunit.xml' => '_CI_DRUPAL_WEB_ROOT_/core/phpunit.xml',
+    '.phpmd.xml' => '.phpmd.xml',
+    '.phpqa.yml' => '.phpqa.yml',
+    'phpstan.neon' => 'phpstan.neon',
   ];
 
   /**
@@ -146,16 +142,7 @@ class RoboFile extends Tasks {
    *   The address of remote ci config files. This can be overridden by
    *   specifying a $CI_REMOTE_FILES environment variable.
    */
-  protected $ciRemoteRef = "";
-
-  /**
-   * CI_PHPUNIT_TESTS context.
-   *
-   * @var string
-   *   The type of PHPunit tests. This can be overridden by specifying
-   *   a $CI_PHPUNIT_TESTS environment variable.
-   */
-  protected $phpunitTests = "custom";
+  protected $ciRemoteFiles = "";
 
   /**
    * RoboFile constructor.
@@ -164,66 +151,27 @@ class RoboFile extends Tasks {
     // Treat this command like bash -e and exit as soon as there's a failure.
     $this->stopOnFail();
 
-    if (getenv('CI_VERBOSE')) {
-      $this->verbose = getenv('CI_VERBOSE');
+    $varsFromEnv = [
+      'ciVerbose' => 'CI_VERBOSE',
+      'ciType' => 'CI_TYPE',
+      'ciProjectDir' => 'CI_PROJECT_DIR',
+      'ciProjectName' => 'CI_PROJECT_NAME',
+      'ciDrupalVersion' => 'CI_DRUPAL_VERSION',
+      'ciRemoteFiles' => 'CI_REMOTE_FILES',
+      'ciDbDriver' => 'CI_DB_DRIVER',
+      'ciDocRoot' => 'CI_DOC_ROOT',
+      'ciDrupalWebRoot' => 'CI_DRUPAL_WEB_ROOT',
+      'ciWebRoot' => 'CI_WEB_ROOT',
+      'dbUrl' => 'DB_URL',
+    ];
+    foreach ($varsFromEnv as $name => $value) {
+      $this->$name = getenv($value);
     }
 
-    // Pull CI variables from the environment, if it exists.
-    if (getenv('CI_TYPE')) {
-      $this->ciType = getenv('CI_TYPE');
+    // Add trailing slash on urls.
+    if (strcmp($this->ciRemoteFiles, '/') !== 0) {
+      $this->ciRemoteFiles .= '/';
     }
-    if (getenv('CI_PROJECT_DIR')) {
-      $this->ciProjectDir = getenv('CI_PROJECT_DIR');
-    }
-    if (empty($this->ciProjectDir)) {
-      $this->ciProjectDir = getcwd();
-    }
-    if (getenv('CI_PROJECT_NAME')) {
-      $this->ciProjectName = getenv('CI_PROJECT_NAME');
-    }
-    if (getenv('CI_DRUPAL_VERSION')) {
-      $this->ciDrupalVersion = getenv('CI_DRUPAL_VERSION');
-    }
-    if (getenv('CI_REMOTE_FILES')) {
-      $this->ciRemoteRef = getenv('CI_REMOTE_FILES');
-    }
-    if (strcmp($this->ciRemoteRef, "/") !== 0) {
-      $this->ciRemoteRef .= '/';
-    }
-
-    // Pull a DB_URL from the environment, if it exists.
-    if (filter_var(getenv('DB_URL'), FILTER_VALIDATE_URL)) {
-      $this->dbUrl = getenv('DB_URL');
-    }
-    // Pull a SIMPLETEST_DB from the environment, if it exists.
-    if (filter_var(getenv('SIMPLETEST_DB'), FILTER_VALIDATE_URL)) {
-      $this->dbUrl = getenv('SIMPLETEST_DB');
-    }
-    if (getenv('CI_DB_DRIVER')) {
-      $this->dbDriver = getenv('CI_DB_DRIVER');
-    }
-
-    // Pull a CI_DOC_ROOT from the environment, if it exists.
-    if (getenv('CI_DOC_ROOT')) {
-      $this->docRoot = getenv('CI_DOC_ROOT');
-    }
-    // Pull a CI_DRUPAL_WEB_ROOT from the environment, if it exists.
-    if (getenv('CI_DRUPAL_WEB_ROOT')) {
-      $this->drupalWebRoot = getenv('CI_DRUPAL_WEB_ROOT');
-    }
-    // Pull a CI_WEB_ROOT from the environment, if it exists.
-    if (getenv('CI_WEB_ROOT')) {
-      $this->webRoot = getenv('CI_WEB_ROOT');
-    }
-    else {
-      $this->webRoot = $this->docRoot . '/' . $this->drupalWebRoot;
-    }
-
-    // Pull a CI_PHPUNIT_TESTS from the environment, if it exists.
-    if (getenv('CI_PHPUNIT_TESTS')) {
-      $this->phpunitTests = getenv('CI_PHPUNIT_TESTS');
-    }
-
   }
 
   /**
@@ -245,11 +193,11 @@ class RoboFile extends Tasks {
   }
 
   /**
-   * Mirror our module/theme in the Drupal or the project.
+   * Get files and prepare folders for CI.
    */
   public function ciPrepare() {
-    $this->ciPreparePhpunit();
     $this->ciGetConfigFiles();
+    $this->ciPreparePhpunit();
     $this->ciPrepareFolders();
   }
 
@@ -263,7 +211,7 @@ class RoboFile extends Tasks {
    */
   public function drupalInstall($profile = 'minimal', $dump = NULL) {
     // Ensure permissions.
-    $dir = $this->webRoot . '/sites/default/files';
+    $dir = $this->ciWebRoot . '/sites/default/files';
     $this->taskFilesystemStack()
       ->mkdir($dir)
       ->chown($dir, 'www-data', TRUE)
@@ -296,18 +244,18 @@ class RoboFile extends Tasks {
       return;
     }
 
-    $_docRoot = $this->ciProjectDir;
+    $_ciDocRoot = $this->ciProjectDir;
     if ('project' !== $this->ciType) {
-      $_docRoot = $this->docRoot;
+      $_ciDocRoot = $this->ciDocRoot;
     }
 
-    if (!file_exists($_docRoot . '/vendor/bin/drush')) {
-      $this->composerRequire($_docRoot)
+    if (!file_exists($_ciDocRoot . '/vendor/bin/drush')) {
+      $this->composerRequire($_ciDocRoot)
           ->dependency('drush/drush', '>10')
           ->run();
     }
 
-    $task = $this->composerRequire($_docRoot)
+    $task = $this->composerRequire($_ciDocRoot)
       ->dependency('drupal/core-dev', '~' . $this->ciDrupalVersion)
       ->dependency('phpspec/prophecy-phpunit', '^2');
 
@@ -341,7 +289,7 @@ class RoboFile extends Tasks {
 
     if (substr($dump, 0, 4) === 'http') {
       if ($remote_file = file_get_contents($dump)) {
-        $filename = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $dump;
+        $filename = sys_get_temp_dir() . '/' . $dump;
         file_put_contents($filename, $remote_file);
       }
       else {
@@ -350,7 +298,7 @@ class RoboFile extends Tasks {
       }
     }
     else {
-      $filename = $this->ciProjectDir . DIRECTORY_SEPARATOR . $dump;
+      $filename = $this->ciProjectDir . '/' . $dump;
       if (!file_exists($filename)) {
         $this->io()->error("Cannot find dump file $filename");
         return NULL;
@@ -361,7 +309,7 @@ class RoboFile extends Tasks {
     $infos = pathinfo($filename);
     $exec = NULL;
     if ('gz' === $infos['extension']) {
-      $exec = 'zcat ' . $filename . ' > ' . $infos['dirname'] . DIRECTORY_SEPARATOR . $infos['filename'] . ';';
+      $exec = 'zcat ' . $filename . ' > ' . $infos['dirname'] . '/' . $infos['filename'] . ';';
     }
     elseif ('zip' === $infos['extension']) {
       $exec = 'unzip -fo ' . $filename . ';';
@@ -374,7 +322,7 @@ class RoboFile extends Tasks {
     $this->ciLog("Extract dump $filename");
     $this->_exec($exec);
 
-    return $infos['dirname'] . DIRECTORY_SEPARATOR . $infos['filename'];
+    return $infos['dirname'] . '/' . $infos['filename'];
   }
 
   /**
@@ -383,17 +331,16 @@ class RoboFile extends Tasks {
   private function drupalCopySettingsLocal() {
     $task = $this->taskFilesystemStack();
     // When install from dump we need to be sure settings.php is correct.
-    if (!file_exists($this->webRoot . '/sites/default/settings.local.php')) {
+    if (!file_exists($this->ciWebRoot . '/sites/default/settings.local.php')) {
       $task
-        ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->webRoot . '/sites/default/settings.local.php', TRUE);
+        ->copy($this->ciProjectDir . '/.gitlab-ci/settings.local.php', $this->ciWebRoot . '/sites/default/settings.local.php', TRUE);
     }
 
     $task
-      ->remove($this->webRoot . '/sites/default/settings.php')
-      ->copy($this->webRoot . '/sites/default/default.settings.php', $this->webRoot . '/sites/default/settings.php', TRUE)
-      ->appendToFile($this->webRoot . '/sites/default/settings.php', 'include $app_root . "/" . $site_path . "/settings.local.php";');
-  
-    $task->run();
+      ->remove($this->ciWebRoot . '/sites/default/settings.php')
+      ->copy($this->ciWebRoot . '/sites/default/default.settings.php', $this->ciWebRoot . '/sites/default/settings.php', TRUE)
+      ->appendToFile($this->ciWebRoot . '/sites/default/settings.php', 'include $app_root . "/" . $site_path . "/settings.local.php";')
+      ->run();
   }
 
   /**
@@ -403,9 +350,9 @@ class RoboFile extends Tasks {
    *   Local path to filename dump.
    */
   private function drupalImportDump($filename) {
-    $this->ciLog("Import dump $filename with $this->dbDriver");
+    $this->ciLog("Import dump $filename with $this->ciDbDriver");
 
-    switch ($this->dbDriver) {
+    switch ($this->ciDbDriver) {
       case 'mysql':
         $this->_exec('mysql -h db -u root drupal < ' . $filename . ';');
         break;
@@ -413,7 +360,7 @@ class RoboFile extends Tasks {
         $this->_exec('psql -h db -U drupal -d drupal -f ' . $filename . ';');
         break;
       default:
-        $this->io()->error("Db driver $this->dbDriver is not supported by this script.");
+        $this->io()->error("Db driver $this->ciDbDriver is not supported by this script.");
     }
   }
 
@@ -435,7 +382,7 @@ class RoboFile extends Tasks {
       $task->workingDir($dir);
     }
 
-    if ($this->verbose) {
+    if ($this->ciVerbose) {
       $task->option('verbose');
     }
 
@@ -468,7 +415,7 @@ class RoboFile extends Tasks {
     if ($profile == 'config_installer') {
       $task = $this->ciDrush()
         ->args('site:install', 'config_installer')
-        ->arg('config_installer_sync_configure_form.sync_directory=' . $this->docRoot . '/config/sync')
+        ->arg('config_installer_sync_configure_form.sync_directory=' . $this->ciDocRoot . '/config/sync')
         ->option('yes')
         ->option('db-url', $this->dbUrl, '=');
     }
@@ -497,8 +444,8 @@ class RoboFile extends Tasks {
       case "project":
         $this->ciLog("Project include Drupal, symlink to included Drupal.");
         $this->taskFilesystemStack()
-          ->remove($this->docRoot)
-          ->symlink($this->ciProjectDir, $this->docRoot)
+          ->remove($this->ciDocRoot)
+          ->symlink($this->ciProjectDir, $this->ciDocRoot)
           ->run();
         break;
 
@@ -512,32 +459,9 @@ class RoboFile extends Tasks {
         $this->taskFilesystemStack()
           ->symlink(
             $this->ciProjectDir,
-            $this->webRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
+            $this->ciWebRoot . '/' . $this->ciType . 's/custom/' . $this->ciProjectName
           )->run();
         break;
-    }
-  }
-
-  /**
-   * Setup Phpunit file used for tests.
-   */
-  private function ciPreparePhpunit() {
-    // Override phpunit.xml file if a custom one exist.
-    if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests)) {
-      $this->ciNotice('Override phpunit.xml file with: phpunit.xml.' . $this->phpunitTests);
-      if (file_exists($this->ciProjectDir . '/.gitlab-ci/phpunit.xml')) {
-        unlink($this->ciProjectDir . '/.gitlab-ci/phpunit.xml');
-      }
-      $this->taskFilesystemStack()
-        ->copy(
-          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml.' . $this->phpunitTests,
-          $this->ciProjectDir . '/.gitlab-ci/phpunit.xml',
-          TRUE
-          )
-        ->run();
-    }
-    else {
-      $this->ciLog('No override phpunit.xml file found as: phpunit.xml.' . $this->phpunitTests);
     }
   }
 
@@ -547,50 +471,49 @@ class RoboFile extends Tasks {
   private function ciGetConfigFiles() {
     $this->ciLog("Prepare config files for CI");
 
-    $src_dir = $this->ciProjectDir . '/.gitlab-ci/';
-    $dest_dir = $this->ciProjectDir . '/' . $this->drupalWebRoot . '/core/';
+    $this->_mkdir($this->ciProjectDir . '/.gitlab-ci/');
 
-    // Create directory if do not exist.
-    $this->_mkdir($src_dir);
-
-    // Manage files for drupal_root/core folder.
-    foreach ($this->ciFiles['core'] as $filename) {
-      // Use local file if exist.
-      if (file_exists($src_dir . $filename)) {
-        $this->ciNotice("Use local core file: $src_dir" . "$filename");
-        $this->taskFilesystemStack()
-          ->copy($src_dir . $filename, $dest_dir . $filename, TRUE)
-          ->run();
+    foreach ($this->ciFiles as $srcFilename => $destFilename) {
+      $destFilename = str_replace('_CI_DRUPAL_WEB_ROOT_', $this->ciDrupalWebRoot, $destFilename);
+      if (file_exists($destFilename)) {
+        $this->ciNotice('Use local file: ' . $destFilename);
+        continue;
       }
-      else {
-        $this->ciNotice("Download remote core file: $this->ciRemoteRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
-        if ($remote_file) {
-          file_put_contents($dest_dir . $filename, $remote_file);
-        }
-        else {
-          $this->io()->warning("Failed to get remote core file: $this->ciRemoteRef" . "$filename");
-        }
-      }
+      $this->ciGetRemoteFile($this->ciRemoteFiles . $srcFilename, $destFilename);
     }
+  }
 
-    // Manage ci configuration files for .gitlab-ci folder.
-    foreach ($this->ciFiles['ci'] as $filename) {
-      // Use remote file if local do not exist.
-      if (!file_exists($src_dir . $filename)) {
-        $this->ciNotice("Download remote ci file: $this->ciRemoteRef" . "$filename");
-        $remote_file = file_get_contents($this->ciRemoteRef . $filename);
-        if ($remote_file) {
-          file_put_contents($src_dir . $filename, $remote_file);
-        }
-        else {
-          $this->io()->warning("Failed to get remote ci file: $this->ciRemoteRef" . "$filename");
-        }
-      }
-      else {
-        $this->ciNotice("Use local ci file: $src_dir" . "$filename");
-      }
+  /**
+   * Helper to download remote file.
+   *
+   * @param string $remoteFilename
+   * @param string $localFilename
+   */
+  private function ciGetRemoteFile(string $remoteFilename, string $localFilename) {
+    $remoteFile = file_get_contents($remoteFilename);
+    if ($remoteFile) {
+      $this->ciLog('Get remote file: ' . $remoteFilename . " to " . $localFilename);
+      file_put_contents($localFilename, $remoteFile);
     }
+    else {
+      $this->io()->warning('Failed to get remote file: ' . $remoteFilename);
+    }
+  }
+
+  /**
+   * Copy phpunit file to web/core folder to be used by phpunit jobs.
+   */
+  private function ciPreparePhpunit() {
+    if (!file_exists($this->ciProjectDir . '/phpunit.xml')) {
+      $this->io()->error('Missing phpunit.xml file at the root of the project.');
+    }
+    $this->taskFilesystemStack()
+      ->copy(
+        $this->ciProjectDir . '/phpunit.xml',
+        $this->ciWebRoot . '/core/phpunit.xml',
+        TRUE
+      )
+      ->run();
   }
 
   /**
@@ -607,10 +530,10 @@ class RoboFile extends Tasks {
     }
 
     // Drush needs an absolute path to the webroot.
-    $task = $this->taskExec($this->docRoot . '/vendor/bin/drush')
-      ->option('root', $this->webRoot, '=');
+    $task = $this->taskExec($this->ciDocRoot . '/vendor/bin/drush')
+      ->option('root', $this->ciWebRoot, '=');
 
-    if ($this->verbose) {
+    if ($this->ciVerbose) {
       $task->arg('--verbose');
     }
 
@@ -624,7 +547,7 @@ class RoboFile extends Tasks {
    *   Message to log.
    */
   private function ciLog($message) {
-    if ($this->verbose) {
+    if ($this->ciVerbose) {
       $this->say("[log] $message");
     }
   }

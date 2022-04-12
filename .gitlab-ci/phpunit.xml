@@ -13,36 +13,22 @@
     <ini name="error_reporting" value="32767"/>
     <!-- Do not limit the amount of memory tests take to run. -->
     <ini name="memory_limit" value="-1"/>
-    <!-- <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/> -->
     <!-- Drupal variables are already set in the environment -->
   </php>
   <testsuites>
     <testsuite name="unit">
-      <file>./tests/TestSuites/UnitTestSuite.php</file>
-    </testsuite>
-    <testsuite name="kernel">
-      <file>./tests/TestSuites/KernelTestSuite.php</file>
-    </testsuite>
-    <testsuite name="functional">
-      <file>./tests/TestSuites/FunctionalTestSuite.php</file>
-    </testsuite>
-    <testsuite name="functional-javascript">
-      <file>./tests/TestSuites/FunctionalJavascriptTestSuite.php</file>
-    </testsuite>
-    <!-- Prefix with custom for only custom code with submodules -->
-    <testsuite name="customunit">
       <directory>../**/custom/**/tests/src/Unit</directory>
       <directory>../**/custom/**/**/**/tests/src/Unit</directory>
     </testsuite>
-    <testsuite name="customkernel">
+    <testsuite name="kernel">
       <directory>../**/custom/**/tests/src/Kernel</directory>
       <directory>../**/custom/**/**/**/tests/src/Kernel</directory>
     </testsuite>
-    <testsuite name="customfunctional">
+    <testsuite name="functional">
       <directory>../**/custom/**/tests/src/Functional</directory>
       <directory>../**/custom/**/**/**/tests/src/Functional</directory>
     </testsuite>
-    <testsuite name="customfunctional-javascript">
+    <testsuite name="functional-javascript">
       <directory>../**/custom/**/tests/src/FunctionalJavascript</directory>
       <directory>../**/custom/**/**/**/tests/src/FunctionalJavascript</directory>
     </testsuite>

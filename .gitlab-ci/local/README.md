@@ -45,8 +45,6 @@ Create a `.local.yml` file in this directory:
 
 ```yaml
 CI_TYPE: module
-# Adapt on conjunction with phpunit.xml in `.gitlab-ci`.
-CI_PHPUNIT_TESTS: custom
 ```
 
 Launch the stack:
