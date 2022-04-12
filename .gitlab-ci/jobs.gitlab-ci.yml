@@ -16,19 +16,18 @@
 #
 # For Gitlab CI help on this file see: https://docs.gitlab.com/ee/ci/yaml
 #
-# This template must be included from a .gitlab-ci.yml file, see documentation.
+# This template MUST be included from a .gitlab-ci.yml file, see documentation.
 #
 ###############################################################################
 
 include:
-  # Include in include must be as remote to work.
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/artifacts.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/scripts.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/01_build.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/02_test.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/03_base_jobs.yml'
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_deploy.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_deploy.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
   # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_release.yml'
 
@@ -350,9 +349,9 @@ behat:
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
     - curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_CHROME_PORT}/json/version | jq '.'
-    # Run the behat tests from the 'behat_tests/' folder at the root of the project.
+    # Run the behat tests.
     - vendor/bin/behat
-        --config ${CI_PROJECT_DIR}/behat_tests/behat.yml
+        --config ${CI_BEHAT_TESTS}
         --format progress
         --out std
         --format junit
@@ -377,7 +376,7 @@ metrics:
         --analyzedDirs "${CI_DIRS_PHP_METRICS}"
 
 ################################################################################
-# Base image for all ci actions, see https://gitlab.com/mog33/drupal8ci
+# Base image for all ci jobs, see https://gitlab.com/mog33/drupal8ci
 ################################################################################
 
 default:

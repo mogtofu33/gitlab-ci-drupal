@@ -80,9 +80,8 @@ By default the configuration is to keep each job report **1 week**.
 ### Custom build tasks
 
 To add some custom build steps for the `Build` job (ie: Yarn, Gulp, Composer, Bower, Webpack...)
-before or after the regular build steps (composer install/require) you can copy
-the `.gitlab-ci\build.php` or `.gitlab-ci\before_build.php` file and include
-any task provided by [Robo.li](https://robo.li/tasks/Base/).
+before or after the regular build steps (composer install/require) you can create `.gitlab-ci\build.php`
+or `.gitlab-ci\before_build.php` file and include any task provided by [Robo.li](https://robo.li/tasks/Base/).
 
 File `.gitlab-ci\build.php` is executed during the Build job script after the
 regular `composer install / require`.
@@ -94,8 +93,8 @@ other task you need before the build.
 It's important to have any action relative to the `$this->docRoot` or `$this->webRoot` as we
 are not working from the `CI_PROJECT_DIR`.
 
-!!! caution "build.php syntax is not checked"
-    If your `build.php` contains error, it will make the `Build` job fail!
+!!! caution "build.php and before_build.php syntax are not checked"
+    If your `build.php` or `before_build.php` contains error, it will make the `Build` job fail!
 
 Some examples of common tasks:
 
@@ -165,13 +164,16 @@ CI_NIGHTWATCH_TESTS | --skiptags core | All tests except core.
 
 ### Behat tests
 
-Tests for [Behat](http://behat.org) are executed from the `behat_tests/` folder of the
-project.
+Tests for [Behat](http://behat.org) are executed from the `CI_BEHAT_TESTS` variable.
 
-Copy this folder on the root of your project and adapt `behat_tests/features` to your
-tests.
+You have to create a folder for your tests at the root of your project containing Behat tests and code.
+An example is provided in this project in `behat_tests`, it could be used as a starting point.
 
-#### Drupal installation
+Name | Value
+-|-
+CI_BEHAT_TESTS | ${CI_PROJECT_DIR}/behat_tests/behat.yml
+
+#### Drupal installation for Behat
 
 To install Drupal from a db dump, you need to set `CI_BEHAT_INSTALL_DUMP` variable to a local or remote dump file.
 
@@ -223,16 +225,15 @@ All rules try to match a [Drupal 9](https://www.drupal.org) project.
 
 To adapt some rules, first look at `.gitlab-ci/.phpmd.xml`, `.gitlab-ci/phpstan.neon`.
 
-Copy those files in your project and configure variables to override or place in a specific
+Copy those files in your project root and configure variables to override or place in a specific
 folder and adapt variables below.
 
 Name | Value
 -|-
-CI_QA_CONFIG_PHPSTAN | .gitlab-ci/phpstan.neon
-CI_QA_CONFIG_PHPMD | .gitlab-ci/.phpmd.xml
+CI_QA_CONFIG_PHPSTAN | ${CI_PROJECT_DIR}/phpstan.neon
+CI_QA_CONFIG_PHPMD | ${CI_PROJECT_DIR}/.phpmd.xml
 
 More details see:
-- [Phpqa .phpqa.yml](https://github.com/EdgedesignCZ/phpqa/blob/master/.phpqa.yml)
 - [Phpstan phpstan.neon](https://phpstan.org/config-reference)
 - [Phpmd phpmd.xml](https://phpmd.org/rules/index.html)
 
@@ -294,7 +295,7 @@ Phpstan autoloading is based on the project autoloading for Drupal. Contrib modu
 folders are not included in the Phpstan analysis. Above level 5, this will trigger a lot of
 unknown type hint from Phpstan.
 
-To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project fill a
+To autoload contrib code, copy the `.gitlab-ci/phpstan.neon` file from this project at the root or fill a
 `CI_QA_CONFIG_PHPSTAN` variable to point the ci to this configuration.
 
 Then add the parameter [scanDirectories or scanFiles](https://phpstan.org/user-guide/discovering-symbols#third-party-code-outside-of-composer-dependencies),
@@ -319,19 +320,30 @@ You can adapt rules and ignore for each jobs.
 Name | Value
 -|-
 CI_CONFIG_ESLINT | ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-CI_CONFIG_ESLINT_IGNORE | ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
 CI_CONFIG_ESLINT_YAML | ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-CI_CONFIG_ESLINT_IGNORE_YAML | ${CI_DRUPAL_WEB_ROOT}/core/.eslintignore
 CI_CONFIG_STYLELINT | ${CI_DRUPAL_WEB_ROOT}/core/.stylelintrc.json
-CI_CONFIG_STYLELINT_IGNORE | ${CI_WEB_ROOT}/core/.stylelintignore
+
+Name | Value
+-|-
+CI_CONFIG_ESLINT_IGNORE | ${CI_PROJECT_DIR}/.eslintignore
+CI_CONFIG_ESLINT_IGNORE_YAML | ${CI_PROJECT_DIR}/.eslintignore
+CI_CONFIG_STYLELINT_IGNORE | ${CI_PROJECT_DIR}/.stylelintignore
 
 ### Metrics jobs
 
-Metrics jobs are using [Phpmetrics](https://www.phpmetrics.org),
-[Phploc](https://github.com/sebastianbergmann/phploc) and
-[Pdepend](https://pdepend.org/).
+Metrics jobs are using:
+- [Phpmetrics](https://www.phpmetrics.org)
+- [Phploc](https://github.com/sebastianbergmann/phploc)
+- [Pdepend](https://pdepend.org/)
 
 PHPqa is used to provide a HTML report that you can access from the job artifacts and kept by default 1 week.
+
+You can override `.gitlab-ci/.phpqa.yml`, copy this file at the root of your project or fill a
+`CI_METRICS_CONFIG_PHPQA` variable to point the ci to this configuration folder.
+
+Name | Value
+-|-
+CI_METRICS_CONFIG_PHPQA | ${CI_PROJECT_DIR}
 
 ### Composer config
 
@@ -366,7 +378,7 @@ Drupal release based on semantic-release not yet implemented, wip in `.gitlab-ci
 
 To deploy to an external server, you must implement your own solution.
 
-As per Drupal 8/9 good practices it is not meant to deploy any database,
+As per Drupal 9 good practices it is not meant to deploy any database,
 only the codebase.
 
 This project include a sample assuming you can ssh to a remote host.  

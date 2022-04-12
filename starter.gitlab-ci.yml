@@ -44,9 +44,9 @@ variables:
   # This is mandatory to get default variables from:
   # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml
   extends: .default_variables
-  # Docker image used for ci, should be the same as include above.
+  # Docker image ref used for ci.
   CI_REF: "4.x-dev"
-  # Minor Drupal version to work with, limited to tags on
+  # Minor Drupal version to work with, limited to existing tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags
   CI_DRUPAL_VERSION:
     value: "9.3"
@@ -60,34 +60,35 @@ variables:
   # CI_PHPUNIT_GROUP: my_group_1,my_group_2
 
   ##############################################################################
-  # Override default variables for a module.
+  # Set variables for a module.
   #
   ## Default CI setup is for a 'project' (full Drupal with a composer.json),
   ## next section contains common variables to change for a module (module,
-  ## theme). Simply uncomment and adapt dirs to set the CI for a module.
+  ## theme). Simply uncomment and adapt dirs to set the CI for custom code
+  ## without Drupal.
 
   # CI_TYPE: module
-  # # CI_PROJECT_DIR is the folder where this project is mounted in Gitlab-CI.
-  # CI_DIRS_QA_PHPCS: "${CI_PROJECT_DIR}"
-  # CI_DIRS_QA_PHPSTAN: "${CI_PROJECT_DIR}"
-  # CI_DIRS_QA_PHPMD: "${CI_PROJECT_DIR}"
-  # # Eslint / Stylelint files to test.
-  # CI_DIRS_LINT_JS: "${CI_PROJECT_DIR}/js/*.js"
-  # CI_DIRS_LINT_YAML: "${CI_PROJECT_DIR}/*.yml"
-  # CI_DIRS_LINT_CSS: "${CI_PROJECT_DIR}/css/*.css"
-  # # Metrics to include.
-  # CI_DIRS_PHP_METRICS: "${CI_PROJECT_DIR}"
-  # # Set CI_SKIP_XXX variable to 1 to skip.
-  # # If no build or deploy, set this to 1.
+  # # Set CI_SKIP_XXX variable to 1 to skip some jobs.
+  # # If no 'build' or 'deploy', set this to 1.
   # CI_SKIP_BUILD: 0
   # # Security is for a Drupal project with third party.
   # CI_SKIP_SECURITY: 1
-  # # If you don't have any css files, you can skip with
+  # # If you don't have any css files, you can skip with:
   # CI_SKIP_LINT_CSS: 1
-  # # If you don't have any javascript files, you can skip with
+  # # If you don't have any javascript files, you can skip with:
   # CI_SKIP_LINT_JS: 1
-  # # If you don't want to check yaml files, you can skip with
+  # # If you don't want to check yaml files, you can skip with:
   # CI_SKIP_LINT_YAML: 1
+  # # Note: 'CI_PROJECT_DIR' is the folder where this project is mounted in Gitlab-CI.
+  # CI_DIRS_QA_PHPCS: "${CI_PROJECT_DIR}"
+  # CI_DIRS_QA_PHPSTAN: "${CI_PROJECT_DIR}"
+  # CI_DIRS_QA_PHPMD: "${CI_PROJECT_DIR}"
+  # # Files to test with EsLint or StyleLint.
+  # CI_DIRS_LINT_JS: "${CI_PROJECT_DIR}/js/*.js"
+  # CI_DIRS_LINT_YAML: "${CI_PROJECT_DIR}/*.yml"
+  # CI_DIRS_LINT_CSS: "${CI_PROJECT_DIR}/css/*.css"
+  # # PHP code to include for metrics.
+  # CI_DIRS_PHP_METRICS: "${CI_PROJECT_DIR}"
 
   ##############################################################################
 
@@ -96,17 +97,6 @@ variables:
   # variables.
   #
   ## List of CI_SKIP_* variables, uncomment to skip a job.
-  #
-  # CI_SKIP_BUILD: 1 # If only QA/Lint or metrics, build can be optional.
-  #
-  # CI_SKIP_SECURITY: 1
-  #
-  # CI_SKIP_TESTS: 1 # Skip all tests, ignore CI_SKIP_TEST_*.
-  # CI_SKIP_TEST_UNITKERNEL: 1
-  # CI_SKIP_TEST_FUNCTIONAL: 1
-  # CI_SKIP_TEST_FUNCTIONALJS: 1
-  #
-  ## Tests disabled by default because need a specific setup / configuration.
   #
   ## Only needed if you have Behat tests, comment or set to 0 to enable.
   ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#behat-tests
@@ -118,13 +108,25 @@ variables:
   ## .sql, .sql.gz, .sql.zip
   # CI_BEHAT_INSTALL_DUMP: "path/relative/to/project/root/dump.sql.zip"
   # CI_BEHAT_INSTALL_DUMP: "http://url/to/dump.sql.zip"
+  ## Yaml file containing Behat tests.
+  # CI_BEHAT_TESTS: "${CI_PROJECT_DIR}/behat_tests/behat.yml"
   #
-  ## Only if you have Nightwatch tests in your code.
-  ## Nightwatch need some configuration, see
+  ## Only if you have NightwatchJs tests in your code.
+  ## NightwatchJs need some configuration, see
   ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
   CI_SKIP_TEST_NIGHTWATCHJS: 1
   ## Default is '--skiptags core', add your tag.
   # CI_NIGHTWATCH_TESTS: "--tag my_module"
+  #
+  ## If only QA/Lint or Metrics jobs, build can be optional.
+  # CI_SKIP_BUILD: 1
+  #
+  # CI_SKIP_SECURITY: 1
+  #
+  # CI_SKIP_TESTS: 1 # Skip all tests, ignore CI_SKIP_TEST_*.
+  # CI_SKIP_TEST_UNITKERNEL: 1
+  # CI_SKIP_TEST_FUNCTIONAL: 1
+  # CI_SKIP_TEST_FUNCTIONALJS: 1
   #
   # CI_SKIP_QA: 1 # Skip all qa, ignore CI_SKIP_QA_*.
   # CI_SKIP_QA_PHPCS: 1
@@ -143,3 +145,15 @@ variables:
 # Advanced usage with this file, see doc.
 # https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage
 ################################################################################
+
+## Uncomment to add your stages.
+# stages:
+#   - build
+#   - qa
+#   - tests
+#   - metrics
+#   # Add your stages, for example deploy.
+#   - deploy to testing
+#   - deploy to production
+
+# Create any new job below or copy existing jobs to override.

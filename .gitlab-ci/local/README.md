@@ -21,10 +21,6 @@ Optional settings files:
 
 ```bash
 .gitlab-ci/local/.gitignore
-.gitlab-ci/.phpqa.yml
-.gitlab-ci/.phpmd.xml
-.gitlab-ci/phpstan.neon
-.gitlab-ci/phpunit.xml
 ```
 
 Optional variable override for this script:
