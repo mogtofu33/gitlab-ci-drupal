@@ -162,7 +162,7 @@ lint_php:
         --checkstyle
         ${CI_DIRS_LINT_PHP} >> report-${CI_JOB_NAME}/parallel-lint.xml
   after_script:
-    - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml
+    - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml || true
   # Detect critical error and should not be ignored.
   allow_failure: false
 
@@ -180,9 +180,11 @@ lint_js:
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
+        --format checkstyle
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_checkstyle.xml"
         "${CI_DIRS_LINT_JS}"
+  after_script:
+    - xsltproc -o report-${CI_JOB_NAME}/eslint-js_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/eslint-js_checkstyle.xml || true
 
 # This is a eslint report for Yaml files.
 lint_yaml:
@@ -198,9 +200,11 @@ lint_yaml:
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
         --ext .yml
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
+        --format checkstyle
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_checkstyle.xml"
         "${CI_DIRS_LINT_YAML}"
+  after_script:
+    - xsltproc -o report-${CI_JOB_NAME}/eslint-js_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/eslint-js_checkstyle.xml || true
 
 # Drupal 9 rules used here for stylelint to check css.
 # https://www.drupal.org/docs/develop/standards/css
@@ -212,13 +216,15 @@ lint_css:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core add stylelint-junit-formatter
+    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core add stylelint-checkstyle-formatter
     - node ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
-        --custom-formatter ${CI_WEB_ROOT}/core/node_modules/stylelint-junit-formatter
-        --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
+        --custom-formatter ${CI_WEB_ROOT}/core/node_modules/stylelint-checkstyle-formatter
+        --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_checkstyle.xml
         "${CI_DIRS_LINT_CSS}"
+  after_script:
+    - xsltproc -o report-${CI_JOB_NAME}/stylelint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/stylelint_checkstyle.xml || true
 
 ################################################################################
 # Drupal tests.
