@@ -212,7 +212,7 @@ lint_css:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core add https://gitlab.com/gitlab-ci-drupal/stylelint-gitlabci-formatter.git
+    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core add stylelint-gitlabci-formatter
     - node ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
