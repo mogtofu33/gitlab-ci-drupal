@@ -52,6 +52,7 @@
       <directory>../themes/custom/*/tests</directory>
       <directory>../themes/custom/*/modules/*/src/Tests</directory>
       <directory>../themes/custom/*/modules/*/tests</directory>
+      <directory>../modules/custom/*/RoboFile.php</directory>
     </exclude>
   </coverage>
 </phpunit>
