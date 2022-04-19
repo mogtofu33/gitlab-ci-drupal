@@ -11,3 +11,10 @@
     - !reference [.scripts, ci-prepare]
   # Allow failure to produce report and warning, not a critical job.
   allow_failure: true
+
+.job_template_yarn_install:
+  extends: .job_template
+  before_script:
+    - !reference [.scripts, set-registries]
+    - !reference [.scripts, ci-prepare]
+    - yarn --cwd ${CI_WEB_ROOT}/core install;

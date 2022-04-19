@@ -71,7 +71,7 @@ build:
     - if [ -f composer.json ]; then
         robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
       fi
-    - if [ -f ${CI_WEB_ROOT}/core/package.json ]; then
+    - if [ ${CI_TYPE} == "project" ] && [ -f ${CI_WEB_ROOT}/core/package.json ]; then
         yarn --cwd ${CI_WEB_ROOT}/core install;
       fi
   allow_failure: false
@@ -169,7 +169,7 @@ lint_php:
 # https://www.drupal.org/docs/develop/standards/javascript
 lint_js:
   stage: qa
-  extends: .job_template
+  extends: .job_template_yarn_install
   rules:
     - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_JS == "1"'
       when: never
@@ -186,7 +186,7 @@ lint_js:
 # This is a eslint report for Yaml files.
 lint_yaml:
   stage: qa
-  extends: .job_template
+  extends: .job_template_yarn_install
   rules:
     - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_YAML == "1"'
       when: never
@@ -205,7 +205,7 @@ lint_yaml:
 # https://www.drupal.org/docs/develop/standards/css
 lint_css:
   stage: qa
-  extends: .job_template
+  extends: .job_template_yarn_install
   rules:
     - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_CSS == "1"'
       when: never
