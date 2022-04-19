@@ -33,7 +33,5 @@
     - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites
     - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites
     - if [ ${CI_TYPE} != "project" ]; then
-        cd ${CI_DOC_ROOT};
         robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
-        cd ${CI_PROJECT_DIR};
       fi
