@@ -43,7 +43,7 @@
 
   # Folder with the phpunit.xml file, default is to copy the file from
   # ./gitlab-ci/ folder to the Drupal core folder.
-  CI_PHPUNIT_CONFIGURATION: ${CI_DRUPAL_WEB_ROOT}/core
+  CI_PHPUNIT_CONFIGURATION: ${CI_WEB_ROOT}/core
 
   # Nightwatch.js tests to run.
   # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
@@ -75,10 +75,10 @@
   # List of variables to set some specific configuration and files to validate.
   #
   # Code quality dirs, must include your PHP code to check.
-  CI_DIRS_QA_PHPCS: "${CI_DRUPAL_WEB_ROOT}/**/custom"
-  CI_DIRS_QA_PHPSTAN: "${CI_DRUPAL_WEB_ROOT}/**/custom"
-  CI_DIRS_QA_PHPMD: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
-  CI_DIRS_LINT_PHP: "${CI_DRUPAL_WEB_ROOT}/**/custom"
+  CI_DIRS_QA_PHPCS: "${CI_WEB_ROOT}/**/custom"
+  CI_DIRS_QA_PHPSTAN: "${CI_WEB_ROOT}/**/custom"
+  CI_DIRS_QA_PHPMD: "${CI_WEB_ROOT}/modules/custom,${CI_WEB_ROOT}/themes/custom"
+  CI_DIRS_LINT_PHP: "${CI_WEB_ROOT}/**/custom"
   #
   CI_QA_IGNORE: "*/vendor/*,*/bootstrap/*,*/tests/*,*/.gitlab-ci/*,Readme.md,style.css,print.css,*Test.php,RoboFile.php"
   CI_QA_SUFFIX: "php,inc,module,install,test,profile,theme"
@@ -91,25 +91,25 @@
   # Eslint / Stylelint settings.
   #
   # Configuration files, default is Drupal used for core.
-  CI_CONFIG_ESLINT: ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-  CI_CONFIG_ESLINT_YAML: ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-  CI_CONFIG_STYLELINT: ${CI_DRUPAL_WEB_ROOT}/core/.stylelintrc.json
+  CI_CONFIG_ESLINT: ${CI_WEB_ROOT}/core/.eslintrc.passing.json
+  CI_CONFIG_ESLINT_YAML: ${CI_WEB_ROOT}/core/.eslintrc.passing.json
+  CI_CONFIG_STYLELINT: ${CI_WEB_ROOT}/core/.stylelintrc.json
   # Ignore files relative to project root. Default will be downloaded from this project.
   CI_CONFIG_ESLINT_IGNORE: ${CI_PROJECT_DIR}/.eslintignore
   CI_CONFIG_ESLINT_IGNORE_YAML: ${CI_PROJECT_DIR}/.eslintignore
   CI_CONFIG_STYLELINT_IGNORE: ${CI_PROJECT_DIR}/.stylelintignore
   #
   # Space separated for multiple folders.
-  CI_DIRS_LINT_JS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.js"
-  CI_DIRS_LINT_YAML: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/*.yml"
-  CI_DIRS_LINT_CSS: "${CI_DRUPAL_WEB_ROOT}/**/custom/**/css/*.css"
+  CI_DIRS_LINT_JS: "${CI_WEB_ROOT}/**/custom/**/*.js"
+  CI_DIRS_LINT_YAML: "${CI_WEB_ROOT}/**/custom/**/*.yml"
+  CI_DIRS_LINT_CSS: "${CI_WEB_ROOT}/**/custom/**/css/*.css"
   #
   # Metrics settings.
   #
   # Folder containing .phpqa.yml file.
   CI_METRICS_CONFIG_PHPQA: ${CI_PROJECT_DIR}
   # Comma separated for multiple folders.
-  CI_DIRS_PHP_METRICS: "${CI_DRUPAL_WEB_ROOT}/modules/custom,${CI_DRUPAL_WEB_ROOT}/themes/custom"
+  CI_DIRS_PHP_METRICS: "${CI_WEB_ROOT}/modules/custom,${CI_WEB_ROOT}/themes/custom"
 
   ##############################################################################
   #
