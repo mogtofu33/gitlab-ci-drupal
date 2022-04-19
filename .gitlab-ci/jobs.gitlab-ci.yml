@@ -350,6 +350,7 @@ behat:
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
     - curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_BEHAT_CHROME_PORT}/json/version | jq '.'
+    - cd ${CI_DOC_ROOT}
     # Run the behat tests.
     - vendor/bin/behat
         --config ${CI_BEHAT_TESTS}
