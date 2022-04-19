@@ -62,7 +62,6 @@ build:
       when: never
     - when: always
   script:
-    - composer self-update
     # Validate the composer.json file, install project.
     - if [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n;
@@ -72,8 +71,8 @@ build:
     - if [ -f composer.json ]; then
         robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
       fi
-    - if [ -f ${CI_DRUPAL_WEB_ROOT}/core/package.json ]; then
-        yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core install;
+    - if [ -f ${CI_WEB_ROOT}/core/package.json ]; then
+        yarn --cwd ${CI_WEB_ROOT}/core install;
       fi
   allow_failure: false
 
@@ -212,7 +211,7 @@ lint_css:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core add stylelint-gitlabci-formatter
+    - yarn --cwd ${CI_WEB_ROOT}/core add stylelint-gitlabci-formatter
     - node ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
@@ -340,7 +339,7 @@ behat:
   services:
     - name: ${CI_SERVICE_DATABASE}
       alias: db
-    - name: ${CI_SERVICE_CHROME}
+    - name: ${CI_SERVICE_BEHAT_CHROME}
       alias: chrome
   script:
     - echo -e "\e[0Ksection_start:`date +%s`:behat_install[collapsed=true]\r\e[0K\e[1;34m Install drupal"
@@ -348,7 +347,7 @@ behat:
     - robo drupal:install ${CI_BEHAT_INSTALL_PROFILE} ${CI_BEHAT_INSTALL_DUMP}
     - echo -e "\e[0Ksection_end:`date +%s`:behat_install\r\e[0K"
     # Test Chrome is running properly.
-    - curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_CHROME_PORT}/json/version | jq '.'
+    - curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_BEHAT_CHROME_PORT}/json/version | jq '.'
     # Run the behat tests.
     - vendor/bin/behat
         --config ${CI_BEHAT_TESTS}
