@@ -68,7 +68,7 @@ build:
         composer install -n --prefer-dist;
       fi
     # Install dev tools and node modules.
-    - if [ -f composer.json ]; then
+    - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
       fi
     - if [ ${CI_TYPE} == "project" ] && [ -f ${CI_WEB_ROOT}/core/package.json ]; then
@@ -333,7 +333,7 @@ nightwatchjs:
 # Behat tests from behat_tests/ folder at the root of your project.
 behat:
   stage: tests
-  extends: .test_template
+  extends: .test_template_behat
   rules:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_BEHAT == "1"'
       when: never
