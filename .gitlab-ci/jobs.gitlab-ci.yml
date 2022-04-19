@@ -136,6 +136,8 @@ phpstan:
       when: never
     - when: on_success
   script:
+    # Avoid phpstan failing.
+    - cd ${CI_DOC_ROOT}
     - phpstan analyze
         --no-progress
         --configuration ${CI_QA_CONFIG_PHPSTAN}
