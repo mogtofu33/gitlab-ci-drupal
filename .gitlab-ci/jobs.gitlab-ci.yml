@@ -142,7 +142,7 @@ phpstan:
         --no-progress
         --configuration ${CI_QA_CONFIG_PHPSTAN}
         --error-format junit
-        ${CI_DIRS_QA_PHPSTAN} >> report-${CI_JOB_NAME}/phpstan_junit.xml
+        ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpstan_junit.xml
 
 ################################################################################
 # Code linter jobs for Drupal 9+
