@@ -55,9 +55,9 @@ services:
       - .env
 
   chrome:
-    image: ${CI_SERVICE_CHROME}
+    image: ${CI_SERVICE_BEHAT_CHROME}
     expose:
-      - "${CI_SERVICE_CHROME_PORT}"
+      - "${CI_SERVICE_BEHAT_CHROME_PORT}"
     container_name: ci-chrome
     env_file:
       - .env

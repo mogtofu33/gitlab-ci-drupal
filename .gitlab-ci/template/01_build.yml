@@ -4,6 +4,7 @@
 
 .build_template:
   before_script:
+    - composer self-update
     - !reference [.scripts, set-registries]
     # Add build ssh key to access private repositories or servers.
     - !reference [.scripts, build-ssh-key]

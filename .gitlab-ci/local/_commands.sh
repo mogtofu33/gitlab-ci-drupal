@@ -204,7 +204,7 @@ _security() {
 }
 
 _behat() {
-  _dkexec curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_CHROME_PORT}/json/version | jq '.'
+  _dkexec curl -s -H "Host:localhost" http://chrome:${CI_SERVICE_BEHAT_CHROME_PORT}/json/version | jq '.'
 
   if [ $__skip_install = 1 ]; then
     printf "%s[SKIP]%s Drupal install\\n" "${_dim_blu}" "${_end}"
