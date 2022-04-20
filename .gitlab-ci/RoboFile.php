@@ -120,7 +120,7 @@ class RoboFile extends Tasks {
     'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
     '.eslintignore' => '.eslintignore',
     '.stylelintignore' => '.stylelintignore',
-    'phpunit.xml' => '_CI_WEB_ROOT_/core/phpunit.xml',
+    'phpunit.xml' => 'phpunit.xml',
     '.phpmd.xml' => '.phpmd.xml',
     '.phpqa.yml' => '.phpqa.yml',
     'phpstan.neon' => 'phpstan.neon',
@@ -479,7 +479,6 @@ class RoboFile extends Tasks {
     $this->_mkdir($this->ciProjectDir . '/.gitlab-ci/');
 
     foreach ($this->ciFiles as $srcFilename => $destFilename) {
-      $destFilename = str_replace('_CI_WEB_ROOT_', $this->ciWebRoot, $destFilename);
       if (file_exists($destFilename)) {
         $this->ciNotice('Use local file: ' . $destFilename);
         continue;
