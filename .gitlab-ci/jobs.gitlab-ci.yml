@@ -243,12 +243,12 @@ phpunit_unit:
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-text
-        --log-junit {CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
+        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
   after_script:
     # [CODECOV] integration, need to set up CI environment variable 'CI_CODECOV_TOKEN' to work.
     # see https://codecov.io
     - if [ ! -z ${CI_CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
-        bash <(curl -s https://codecov.io/bash) -f "{CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.xml" || true;
+        bash <(curl -s https://codecov.io/bash) -f "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.xml" || true;
       fi
   # https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
@@ -266,10 +266,10 @@ phpunit_func:
         --testsuite "functional"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
-        --log-junit {CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functional_junit.xml
+        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functional_junit.xml
   after_script:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
-    - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "{CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
+    - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
 phpunit_funcjs:
   stage: tests
@@ -291,10 +291,10 @@ phpunit_funcjs:
         --testsuite "functional-javascript"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
-        --log-junit {CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
+        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
   after_script:
-    - mkdir -p "{CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
-    - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "{CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
+    - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
+    - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
 # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 nightwatchjs:
