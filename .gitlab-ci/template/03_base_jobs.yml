@@ -17,6 +17,4 @@
   before_script:
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]
-    - if [ ${CI_TYPE} != "project" ]; then
-        yarn --cwd ${CI_WEB_ROOT}/core install;
-      fi
+    - yarn --cwd ${CI_WEB_ROOT}/core install
