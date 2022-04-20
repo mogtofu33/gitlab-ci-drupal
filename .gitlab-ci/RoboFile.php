@@ -200,10 +200,11 @@ class RoboFile extends Tasks {
    */
   public function ciPrepare($job = '') {
     $this->ciGetConfigFiles();
+    $this->ciPrepareFolders();
+    // After symlink, move local phpunit.xml file to drupal web/core folder.
     if (FALSE !== strpos($job, 'phpunit')) {
       $this->ciPreparePhpunit();
     }
-    $this->ciPrepareFolders();
   }
 
   /**
