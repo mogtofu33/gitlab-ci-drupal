@@ -49,7 +49,7 @@ variables:
   # Minor Drupal version to work with, limited to existing tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags
   CI_DRUPAL_VERSION:
-    value: "9.3"
+    value: "9.4"
     description: The version of Drupal to use for this Pipeline.
   # Relative path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on

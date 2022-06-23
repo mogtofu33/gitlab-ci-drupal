@@ -16,7 +16,7 @@
 
   # Minor Drupal version to work with, limited to tags on
   # https://hub.docker.com/r/mogtofu33/drupal8ci/tags?name=3.x
-  CI_DRUPAL_VERSION: "9.3"
+  CI_DRUPAL_VERSION: "9.4"
 
   # Select what you are running CI on, options are:
   #   project
