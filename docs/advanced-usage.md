@@ -8,7 +8,7 @@ For example to add a deploy stage:
 stages:
   - build
   - qa
-  - tests
+  - test
   - metrics
   # Add new stages.
   - deploy to testing
