@@ -460,7 +460,7 @@ class RoboFile extends Tasks {
         // If we have a custom build, run it now, see issue:
         // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
         $this->ciBuild();
-        // Root contain the theme / module, we mirror with project name.
+        // Root contain the theme / module, we symlink with project name.
         $this->taskFilesystemStack()
           ->symlink(
             $this->ciProjectDir,

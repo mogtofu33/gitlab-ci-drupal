@@ -10,7 +10,7 @@ Include **Build**, **Testing**, **Code quality**, **Metrics** and more...
 
 For any **issue**, please use the [Gitlab-CI project page](https://gitlab.com/mog33/gitlab-ci-drupal/-/issues)
 
-Current branch **4.x-dev** is based on an include behavior, ie you don't have to copy all files from this project.
+Based on an include behavior, ie you don't have to copy all files from this project.
 
 ## Prerequisites
 
@@ -33,19 +33,11 @@ Push your module / theme to a Gitlab with CI and runners enabled.
 - Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/starter.gitlab-ci.yml)
 file as a `.gitlab-ci.yml` at the root of your Drupal module or theme
 (same level as `my_module_or_theme.info.yml` file).
-
 - If your project is not on [Gitlab.com](https://gitlab.com), edit the `include` section et the beginning.
-
 - Edit the `variables` and uncomment the section under `Override default variables for a module`
-
-  - **OR** go to Gitlab **Settings > CI/ CD > Variables** and add variables from this section.
-
 - Create and push your branch, see the pipeline running for basic code standard and lint.
 
-External [module demo](https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-module)
-
-As an example you can check my module:
-[Content moderation edit notify](https://gitlab.com/mog33/content_moderation_edit_notify)
+External [module demo](https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-module), real module example [Content moderation edit notify](https://gitlab.com/mog33/content_moderation_edit_notify)
 
 For more option and details see the [full documentation](https://mog33.gitlab.io/gitlab-ci-drupal).
 
@@ -59,13 +51,9 @@ Assuming your project include a `composer.json` file from the
 [Drupal project](https://www.drupal.org/docs/develop/using-composer/using-composer-to-install-drupal-and-manage-dependencies).
 
 - Copy [starter.gitlab-ci.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/starter.gitlab-ci.yml) file as a `.gitlab-ci.yml` in your project
-
 - If you are using _Behat_ you must add your tests in a `behat_tests` folders at the root of your Drupal project (same level as `composer.json` file).
-
-  As a starting point you can look in the [behat_tests](./behat_tests) folder of this project.
-
+  - As a starting point you can look in the [behat_tests](./behat_tests) folder of this project.
 - Put your custom code in the `web/modules/custom` and `web/themes/custom` folders of your project.
-
 - Create and push your branch, see the pipeline running for basic code standard, lint, tests and metrics.
 
 External [project demo](https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-project).
@@ -80,7 +68,7 @@ For more option and details see the [full documentation](https://mog33.gitlab.io
 Want some help implementing this on your project? I provide Drupal expertise
 as a freelance, just [contact me](https://developpeur-drupal.com/en).
 
-If you want to support this project, you can
+If you want to support this project, you can:
 
 - [<img src="https://www.drupal.org/files/images/buy_me_a_coffee.png">](https://bit.ly/34jPKcE)
 - Hire me as a freelance for any Drupal related work

@@ -376,7 +376,8 @@ metrics:
         --analyzedDirs "${CI_DIRS_PHP_METRICS}"
 
 ################################################################################
-# Base image for all ci jobs, see https://gitlab.com/mog33/drupal8ci
+# Base image for all ci jobs
+# @see https://gitlab.com/gitlab-ci-drupal/drupal-ci-images
 ################################################################################
 
 default:

@@ -13,7 +13,7 @@ version: '3'
 services:
   build:
     # Drupal included from official docker image + ci tools. Edit in .env file.
-    # see https://gitlab.com/mog33/drupal8ci
+    # @see https://gitlab.com/gitlab-ci-drupal/drupal-ci-images
     image: mogtofu33/drupal8ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
     # image: registry.gitlab.com/mog33/drupal8ci/drupal8ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
     ports:

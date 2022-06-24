@@ -15,30 +15,9 @@ stages:
   - deploy to production
 ```
 
-### Available jobs
-
-Name | Detail | Report
----|---|---|:---:
-Build | If a project : `composer install`, can be used to add build steps (composer run-script, grunt, webpack, yarn...) | No
-Security | Symfony security-checker, look at versions in composer.lock | junit xml
-PHPcs | Code sniffer with _Drupal standards_, _Drupal Best practice_ | junit xml
-PHPMD | Code analysis with PHPMD | junit xml
-PHPStan | Static code analysis with PHPStan | junit xml
-PHP lint | Lint PHP code with PHP Parallel lint | junit xml
-Js lint | Javascript check with eslint (as used in Drupal core, with Drupal rules by default) | junit xml
-Yaml lint | Yaml check with eslint) | junit xml
-Css lint | Css check with stylelint (as used in Drupal core, with Drupal rules by default) | junit xml
-Unit, kernel | Phpunit unit and kernel tests with coverage. Codecov.io support see [Codecov.io support](/advanced-usage/#codecovio-support-in-phpunit-code-coverage) | junit xml
-Functional | Phpunit functional test (Browser based tests) | junit xml
-Functional Js | Phpunit functional javascript test (Browser with javascript based tests) | junit xml
-NightwatchJs | Nightwatch.js javascript test (Browser with javascript based tests), see [Nightwatch.js for Drupal 8/9](/advanced-usage/#nightwatchjs-for-drupal-8-or-9) | junit xml
-Behat tests | Support Behat tests from `behat_tests` folder, see [Behat tests for Drupal 8/9](#behat-tests-for-drupal-8-or-9) | junit xml
-Php metrics | Code metrics ans stats in a nice html report with phpmetrics, phploc, pdepend | Html report from job
-Deploy to... | Sample of deploy jobs with ssh to a host | No
-
 ### CI image tools
 
-Most tools are included in a specific [docker image](https://gitlab.com/mog33/drupal8ci).
+Most tools are included in a specific [docker image](https://gitlab.com/gitlab-ci-drupal/drupal-ci-images).
 
 Nothing could be done without a bunch of awesome humans building awesome tools.
 
@@ -55,7 +34,6 @@ Code quality is done using the wonderful PHP projects:
 - [Phploc](https://github.com/sebastianbergmann/phploc)
 - [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
 - [Phpmd](https://github.com/phpmd/phpmd)
-- [PHP-Parallel-Lint](https://github.com/JakubOnderka/PHP-Parallel-Lint)
 - [Pdepend](https://pdepend.org/)
 - [Phpmetrics](https://www.phpmetrics.org)
 - [Phpstan](https://github.com/phpstan/phpstan)
@@ -199,8 +177,8 @@ If you need different configuration for Behat, you can look and override variabl
 
 The pipeline in this project support Unit, Kernel, Functional,
 [Functional Javascript](https://www.drupal.org/docs/8/phpunit/phpunit-javascript-testing-tutorial)
-tests in Drupal 8/9, see
-[Type of tests in Drupal 8/9](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
+tests in Drupal 9+, see
+[Type of tests in Drupal 9+](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
 The tests configuration is defined in [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/blob/4.x-dev/.gitlab-ci/phpunit.xml).
 You can set your own specific configuration file with `CI_PHPUNIT_CONFIGURATION` or for a project simply have a `web/core/phpunit.xml` file.
@@ -224,7 +202,7 @@ your token value.
 
 ### Code Quality
 
-All rules try to match a [Drupal 9](https://www.drupal.org) project.
+All rules try to match a [Drupal 9+](https://www.drupal.org) project.
 
 To adapt some rules, first look at `.gitlab-ci/.phpmd.xml`, `.gitlab-ci/phpstan.neon`.
 
@@ -260,33 +238,6 @@ See [ignoring errors](https://phpstan.org/user-guide/ignoring-errors).
 Ignore errors that are not in your code will still trigger errors because of unmatched, uncomment
 `reportUnmatchedIgnoredErrors: false` to ignore unmatched ignored errors.
 
-Sample of common errors to ignore:
-
-```yaml
-    reportUnmatchedIgnoredErrors: false
-    ignoreErrors:
-        - '#Function t not found.#'
-        - '#Function node_is_page not found.#'
-        - '#Function theme_get_setting not found.#'
-        - '#Function file_prepare_directory not found.#'
-        - '#Function file_unmanaged_save_data not found.#'
-        - '#Function batch_set not found.#'
-        - '#Function _locale_parse_js_file not found.#'
-        - '#Constant FILE_CREATE_DIRECTORY not found.#'
-        - '#Constant FILE_EXISTS_RENAME not found.#'
-        - '#Constant FILE_STATUS_PERMANENT not found.#'
-        - '#Constant SAVED_NEW not found.#'
-        - '#Constant SAVED_UPDATED not found.#'
-        - '#Cannot call method toLink\(\) on Drupal\\node\\NodeInterface\|null.#'
-        - '#Unsafe usage of new static\(\).#'
-        - '#Access to an undefined property Drupal\\Core\\Field\\FieldItemListInterface\:\:\$entity.#'
-        - '#Access to an undefined property Drupal\\Core\\Field\\FieldItemListInterface\:\:\$value.#'
-        - '#Access to an undefined property Drupal\\Core\\Field\\FieldItemListInterface\:\:\$title.#'
-        - '#Call to an undefined method Drupal\\Core\\Database\\Query\\AlterableInterface\:\:execute\(\).#'
-        - '#Call to an undefined method Drupal\\Core\\Database\\Query\\AlterableInterface\:\:count\(\).#'
-        - '#Call to an undefined method Drupal\\Core\\Access\\AccessResultInterface\:\:setCacheMaxAge\(\).#'
-```
-
 ##### Baseline
 
 To include a baseline file you must adapt `phpstan.neon` with your baseline file.
@@ -314,24 +265,34 @@ parameters:
 ### Rules for linting
 
 Eslint is based on the official
-[Drupal 8/9 eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
+[Drupal 9+ eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
 
 Stylelint is based on the official
-[Drupal 8/9 stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
+[Drupal 9+ stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
 You can adapt rules and ignore for each jobs.
 
 Name | Value
 -|-
-CI_CONFIG_ESLINT | ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-CI_CONFIG_ESLINT_YAML | ${CI_DRUPAL_WEB_ROOT}/core/.eslintrc.passing.json
-CI_CONFIG_STYLELINT | ${CI_DRUPAL_WEB_ROOT}/core/.stylelintrc.json
+CI_CONFIG_ESLINT | ${CI_WEB_ROOT}/core/.eslintrc.passing.json
+CI_CONFIG_ESLINT_YAML | ${CI_WEB_ROOT}/core/.eslintrc.passing.json
+CI_CONFIG_STYLELINT | ${CI_WEB_ROOT}/core/.stylelintrc.json
 
 Name | Value
 -|-
 CI_CONFIG_ESLINT_IGNORE | ${CI_PROJECT_DIR}/.eslintignore
 CI_CONFIG_ESLINT_IGNORE_YAML | ${CI_PROJECT_DIR}/.eslintignore
 CI_CONFIG_STYLELINT_IGNORE | ${CI_PROJECT_DIR}/.stylelintignore
+
+### Files concerned by linting
+
+Space separated for multiple folders. Default is all custom code.
+
+Name | Value
+-|-
+CI_DIRS_LINT_JS | ${CI_WEB_ROOT}/**/custom/**/*.js
+CI_DIRS_LINT_YAML | ${CI_WEB_ROOT}/**/custom/**/*.yml
+CI_DIRS_LINT_CSS | ${CI_WEB_ROOT}/**/custom/**/css/*.css
 
 ### Metrics jobs
 
@@ -444,18 +405,18 @@ deploy ssh:
     - ssh -p22 ${ENV_USER}@${ENV_HOST} "${ENV_PATH}/scripts/deploy.sh --env=testing"
 ```
 
-#### Deploy Docker image sample
+#### [WIP] Deploy Docker image sample
 
 ```yaml
 deploy image:
   stage: deploy
-  extends: .deploy_ssh
+  extends: .deploy_docker
   variables:
     IMAGE_NAME: "${CI_DEPLOY_IMAGE_NAME}"
     IMAGE_TAG: "${CI_COMMIT_SHORT_SHA}"
   script:
     # Create docker image and include our Drupal code.
-    - docker build --compress --tag $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG --file ./.gitlab-ci/Dockerfile
+    - docker build --compress --tag $CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG --file ./.gitlab-ci/conf/Dockerfile
     - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME
     - docker ps
     # Sample to push to Docker Hub.
