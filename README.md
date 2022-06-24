@@ -20,7 +20,7 @@ and [Gitlab CI Yaml](https://docs.gitlab.com/ee/ci/yaml)
 
 ## Documentation
 
-* https://mog33.gitlab.io/gitlab-ci-drupal
+- [gitlab-ci-drupal](https://mog33.gitlab.io/gitlab-ci-drupal)
 
 ## Quick setup
 
@@ -42,7 +42,7 @@ file as a `.gitlab-ci.yml` at the root of your Drupal module or theme
 
 - Create and push your branch, see the pipeline running for basic code standard and lint.
 
-External module demo: https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-module
+External [module demo](https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-module)
 
 As an example you can check my module:
 [Content moderation edit notify](https://gitlab.com/mog33/content_moderation_edit_notify)
@@ -68,7 +68,7 @@ Assuming your project include a `composer.json` file from the
 
 - Create and push your branch, see the pipeline running for basic code standard, lint, tests and metrics.
 
-External project demo: https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-project
+External [project demo](https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-project).
 
 As an example you can check my project on a Drupal template:
 [Drupal project advanced template](https://gitlab.com/mog33/drupal-composer-advanced-template)

@@ -51,6 +51,7 @@ Nothing could be done without a bunch of awesome humans building awesome tools.
 - [Behat](http://behat.org/en/latest)
 
 Code quality is done using the wonderful PHP projects:
+
 - [Phploc](https://github.com/sebastianbergmann/phploc)
 - [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
 - [Phpmd](https://github.com/phpmd/phpmd)
@@ -62,7 +63,9 @@ Code quality is done using the wonderful PHP projects:
 
 Code metrics is done using the wonderful Phpqa, a tool that integrate other Php
 tools:
+
 - [Phpqa](https://github.com/EdgedesignCZ/phpqa)
+
 ### Custom configuration
 
 You can override any config by copying the file from `.gitlab-ci` folder on your project.
@@ -75,7 +78,7 @@ project in a `.gitlab-ci/` folder.
 By default the configuration is to keep each job report **1 week**.
 
 !!! bug "Artifacts override"
-    There is currently no easy override for this until https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/1893.
+    There is currently no easy override for this until [MR1893](https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/1893).
 
 ### Custom build tasks
 
@@ -133,7 +136,7 @@ For more tasks options see [Robo.li documentation](https://robo.li/tasks/Base/).
 
 You can use private repositories in your `composer.json` adding a ssh private key as a variable with name `CI_BUILD_KEY`
 
-See https://getcomposer.org/doc/05-repositories.md#using-private-repositories
+See [using private repositories](https://getcomposer.org/doc/05-repositories.md#using-private-repositories).
 
 The `CI_BUILD_KEY` is an arbitrary named variable for this project to be able to have a private key during the ci job of
 build that identify the ci user when trying to access a remote address with ssh support.
@@ -143,9 +146,9 @@ The CI will access the private module by `SSH` using a private key created from 
 The private key can not have a password so for obvious security reason you must create a key pair only for this task:
 
 1. Generate a ssh key, see [documentation](https://gitlab.com/help/ssh/README)
-2. On the *private* Gitlab project (Settings > Repository > Deploy keys) create a Deploy key and paste the __public__ key
+2. On the **private** Gitlab project (Settings > Repository > Deploy keys) create a Deploy key and paste the **public** key
 3. On the Gitlab where the CI is running (Settings > CI/CD > VARIABLES), add a variable with key `CI_BUILD_KEY` and for
-  value the __private__ part of the key, set the *protect* option depending your use case, do not mask it will never appear in logs
+  value the **private** part of the key, set the **protect** option depending your use case, do not mask it will never appear in logs
 
 The CI will use this key for any external authentication.
 
@@ -234,13 +237,14 @@ CI_QA_CONFIG_PHPSTAN | ${CI_PROJECT_DIR}/phpstan.neon
 CI_QA_CONFIG_PHPMD | ${CI_PROJECT_DIR}/.phpmd.xml
 
 More details see:
+
 - [Phpstan phpstan.neon](https://phpstan.org/config-reference)
 - [Phpmd phpmd.xml](https://phpmd.org/rules/index.html)
 
 #### PHPMD
 
 If a generated baseline file is on the same level as phpmd.xml, it will be included, see
-https://phpmd.org/documentation/
+[phpmd.org documentation](https://phpmd.org/documentation/).
 
 #### Phpstan
 
@@ -251,7 +255,7 @@ to your `.gitlab-ci/` or to the root of your project and change `CI_QA_CONFIG_PH
 
 To ignore some errors as false positive for Drupal, create a `ignoreErrors:` section in your `phpstan.neon` file.
 
-See https://phpstan.org/user-guide/ignoring-errors
+See [ignoring errors](https://phpstan.org/user-guide/ignoring-errors).
 
 Ignore errors that are not in your code will still trigger errors because of unmatched, uncomment
 `reportUnmatchedIgnoredErrors: false` to ignore unmatched ignored errors.
@@ -287,7 +291,7 @@ Sample of common errors to ignore:
 
 To include a baseline file you must adapt `phpstan.neon` with your baseline file.
 
-See https://phpstan.org/user-guide/baseline
+See [Phpstan baseline](https://phpstan.org/user-guide/baseline)
 
 ##### Autoloading
 
@@ -332,6 +336,7 @@ CI_CONFIG_STYLELINT_IGNORE | ${CI_PROJECT_DIR}/.stylelintignore
 ### Metrics jobs
 
 Metrics jobs are using:
+
 - [Phpmetrics](https://www.phpmetrics.org)
 - [Phploc](https://github.com/sebastianbergmann/phploc)
 - [Pdepend](https://pdepend.org/)
@@ -351,8 +356,8 @@ In case you want to set a different url for packagist or set a _Github oauth tok
 
 Name | Detail | Default
 -|-|-
-CI_COMPOSER_REPO_PACKAGIST_URL | https://getcomposer.org/doc/01-basic-usage.md#packagist | https?://repo.packagist.org
-CI_COMPOSER_GITHUB_OAUTH_TOKEN | https://getcomposer.org/doc/06-config.md#github-oauth |
+CI_COMPOSER_REPO_PACKAGIST_URL | [packagist](https://getcomposer.org/doc/01-basic-usage.md#packagist) | [packagist](https://repo.packagist.org)
+CI_COMPOSER_GITHUB_OAUTH_TOKEN | [github-oauth](https://getcomposer.org/doc/06-config.md#github-oauth) |
 
 _Note_: The Github token MUST be a private variable.
 
@@ -362,7 +367,7 @@ In case you want to set a different url for yarn registry, you can set variables
 
 Name | Default
 -|-
-CI_YARN_REGISTRY | https://registry.yarnpkg.com
+CI_YARN_REGISTRY | [Yarn registry](https://registry.yarnpkg.com)
 
 ### Release of code to Gitlab and Drupal.org
 
@@ -370,7 +375,7 @@ CI_YARN_REGISTRY | https://registry.yarnpkg.com
 
 Gitlab release, waiting for:
 
-* https://gitlab.com/gitlab-org/release-cli/-/blob/master/docs/index.md#using-this-tool-in-gitlab-ci
+- [Gitlab CLI](https://gitlab.com/gitlab-org/release-cli/-/blob/master/docs/index.md#using-this-tool-in-gitlab-ci)
 
 Drupal release based on semantic-release not yet implemented, wip in `.gitlab-ci/template/04_release.yml`
 
@@ -394,13 +399,12 @@ SSH / SCP based deploy sample job for a project.
 Could be a starting point if you have a remote ssh access to your environment.
 
 You must fill variables on the deploy job or in Gitlab UI:
-* Gitlab CI UI > settings > CI/CD
 
-See Gitlab-CI Environments documentation:
-https://docs.gitlab.com/ee/ci/environments.html#configuring-environments
+- Gitlab CI UI > settings > CI/CD
 
-For deploy samples, see examples in documentation:
-https://docs.gitlab.com/ee/ci/examples/README.html
+See Gitlab-CI Environments documentation: [configuring environments](https://docs.gitlab.com/ee/ci/environments.html#configuring-environments)
+
+For deploy samples, see examples in documentation: [README](https://docs.gitlab.com/ee/ci/examples/README.html)
 
 ```yaml
 deploy ssh:
@@ -410,7 +414,7 @@ deploy ssh:
     name: testing
     url: https://SET_MY_URL
   # To make this deploy job manual on the pipeline.
-  # https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
+  # @see https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
   # when: manual
   # Variables can be set from 'Gitlab CI UI > settings > CI/CD > variables' as
   # named below or directly here.

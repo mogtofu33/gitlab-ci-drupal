@@ -28,6 +28,6 @@ skip variables are described in [variables.yml](https://gitlab.com/mog33/gitlab-
 ### Workflow of jobs
 
 Tests (and Build) are by default on each push, check `rules:` to adapt.
-See documentation: https://docs.gitlab.com/ee/ci/yaml/#rules
+See [rules documentation](https://docs.gitlab.com/ee/ci/yaml/#rules).
 
-You can add global rules on the workflow in your `.gitlab-ci.yml`, see https://docs.gitlab.com/ee/ci/yaml/#workflowrules
+You can add global rules on the workflow in your `.gitlab-ci.yml`, see [workflowrules](https://docs.gitlab.com/ee/ci/yaml/#workflowrules).
