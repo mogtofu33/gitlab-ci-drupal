@@ -1,4 +1,9 @@
+################################################################################
+# Reusable scripts.
+################################################################################
+
 .scripts:
+  # Set Composer and Yarn registries if specific.
   set-registries:
     - echo -e "\e[0Ksection_start:`date +%s`:set_registry[collapsed=true]\r\e[0K\e[1;34m Ci set registries and auth"
     - if [ ! -z ${CI_COMPOSER_REPO_PACKAGIST_URL} ]; then
@@ -34,3 +39,7 @@
         chmod 400 ~/.ssh/id_rsa;
       fi
     - echo -e "\e[0Ksection_end:`date +%s`:ssh_key\r\e[0K"
+  test-permissions:
+    - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites/default/files/simpletest
+    - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites
+    - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites

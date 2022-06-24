@@ -1,24 +1,22 @@
-###############################################################################
-# Gitlab CI integration for Drupal 9 project or module: unit tests,
-# code quality, linting, metrics and deploy samples.
+################################################################################
+# Gitlab CI integration for Drupal 9+ project or module: tests, code quality,
+# linting, metrics and deploy samples.
 #
-# Project: https://gitlab.com/mog33/gitlab-ci-drupal
-# Documentation: https://mog33.gitlab.io/gitlab-ci-drupal
-# Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
-# Author: Jean Valverde contact@dev-drupal.com
-# License: GPL-3
+# @project: https://gitlab.com/mog33/gitlab-ci-drupal
+# @documentation: https://mog33.gitlab.io/gitlab-ci-drupal
+# @issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
+# @author: Jean Valverde contact@dev-drupal.com
+# @license: GPL-3
 #
-# If you want to support this project, you can
+# If you want to support this project, you can:
 # - Buy me a coffee: https://bit.ly/34jPKcE
 # - Hire me as a freelance for any Drupal related work
 # - Promote me to any company looking for any Drupal related work
-# - Help me with Testing / Documentation / Use cases
-#
-# For Gitlab CI help on this file see: https://docs.gitlab.com/ee/ci/yaml
+# - Help me with testing / documentation / grammar fixes / use cases...
 #
 # This template MUST be included from a .gitlab-ci.yml file, see documentation.
 #
-###############################################################################
+################################################################################
 
 include:
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml'
@@ -168,7 +166,7 @@ lint_php:
   allow_failure: false
 
 # This is a eslint report based on Drupal 9 standards.
-# https://www.drupal.org/docs/develop/standards/javascript
+# @see https://www.drupal.org/docs/develop/standards/javascript
 lint_js:
   stage: qa
   extends: .job_template_yarn_install
@@ -204,7 +202,7 @@ lint_yaml:
         "${CI_DIRS_LINT_YAML}"
 
 # Drupal 9 rules used here for stylelint to check css.
-# https://www.drupal.org/docs/develop/standards/css
+# @see https://www.drupal.org/docs/develop/standards/css
 lint_css:
   stage: qa
   extends: .job_template_yarn_install
@@ -223,7 +221,7 @@ lint_css:
 
 ################################################################################
 # Drupal tests.
-# https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
+# @see https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md
 ################################################################################
 
 phpunit_unit:
@@ -250,7 +248,7 @@ phpunit_unit:
     - if [ ! -z ${CI_CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
         bash <(curl -s https://codecov.io/bash) -f "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.xml" || true;
       fi
-  # https://docs.gitlab.com/ee/ci/yaml/#coverage
+  # @see https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
 phpunit_func:
@@ -296,7 +294,7 @@ phpunit_funcjs:
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
-# https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+# @see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 nightwatchjs:
   stage: tests
   extends: .test_template

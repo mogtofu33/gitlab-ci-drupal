@@ -1,14 +1,14 @@
 ################################################################################
-# Gitlab CI integration for Drupal 9 project or module: tests, code quality,
+# Gitlab CI integration for Drupal 9+ project or module: tests, code quality,
 # linting, metrics and deploy samples.
 #
-# Project: https://gitlab.com/mog33/gitlab-ci-drupal
-# Documentation: https://mog33.gitlab.io/gitlab-ci-drupal
-# Issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
-# Author: Jean Valverde contact@dev-drupal.com
-# License: GPL-3
+# @project: https://gitlab.com/mog33/gitlab-ci-drupal
+# @documentation: https://mog33.gitlab.io/gitlab-ci-drupal
+# @issues: https://gitlab.com/mog33/gitlab-ci-drupal/-/issues
+# @author: Jean Valverde contact@dev-drupal.com
+# @license: GPL-3
 #
-# If you want to support this project, you can
+# If you want to support this project, you can:
 # - Buy me a coffee: https://bit.ly/34jPKcE
 # - Hire me as a freelance for any Drupal related work
 # - Promote me to any company looking for any Drupal related work
@@ -16,38 +16,38 @@
 #
 ################################################################################
 
-# The 'ref' is relative to the version of the project to use.
 include:
-  # If hosted on gitlab.com.
+  # Gitlab source when your project is hosted on Gitlab.com.
+  # 'ref' is the branch, should be sync with next variable `CI_REF`.
   - project: 'mog33/gitlab-ci-drupal'
     ref: 4.x-dev
     file: '/.gitlab-ci/jobs.gitlab-ci.yml'
   # If hosted on an other Gitlab instance.
   # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/jobs.gitlab-ci.yml'
 
-  # Use a Workflow template matching your needs side of CI_SKIP_* variables.
-  # See https://docs.gitlab.com/ee/ci/yaml/workflow.html#workflowrules-templates
+  # Use a Workflow template matching your needs side of `CI_SKIP_*` variables.
+  # @see https://docs.gitlab.com/ee/ci/yaml/workflow.html#workflowrules-templates
   - template: 'Workflows/Branch-Pipelines.gitlab-ci.yml'
   # - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
 
-# If needed by your Gitlab-ci instance, you can set global tags for all jobs.
-# default:
-#   tags:
-#     - docker
+  # Dependency scanning.
+  # @see https://docs.gitlab.com/ee/user/application_security/dependency_scanning/
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
 
 ################################################################################
 # Gitlab-CI variables documentation:
-# https://docs.gitlab.com/ee/ci/variables/
+# @see https://docs.gitlab.com/ee/ci/variables/
 ################################################################################
 
 variables:
-  # This is mandatory to get default variables from:
-  # https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml
+  # Mandatory to get default variables.
+  # @see https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml
   extends: .default_variables
+
   # Docker image ref used for ci.
   CI_REF: "4.x-dev"
-  # Minor Drupal version to work with, limited to existing tags on
-  # https://hub.docker.com/r/mogtofu33/drupal8ci/tags
+  # Minor Drupal version to work with.
+  # @see https://hub.docker.com/r/mogtofu33/drupal-ci/tags
   CI_DRUPAL_VERSION:
     value: "9.4"
     description: The version of Drupal to use for this Pipeline.
@@ -103,7 +103,7 @@ variables:
   ## List of CI_SKIP_* variables, uncomment to skip a job.
   #
   ## Only needed if you have Behat tests, comment or set to 0 to enable.
-  ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#behat-tests
+  ## @see https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#behat-tests
   CI_SKIP_TEST_BEHAT: 1
   ## Can use a profile setup or a sql dump file.
   # CI_BEHAT_INSTALL_PROFILE: "minimal"
@@ -117,7 +117,7 @@ variables:
   #
   ## Only if you have NightwatchJs tests in your code.
   ## NightwatchJs need some configuration, see
-  ## https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
+  ## @see https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage/#nightwatchjs
   CI_SKIP_TEST_NIGHTWATCHJS: 1
   ## Default is '--skiptags core', add your tag.
   # CI_NIGHTWATCH_TESTS: "--tag my_module"
@@ -147,7 +147,7 @@ variables:
 
 ################################################################################
 # Advanced usage with this file, see doc.
-# https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage
+# @see https://mog33.gitlab.io/gitlab-ci-drupal/advanced-usage
 ################################################################################
 
 ## Uncomment to add your stages.

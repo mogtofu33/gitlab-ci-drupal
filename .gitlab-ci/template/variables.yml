@@ -1,22 +1,19 @@
 ################################################################################
-# Variables template used on this project, must be used in your .gitlab-ci.yml:
+# Variables template used on this project, must be used in .gitlab-ci.yml:
 #
 # variables:
 #   extends: .default_variables
 #
 # Gitlab-CI variables documentation:
-# https://docs.gitlab.com/ee/ci/variables
+# @see https://docs.gitlab.com/ee/ci/variables
 ################################################################################
 
 .default_variables:
 
-  # Should be the same as 'include: ref:' from .gitlab-ci.yml.
-  # Based on branch for this project.
-  CI_REF: "4.x-dev"
-
-  # Minor Drupal version to work with, limited to tags on
-  # https://hub.docker.com/r/mogtofu33/drupal8ci/tags?name=3.x
-  CI_DRUPAL_VERSION: "9.4"
+  # To be set in starter .gitlab-ci.yml
+  # CI_REF: "4.x-dev"
+  # CI_DRUPAL_VERSION: "9.4"
+  # CI_DRUPAL_WEB_ROOT: web
 
   # Select what you are running CI on, options are:
   #   project
@@ -26,11 +23,6 @@
   CI_TYPE: "project"
   # CI_TYPE: "module"
 
-  # Relative path to the Drupal web root.
-  # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
-  # some distributions.
-  CI_DRUPAL_WEB_ROOT: web
-
   # Path to the Drupal doc and web root.
   # Drupal official image create symlink /opt/drupal/web > /var/www/html
   # In case of a project we remove /opt/drupal and symlink CI_PROJECT_DIR to
@@ -38,15 +30,12 @@
   CI_DOC_ROOT: "/opt/drupal"
   CI_WEB_ROOT: "/opt/drupal/${CI_DRUPAL_WEB_ROOT}"
 
-  # Specify a group of tests to run rather than all tests in the suite.
-  # CI_PHPUNIT_GROUP: my_group_1,my_group_2
-
   # Folder with the phpunit.xml file, default is to copy the file from
   # ./gitlab-ci/ folder to the Drupal core folder.
   CI_PHPUNIT_CONFIGURATION: ${CI_WEB_ROOT}/core
 
   # Nightwatch.js tests to run.
-  # https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
+  # @see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
   # Add --verbose for a full log from Nightwatch if it fail.
   # Default is to run everything except core. For a module / theme, add your tag.
   CI_NIGHTWATCH_TESTS: "--skiptags core"
@@ -62,7 +51,7 @@
   CI_BEHAT_TESTS: "${CI_PROJECT_DIR}/behat_tests/behat.yml"
 
   # Composer override to use github oauth token.
-  # https://getcomposer.org/doc/06-config.md#github-oauth
+  # @see https://getcomposer.org/doc/06-config.md#github-oauth
   # CI_COMPOSER_GITHUB_OAUTH_TOKEN: ""
 
   # Composer override to use packagist mirror.
@@ -201,7 +190,7 @@
   # Required by Drupal tests with PHPunit.
   # Build is the Gitlab-ci name of the running container with the /builds code.
   # This is provided by FF_NETWORK_PER_BUILD.
-  # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
+  # @see https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/phpunit.xml.dist
   SIMPLETEST_BASE_URL: "http://build"
   SIMPLETEST_DB: "${CI_DB_DRIVER}://drupal:drupal@db/drupal"
   # SIMPLETEST_DB: "sqlite://localhost/:memory:"
@@ -232,7 +221,7 @@
   #
   # Settings for Behat with DrupalExtension, match the tests on behat_tests
   # included in this project.
-  # https://www.drupal.org/project/drupalextension
+  # @see https://www.drupal.org/project/drupalextension
   BEHAT_PARAMS: >
     {
       "extensions" : {
@@ -244,13 +233,13 @@
       }
     }
   # Chrome options, used by mogtofu33/chrome-headless startup.
-  # https://peter.sh/experiments/chromium-command-line-switches/
+  # @see https://peter.sh/experiments/chromium-command-line-switches/
   CHROME_OPTS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=${CI_SERVICE_BEHAT_CHROME_PORT}"
   #
   # NightwatchJS settings.
   #
-  # https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md#running-nightwatch-tests
-  # https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/.env.example
+  # @see https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md#running-nightwatch-tests
+  # @see https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/.env.example
   DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080"
   DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: "../"
   DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/default/files/simpletest"
@@ -259,7 +248,7 @@
   # General settings.
   #
   # Enable Docker network bridge to access services.
-  # https://docs.gitlab.com/runner/configuration/feature-flags.html#available-feature-flags
+  # @see https://docs.gitlab.com/runner/configuration/feature-flags.html#available-feature-flags
   FF_NETWORK_PER_BUILD: 1
   #
   # Config files location for inclusion if not present locally (from ./.gitlab-ci/).
@@ -273,5 +262,5 @@
   CI_VERBOSE: 0
   #
   # Make CI very (very!) verbose in case of problem.
-  # https://docs.gitlab.com/ee/ci/variables/#debug-logging
+  # @see https://docs.gitlab.com/ee/ci/variables/#debug-logging
   # CI_DEBUG_TRACE: 1
