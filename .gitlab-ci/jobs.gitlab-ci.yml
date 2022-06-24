@@ -38,7 +38,7 @@ include:
 stages:
   - build
   - qa
-  - tests
+  - test
   - metrics
   # [DEPLOY] All deploy jobs can be set here.
   # Sample of a deploy workflow:
@@ -225,7 +225,7 @@ lint_css:
 ################################################################################
 
 phpunit_unit:
-  stage: tests
+  stage: test
   extends: .test_template
   rules:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_UNITKERNEL == "1"'
@@ -252,7 +252,7 @@ phpunit_unit:
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
 phpunit_func:
-  stage: tests
+  stage: test
   extends: .test_template
   rules:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_FUNCTIONAL == "1"'
@@ -270,7 +270,7 @@ phpunit_func:
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
 phpunit_funcjs:
-  stage: tests
+  stage: test
   extends: .test_template
   rules:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_FUNCTIONALJS == "1"'
@@ -296,7 +296,7 @@ phpunit_funcjs:
 
 # @see https://www.drupal.org/docs/8/testing/javascript-testing-using-nightwatch
 nightwatchjs:
-  stage: tests
+  stage: test
   extends: .test_template
   rules:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_NIGHTWATCHJS == "1"'
@@ -330,7 +330,7 @@ nightwatchjs:
 
 # Behat tests from behat_tests/ folder at the root of your project.
 behat:
-  stage: tests
+  stage: test
   extends: .test_template_behat
   rules:
     - if: '$CI_SKIP_TESTS == "1" || $CI_SKIP_TEST_BEHAT == "1"'
