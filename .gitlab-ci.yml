@@ -14,4 +14,4 @@ pages:
     paths:
       - public
   only:
-    - 3.x-dev
+    - 4.x-dev
