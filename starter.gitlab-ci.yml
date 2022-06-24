@@ -30,10 +30,6 @@ include:
   - template: 'Workflows/Branch-Pipelines.gitlab-ci.yml'
   # - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
 
-  # Dependency scanning.
-  # @see https://docs.gitlab.com/ee/user/application_security/dependency_scanning/
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
-
 ################################################################################
 # Gitlab-CI variables documentation:
 # @see https://docs.gitlab.com/ee/ci/variables/
