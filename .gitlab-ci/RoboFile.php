@@ -42,8 +42,8 @@ class RoboFile extends Tasks {
    * Database connection information.
    *
    * @var string
-   *   The database URL. This can be overridden by specifying a $DB_URL or a
-   *   $SIMPLETEST_DB environment variable.
+   *   The database URL. This can be overridden by specifying a $SIMPLETEST_DB
+   *   environment variable.
    *   Default is to the ci variables used with db service.
    */
   protected $dbUrl = 'mysql://drupal:drupal@db/drupal';
@@ -162,7 +162,7 @@ class RoboFile extends Tasks {
       'ciDocRoot' => 'CI_DOC_ROOT',
       'ciDrupalWebRoot' => 'CI_DRUPAL_WEB_ROOT',
       'ciWebRoot' => 'CI_WEB_ROOT',
-      'dbUrl' => 'DB_URL',
+      'dbUrl' => 'SIMPLETEST_DB',
     ];
     foreach ($varsFromEnv as $name => $value) {
       $this->$name = getenv($value);
@@ -417,11 +417,10 @@ class RoboFile extends Tasks {
   private function drupalSetup($profile = 'minimal') {
     $this->ciLog("Setup Drupal with $profile...");
 
-    // @TODO: use drush --existing-config instead.
-    if ($profile == 'config_installer') {
+    if ($profile == 'existing-config') {
       $task = $this->ciDrush()
-        ->args('site:install', 'config_installer')
-        ->arg('config_installer_sync_configure_form.sync_directory=' . $this->ciDocRoot . '/config/sync')
+        ->args('site:install')
+        ->option('existing-config')
         ->option('yes')
         ->option('db-url', $this->dbUrl, '=');
     }
