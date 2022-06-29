@@ -52,6 +52,10 @@ variables:
   # some distributions.
   CI_DRUPAL_WEB_ROOT: web
 
+  # Path to composer bin folder, default in vendor but can be set in
+  # composer.json as config: bin-dir
+  # CI_COMPOSER_BIN: vendor/bin
+
   # Specify a group of tests to run rather than all tests in the suite.
   # CI_PHPUNIT_GROUP: my_group_1,my_group_2
 

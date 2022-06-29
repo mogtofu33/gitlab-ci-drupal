@@ -235,8 +235,7 @@ phpunit_unit:
     # Prepare report folders for coverage.
     - mkdir -p report-${CI_JOB_NAME}/coverage-xml
     # Run PHPunit tests for unit, kernel, with coverage report.
-    - cd ${CI_DOC_ROOT}
-    - XDEBUG_MODE=coverage ${CI_COMPOSER_BIN}/phpunit
+    - XDEBUG_MODE=coverage ${CI_DOC_ROOT}/${CI_COMPOSER_BIN}/phpunit
         --testsuite "unit,kernel"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
@@ -260,9 +259,8 @@ phpunit_func:
       when: never
     - when: on_success
   script:
-    - cd ${CI_DOC_ROOT}
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${CI_COMPOSER_BIN}/phpunit
+    - sudo -E -u www-data ${CI_DOC_ROOT}/${CI_COMPOSER_BIN}/phpunit
         --testsuite "functional"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
@@ -287,8 +285,7 @@ phpunit_funcjs:
     # Check Chromedriver.
     - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # For functional tests the user need to be the web server user.
-    - cd ${CI_DOC_ROOT}
-    - sudo -E -u www-data ${CI_COMPOSER_BIN}/phpunit
+    - sudo -E -u www-data ${CI_DOC_ROOT}/${CI_COMPOSER_BIN}/phpunit
         --testsuite "functional-javascript"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}

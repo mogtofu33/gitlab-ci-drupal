@@ -25,6 +25,7 @@
     paths:
       # Build files for next steps and deploy/release.
       - vendor
+      - ${CI_COMPOSER_BIN}
       - ${CI_DRUPAL_WEB_ROOT}
       - composer.json
       - composer.lock
