@@ -69,6 +69,7 @@ build:
     - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
         robo drupal:require-dev $CI_SKIP_TEST_BEHAT;
       fi
+    # Install Drupal core package.json fro NightwatchJS and core js/css lint.
     - if [ ${CI_TYPE} == "project" ] && [ -f ${CI_WEB_ROOT}/core/package.json ]; then
         yarn --cwd ${CI_WEB_ROOT}/core install;
       fi
@@ -175,7 +176,7 @@ lint_js:
       when: never
     - when: on_success
   script:
-    - node ${CI_WEB_ROOT}/core/node_modules/.bin/eslint
+    - node ${CI_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
@@ -192,7 +193,7 @@ lint_yaml:
       when: never
     - when: on_success
   script:
-    - node ${CI_WEB_ROOT}/core/node_modules/.bin/eslint
+    - node ${CI_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT_YAML}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
@@ -211,8 +212,8 @@ lint_css:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_WEB_ROOT}/core add stylelint-gitlabci-formatter
-    - node ${CI_WEB_ROOT}/core/node_modules/.bin/stylelint
+    - yarn --cwd ${CI_NODE_PACKAGE} add stylelint-gitlabci-formatter
+    - node ${CI_NODE_BIN_DIR}/stylelint
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
         --custom-formatter ${CI_WEB_ROOT}/core/node_modules/stylelint-gitlabci-formatter

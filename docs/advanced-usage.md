@@ -284,6 +284,8 @@ CI_CONFIG_ESLINT_IGNORE | ${CI_PROJECT_DIR}/.eslintignore
 CI_CONFIG_ESLINT_IGNORE_YAML | ${CI_PROJECT_DIR}/.eslintignore
 CI_CONFIG_STYLELINT_IGNORE | ${CI_PROJECT_DIR}/.stylelintignore
 
+If your project use specific `package.json` and Node bin dir, see variables for Node below.
+
 ### Files concerned by linting
 
 Space separated for multiple folders. Default is all custom code.
@@ -328,13 +330,14 @@ CI_COMPOSER_GITHUB_OAUTH_TOKEN | [github-oauth](https://getcomposer.org/doc/06-c
 
 _Note_: The Github token MUST be a private variable.
 
-### Yarn config
+### Node / Yarn config
 
 If your project use a specific package.json for lint jobs you must adapt the variable:
 
 Name | Detail | Default
 -|-|-
-CI_LINT_PACKAGE | Package.json dir | ${CI_WEB_ROOT}/core
+CI_NODE_PACKAGE | Package.json dir | ${CI_WEB_ROOT}/core
+CI_NODE_BIN_DIR | Node bin dir | ${CI_WEB_ROOT}/core/node_modules/.bin
 
 In case you want to set a different url for yarn registry, you can set variables:
 
