@@ -106,6 +106,15 @@ class RoboFile extends Tasks {
   protected $ciProjectName = "my_project";
 
   /**
+   * CI_COMPOSER_BIN context.
+   *
+   * @var string
+   *   The CI composer bin directory, default is vendor/bin, can be changed
+   *   in composer.json with config: bin-dir.
+   */
+  protected $ciComposerBin = "vendor/bin";
+
+  /**
    * Configuration files for CI context.
    *
    * @var array
@@ -162,6 +171,7 @@ class RoboFile extends Tasks {
       'ciDocRoot' => 'CI_DOC_ROOT',
       'ciDrupalWebRoot' => 'CI_DRUPAL_WEB_ROOT',
       'ciWebRoot' => 'CI_WEB_ROOT',
+      'ciComposerBin' => 'CI_COMPOSER_BIN',
       'dbUrl' => 'SIMPLETEST_DB',
     ];
     foreach ($varsFromEnv as $name => $value) {
@@ -255,7 +265,7 @@ class RoboFile extends Tasks {
       $_ciDocRoot = $this->ciDocRoot;
     }
 
-    if (!file_exists($_ciDocRoot . '/vendor/bin/drush')) {
+    if (!file_exists($_ciDocRoot . '/' . $this->ciComposerBin . '/drush')) {
       $this->composerRequire($_ciDocRoot)
           ->dependency('drush/drush', '>10')
           ->run();
@@ -528,14 +538,16 @@ class RoboFile extends Tasks {
    *   A drush exec command.
    */
   private function ciDrush() {
-    if (!file_exists($this->ciProjectDir . '/vendor/bin/drush')) {
+    $bin = $this->ciDocRoot . '/' . $this->ciComposerBin . '/drush';
+
+    if (!file_exists($bin)) {
       $task = $this->composerRequire()
         ->dependency('drush/drush', '>10')
         ->run();
     }
 
     // Drush needs an absolute path to the webroot.
-    $task = $this->taskExec($this->ciDocRoot . '/vendor/bin/drush')
+    $task = $this->taskExec($bin)
       ->option('root', $this->ciWebRoot, '=');
 
     if ($this->ciVerbose) {

@@ -50,6 +50,10 @@
   # Yaml file of behat tests.
   CI_BEHAT_TESTS: "${CI_PROJECT_DIR}/behat_tests/behat.yml"
 
+  # Path to composer bin folder, default in vendor but can be set in
+  # composer.json as config: bin-dir
+  CI_COMPOSER_BIN: vendor/bin
+
   # Composer override to use github oauth token.
   # @see https://getcomposer.org/doc/06-config.md#github-oauth
   # CI_COMPOSER_GITHUB_OAUTH_TOKEN: ""

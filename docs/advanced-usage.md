@@ -313,6 +313,12 @@ CI_METRICS_CONFIG_PHPQA | ${CI_PROJECT_DIR}
 
 ### Composer config
 
+If your project set a specific bin dir in composer.json you must adapt the variable:
+
+Name | Detail | Default
+-|-|-
+CI_COMPOSER_BIN | Project bin dir | vendor/bin
+
 In case you want to set a different url for packagist or set a _Github oauth token_, you can set variables:
 
 Name | Detail | Default
