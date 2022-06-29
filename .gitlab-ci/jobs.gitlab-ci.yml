@@ -179,7 +179,7 @@ lint_js:
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
-        --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
+        --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
         "${CI_DIRS_LINT_JS}"
@@ -196,7 +196,7 @@ lint_yaml:
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT_YAML}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
-        --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
+        --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
         --ext .yml
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
