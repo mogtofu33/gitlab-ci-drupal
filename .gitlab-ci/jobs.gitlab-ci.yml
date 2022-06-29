@@ -176,7 +176,7 @@ lint_js:
       when: never
     - when: on_success
   script:
-    - node ${CI_NODE_BIN_DIR}/eslint
+    - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
@@ -193,7 +193,7 @@ lint_yaml:
       when: never
     - when: on_success
   script:
-    - node ${CI_NODE_BIN_DIR}/eslint
+    - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT_YAML}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
         --resolve-plugins-relative-to ${CI_WEB_ROOT}/core
@@ -212,8 +212,8 @@ lint_css:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_NODE_PACKAGE} add stylelint-gitlabci-formatter
-    - node ${CI_NODE_BIN_DIR}/stylelint
+    - yarn --cwd ${CI_LINT_NODE_PACKAGE} add stylelint-gitlabci-formatter
+    - node ${CI_LINT_NODE_BIN_DIR}/stylelint
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
         --custom-formatter ${CI_WEB_ROOT}/core/node_modules/stylelint-gitlabci-formatter

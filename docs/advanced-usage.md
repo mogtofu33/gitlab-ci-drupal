@@ -336,8 +336,8 @@ If your project use a specific package.json for lint jobs you must adapt the var
 
 Name | Detail | Default
 -|-|-
-CI_NODE_PACKAGE | Package.json dir | ${CI_WEB_ROOT}/core
-CI_NODE_BIN_DIR | Node bin dir | ${CI_WEB_ROOT}/core/node_modules/.bin
+CI_LINT_NODE_PACKAGE | Package.json dir | ${CI_WEB_ROOT}/core
+CI_LINT_NODE_BIN_DIR | Node bin dir | ${CI_LINT_NODE_PACKAGE}/node_modules/.bin
 
 In case you want to set a different url for yarn registry, you can set variables:
 

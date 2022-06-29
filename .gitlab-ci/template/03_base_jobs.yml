@@ -17,8 +17,8 @@
   before_script:
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]
-    - yarn --cwd ${CI_NODE_PACKAGE} install
+    - yarn --cwd ${CI_LINT_NODE_PACKAGE} install
   cache:
     key: "yarn-${CI_COMMIT_REF_NAME}"
     paths:
-      - node_modules
+      - ${CI_LINT_NODE_PACKAGE}/node_modules

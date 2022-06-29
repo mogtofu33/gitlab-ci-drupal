@@ -84,8 +84,8 @@
   # Eslint / Stylelint settings.
   #
   # Location of package.json file for install in lint js/css and yaml jobs.
-  CI_NODE_PACKAGE: ${CI_WEB_ROOT}/core
-  CI_NODE_BIN_DIR: ${CI_WEB_ROOT}/core/node_modules/.bin
+  CI_LINT_NODE_PACKAGE: ${CI_WEB_ROOT}/core
+  CI_LINT_NODE_BIN_DIR: ${CI_LINT_NODE_PACKAGE}/node_modules/.bin
   # Configuration files, default is Drupal used for core.
   CI_CONFIG_ESLINT: ${CI_WEB_ROOT}/core/.eslintrc.passing.json
   CI_CONFIG_ESLINT_YAML: ${CI_WEB_ROOT}/core/.eslintrc.passing.json
