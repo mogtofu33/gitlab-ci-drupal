@@ -330,6 +330,12 @@ _Note_: The Github token MUST be a private variable.
 
 ### Yarn config
 
+If your project use a specific package.json for lint jobs you must adapt the variable:
+
+Name | Detail | Default
+-|-|-
+CI_LINT_PACKAGE | Package.json dir | ${CI_WEB_ROOT}/core
+
 In case you want to set a different url for yarn registry, you can set variables:
 
 Name | Default
