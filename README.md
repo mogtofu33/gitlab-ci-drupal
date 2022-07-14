@@ -20,7 +20,7 @@ and [Gitlab CI Yaml](https://docs.gitlab.com/ee/ci/yaml)
 
 ## Documentation
 
-- [gitlab-ci-drupal](https://mog33.gitlab.io/gitlab-ci-drupal)
+- [Documentation for GitLab CI Drupal](https://mog33.gitlab.io/gitlab-ci-drupal)
 
 ## Quick setup
 
