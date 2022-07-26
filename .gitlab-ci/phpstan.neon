@@ -9,5 +9,7 @@ parameters:
             - *RoboFile.php
             - */tests/*
             - */Tests/*
+            - */node_modules/*
+            - */vendor/*
     inferPrivatePropertyTypeFromConstructor: true
     checkMissingIterableValueType: false
