@@ -382,4 +382,4 @@ metrics:
 ################################################################################
 
 default:
-  image: mogtofu33/drupal8ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
+  image: mogtofu33/drupal-ci:${CI_IMAGE_REF}-${CI_DRUPAL_VERSION}
