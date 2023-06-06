@@ -12,9 +12,9 @@ This is a **WIP** and there is no support on this for now.
 Require at minimum:
 
 ```bash
+.gitlab-ci/local/_commands.sh
 .gitlab-ci/local/ci.sh
 .gitlab-ci/local/docker-compose.yml
-.gitlab-ci/local/my.cnf
 ```
 
 Optional settings files:

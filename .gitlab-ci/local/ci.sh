@@ -74,7 +74,8 @@ _check_yq() {
 }
 
 ###############################################################################
-# DispatchCI_QA_CONFIG_PHPMD#######################################
+# Dispatch Command
+###############################################################################
 
 __dispatch() {
   local cmd="_${_CMD}"
@@ -315,7 +316,7 @@ _VERBOSE=0
 __skip_install=0
 # __tools_qa=""
 
-CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci"
+# CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci"
 
 _CMD=()
 
