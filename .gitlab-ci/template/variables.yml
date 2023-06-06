@@ -12,7 +12,7 @@
 
   # To be set in starter .gitlab-ci.yml
   # CI_REF: "4.x-dev"
-  # CI_DRUPAL_VERSION: "9.4"
+  # CI_DRUPAL_VERSION: "10.0"
   # CI_DRUPAL_WEB_ROOT: web
 
   # Select what you are running CI on, options are:

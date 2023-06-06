@@ -45,7 +45,7 @@ variables:
   # Minor Drupal version to work with.
   # @see https://hub.docker.com/r/mogtofu33/drupal-ci/tags
   CI_DRUPAL_VERSION:
-    value: "9.4"
+    value: "10.0"
     description: The version of Drupal to use for this Pipeline.
   # Relative path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
