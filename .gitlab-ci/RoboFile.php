@@ -278,19 +278,18 @@ class RoboFile extends Tasks {
     if ($CI_SKIP_TEST_BEHAT == "0") {
       if ($this->ciDrupalVersion == "9.5" || $this->ciDrupalVersion == "9.4") {
         $task
-          ->dependency('drupal/drupal-extension', '~4.1')
-          ->dependency('dmore/behat-chrome-extension', '^1.3')
-          ->dependency('friends-of-behat/mink-extension', '^2.6')
-          ->dependency('dmore/chrome-mink-driver', '2.8.1-beta1');
+          ->dependency('drupal/drupal-extension', '^4.1');
       }
       else {
         $task
-          ->dependency('drupal/drupal-extension', '5.0.x-dev')
-          ->dependency('dmore/behat-chrome-extension', '^1.4')
-          ->dependency('friends-of-behat/mink-extension', '^2.7')
-          ->dependency('dmore/chrome-mink-driver', '^2.9');
+          ->dependency('drupal/drupal-extension', '5.0.x-dev');
       }
     }
+
+    $task
+      ->dependency('dmore/behat-chrome-extension', '^1.4')
+      ->dependency('friends-of-behat/mink-extension', '^2.7')
+      ->dependency('dmore/chrome-mink-driver', '^2.9');
 
     $task
       ->dev()
