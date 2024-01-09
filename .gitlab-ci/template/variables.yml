@@ -217,7 +217,7 @@
             "--headless",
             "--no-sandbox",
             "--disable-gpu",
-            "--window-size=1920,1080"
+            "--window-size=1600,800"
           ]
         }
       },
@@ -241,13 +241,13 @@
     }
   # Chrome options, used by mogtofu33/chrome-headless startup.
   # @see https://peter.sh/experiments/chromium-command-line-switches/
-  CHROME_OPTS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080 --remote-debugging-address=0.0.0.0 --remote-debugging-port=${CI_SERVICE_BEHAT_CHROME_PORT}"
+  CHROME_OPTS: "--headless --no-sandbox --disable-gpu --window-size=1600,800 --remote-debugging-address=0.0.0.0 --remote-debugging-port=${CI_SERVICE_BEHAT_CHROME_PORT}"
   #
   # NightwatchJS settings.
   #
   # @see https://git.drupalcode.org/project/drupal/blob/HEAD/core/tests/README.md#running-nightwatch-tests
   # @see https://git.drupalcode.org/project/drupal/-/blob/HEAD/core/.env.example
-  DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--headless --no-sandbox --disable-gpu --window-size=1920,1080"
+  DRUPAL_TEST_WEBDRIVER_CHROME_ARGS: "--headless --no-sandbox --disable-gpu --window-size=1600,800"
   DRUPAL_NIGHTWATCH_SEARCH_DIRECTORY: "../"
   DRUPAL_NIGHTWATCH_IGNORE_DIRECTORIES: "node_modules,vendor,.*,sites/*/files,sites/*/private,sites/default/files/simpletest"
   DRUPAL_NIGHTWATCH_OUTPUT: ${CI_PROJECT_DIR}/report-nightwatchjs
