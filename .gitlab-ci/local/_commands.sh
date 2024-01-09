@@ -44,7 +44,7 @@ _build() {
   fi
 
   # after_script
-  _dkexec_bash "robo ci:build after_build"
+  _dkexec_bash "robo ci:build"
   _dkexec_bash "robo ci:prepare"
 
   __fix_perm

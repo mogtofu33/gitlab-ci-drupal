@@ -465,7 +465,7 @@ class RoboFile extends Tasks {
     // Handle CI Type value.
     switch ($this->ciType) {
       case "project":
-        $this->ciLog("Project include Drupal, symlink to included Drupal.");
+        $this->ciLog("Project include Drupal, symlink to replace included Drupal.");
         $this->taskFilesystemStack()
           ->remove($this->ciDocRoot)
           ->symlink($this->ciProjectDir, $this->ciDocRoot)
@@ -478,6 +478,7 @@ class RoboFile extends Tasks {
         // If we have a custom build, run it now, see issue:
         // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
         $this->ciBuild();
+        $this->ciLog("Symlink code to included Drupal.");
         // Root contain the theme / module, we symlink with project name.
         $this->taskFilesystemStack()
           ->symlink(
