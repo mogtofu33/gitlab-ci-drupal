@@ -1,5 +1,5 @@
 ################################################################################
-# Gitlab CI integration for Drupal 9+ project or module: tests, code quality,
+# Gitlab CI integration for Drupal 10+ project or module: tests, code quality,
 # linting, metrics and deploy samples.
 #
 # @project: https://gitlab.com/mog33/gitlab-ci-drupal

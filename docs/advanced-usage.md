@@ -112,8 +112,8 @@ The CI will use this key for any external authentication.
 
 The pipeline in this project support Unit, Kernel, Functional,
 [Functional Javascript](https://www.drupal.org/docs/8/phpunit/phpunit-javascript-testing-tutorial)
-tests in Drupal 9+, see
-[Type of tests in Drupal 9+](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
+tests in Drupal, see
+[Type of tests in Drupal](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
 The tests configuration is defined in
 [.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/phpunit.xml).
@@ -140,7 +140,7 @@ your token value.
 
 ### Code Quality
 
-All rules try to match a [Drupal 9+](https://www.drupal.org) project.
+All rules try to match a [Drupal](https://www.drupal.org) project.
 
 To adapt some rules, first look at `.gitlab-ci/.phpmd.xml`, `.gitlab-ci/phpstan.neon`.
 
@@ -199,10 +199,10 @@ parameters:
 ### Linting JavaScript, CSS and Yaml
 
 Eslint is based on the official
-[Drupal 9+ eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
+[Drupal eslintrc.passing.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.eslintrc.passing.json)
 
 Stylelint is based on the official
-[Drupal 9+ stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
+[Drupal stylelintrc.json](https://git.drupalcode.org/project/drupal/raw/HEAD/core/.stylelintrc.json)
 
 You can adapt rule file used for each job.
 
@@ -323,7 +323,7 @@ To deploy to an external server, you must implement your own solution.
 As per Drupal 9 good practices it is not meant to deploy any database,
 only the codebase.
 
-This project include a sample assuming you can ssh to a remote host.  
+This project include a sample assuming you can ssh to a remote host.
 From this starting point, you can include any script to match your deploy
 process.
 

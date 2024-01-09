@@ -1,5 +1,5 @@
 ################################################################################
-# Gitlab CI integration for Drupal 9+ project or module: tests, code quality,
+# Gitlab CI integration for Drupal 10+ project or module: tests, code quality,
 # linting, metrics and deploy samples.
 #
 # @project: https://gitlab.com/mog33/gitlab-ci-drupal
@@ -93,7 +93,7 @@ security:
     - ./php-security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
 
 ################################################################################
-# Code quality jobs for Drupal 9+
+# Code quality jobs for Drupal
 # @todo codequality report, @see https://docs.gitlab.com/ee/user/project/merge_requests/code_quality.html#use-cases
 ################################################################################
 
@@ -144,7 +144,7 @@ phpstan:
         ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpstan_junit.xml
 
 ################################################################################
-# Code linter jobs for Drupal 9+
+# Code linter jobs for Drupal
 ################################################################################
 
 lint_php:
