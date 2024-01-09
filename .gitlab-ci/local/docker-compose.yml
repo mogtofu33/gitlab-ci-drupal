@@ -23,15 +23,18 @@ services:
       - chrome
       - chromedriver
     volumes:
-      # Mount the parent folder as a module.
-      # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
       # Mount current module in /builds, theme or project, mimic Gitlab-ci.
+      # - ../../:/builds/${CI_PROJECT_NAME}
+
+      # Mount the parent folder as a project.
       - ../../:${CI_PROJECT_DIR}
+
+      # Mount the parent folder as a module directly in Drupal.
+      # - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
       # Mount the parent folder as a group of modules or project for local test.
       # - ../../:${CI_DOC_ROOT}
       # [OPTIONAL] composer cache folder to speed up the process.
       - ${HOME}/.cache/composer:/var/www/.composer/cache
-    # working_dir: ${CI_DOC_ROOT}
     # Mimic Gitlab-ci.
     working_dir: /builds
     container_name: ci-drupal
@@ -48,16 +51,18 @@ services:
 
   chromedriver:
     image: ${CI_SERVICE_CHROMEDRIVER}
-    expose:
-      - "${CI_SERVICE_CHROMEDRIVER_PORT}"
+    # expose:
+    ports:
+      - ${CI_SERVICE_CHROMEDRIVER_PORT}:${CI_SERVICE_CHROMEDRIVER_PORT}
     container_name: ci-chromedriver
     env_file:
       - .env
 
   chrome:
     image: ${CI_SERVICE_BEHAT_CHROME}
-    expose:
-      - "${CI_SERVICE_BEHAT_CHROME_PORT}"
+    # expose:
+    ports:
+      - ${CI_SERVICE_BEHAT_CHROME_PORT}:${CI_SERVICE_BEHAT_CHROME_PORT}
     container_name: ci-chrome
     env_file:
       - .env

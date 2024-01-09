@@ -1,4 +1,4 @@
-# Local testing simulating Gitlab-CI
+# Local testing simulating Gitlab-CI [WIP]
 
 This is a Docker stack to help run the tests locally using our ci image.
 
@@ -15,6 +15,7 @@ Require at minimum:
 .gitlab-ci/local/_commands.sh
 .gitlab-ci/local/ci.sh
 .gitlab-ci/local/docker-compose.yml
+.gitlab-ci/local/.env.dist
 ```
 
 Optional settings files:
@@ -26,7 +27,7 @@ Optional settings files:
 Optional variable override for this script:
 
 ```bash
-.gitlab-ci/local/.local.yml
+.gitlab-ci/local/local.yml
 ```
 
 ## Ci type module
@@ -37,16 +38,17 @@ Edit `.gitlab-ci/local/docker-compose.yml` and uncomment volume for a module:
   - ../../:/opt/drupal/web/modules/custom/${CI_PROJECT_NAME}
 ```
 
-Create a `.local.yml` file in this directory:
+Create a `local.yml` file in this directory:
 
 ```yaml
 CI_TYPE: module
 ```
 
-Launch the stack:
+Launch the stack and one time build for ci mimic:
 
 ```bash
 .gitlab-ci/local/ci.sh up
+.gitlab-ci/local/ci.sh build
 ```
 
 ### Phpunit tests
@@ -77,12 +79,33 @@ Run your Kernel tests:
 .gitlab-ci/local/ci.sh phpunit -d tests/src/Kernel
 ```
 
+### Nightwatch tests
+
+Default will run the value of `CI_NIGHTWATCH_TESTS`.
+
+```bash
+.gitlab-ci/local/ci.sh nightwatch
+```
+
+For specific test or value, you can pass options to override `CI_NIGHTWATCH_TESTS`.
+
+```bash
+.gitlab-ci/local/ci.sh nightwatch --tag demo
+```
+
+If the args contain a path to a js file, it must be relative to `DOC_ROOT/core` path, to have path completion it's better to be in `DOC_ROOT/core`:
+
+```bash
+cd web/core
+../../.gitlab-ci/local/ci.sh nightwatch ../modules/custom/my_module/tests/src/Nightwatch/Tests/exampleModuleTest.js
+``````
+
 ### Qa tests
 
-Run a qa tests:
-
-One time:
+Run qa tests:
 
 ```bash
 .gitlab-ci/local/ci.sh qa
 ```
+
+[...]

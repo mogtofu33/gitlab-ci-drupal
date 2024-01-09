@@ -1,5 +1,7 @@
 #!/bin/bash
+
 # set -ex
+set -eE -o functrace
 
 # This script is an helper to run some tests from Gitlab-ci config in a local
 # environment with docker-compose.
@@ -10,7 +12,10 @@
 
 _dkexec() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; debug "$@"; fi
+    if ((_USE_DEBUG)); then
+      debug "$FUNCNAME called by ${FUNCNAME[1]}"
+      debug "$@"
+    fi
     # docker exec -it -w ${CI_PROJECT_DIR} ci-drupal "$@" || true
     docker exec -it ci-drupal "$@" || true
   fi
@@ -18,9 +23,35 @@ _dkexec() {
 
 _dkexec_bash() {
   if ! [ -f "/.dockerenv" ]; then
-    if ((_USE_DEBUG)); then debug "$FUNCNAME called by ${FUNCNAME[1]}"; debug "$@"; fi
+    if ((_USE_DEBUG)); then
+      debug "$FUNCNAME called by ${FUNCNAME[1]}"
+      debug "$@"
+    fi
     # docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
     docker exec -it ci-drupal bash -c "$@"
+  fi
+}
+
+_dkexec_drupal_bash() {
+  if ! [ -f "/.dockerenv" ]; then
+    if ((_USE_DEBUG)); then
+      debug "$FUNCNAME called by ${FUNCNAME[1]}"
+      debug "$@"
+    fi
+    # docker exec -it -w ${CI_PROJECT_DIR} ci-drupal bash -c "$@"
+    docker exec -it -w /opt/drupal/ ci-drupal bash -c "$@"
+  fi
+}
+
+_dk_running() {
+  if [ ! "$(docker ps -a -q -f name=ci-drupal)" ]; then
+    if [ ! "$(docker ps -aq -f status=exited -f name=ci-drupal)" ]; then
+      printf "%s[ERROR]%s Stack is not running, please do '%s up'.\\n" "${_red}" "${_end}" "${_ME}"
+      exit 1
+    fi
+  else
+    printf "%s[ERROR]%s Stack is not running, please do '%s up'.\\n" "${_red}" "${_end}" "${_ME}"
+    exit 1
   fi
 }
 
@@ -119,8 +150,7 @@ __dispatch() {
 #   Entry point for the program, handling basic option parsing and dispatching.
 _main() {
 
-  if ((_PRINT_HELP))
-  then
+  if ((_PRINT_HELP)); then
     _print_help
     exit 0
   elif [ "${_CMD}" == "env" ]; then
@@ -134,11 +164,11 @@ _main() {
 
 _SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$_SOURCE" ]; do # resolve $_SOURCE until the file is no longer a symlink
-  _DIR="$( cd -P "$( dirname "$_SOURCE" )" && pwd )"
+  _DIR="$(cd -P "$(dirname "$_SOURCE")" && pwd)"
   _SOURCE="$(readlink "$_SOURCE")"
   [[ $_SOURCE != /* ]] && _SOURCE="$_DIR/$_SOURCE" # if $_SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
-_DIR="$( cd -P "$( dirname "$_SOURCE" )" && pwd )"
+_DIR="$(cd -P "$(dirname "$_SOURCE")" && pwd)"
 
 IFS=$'\n\t'
 
@@ -173,6 +203,7 @@ _print_help() {
     ${_ME} qa
 
   Standalone local tests:
+    up                              Set stack up for tests.
     build                           Run ci build.
     phpunit                         Run all phpunit tests.
     unit                            Run phpunit unit tests.
@@ -188,7 +219,8 @@ _print_help() {
     behat                           Run a behat test, if behat_tests folder exist.
 
   Standalone local options
-    --skip-install                  Skip install steps (Behat).
+    -si | --skip-install            Skip install steps (Behat).
+    -se | --skip-env                Skip local env creation.
 
   Options
     -h|--help                       Print help.
@@ -246,9 +278,8 @@ die() {
 # should typically be either `echo`, `printf`, or `cat`.
 __DEBUG_COUNTER=0
 _debug() {
-  if [[ "${_USE_DEBUG:-"0"}" -eq 1 ]]
-  then
-    __DEBUG_COUNTER=$((__DEBUG_COUNTER+1))
+  if [[ "${_USE_DEBUG:-"0"}" -eq 1 ]]; then
+    __DEBUG_COUNTER=$((__DEBUG_COUNTER + 1))
     # Prefix debug message with "bug (U+1F41B)"
     printf "🐛  %s " "${__DEBUG_COUNTER}"
     "${@}"
@@ -289,8 +320,7 @@ __get_option_value() {
   local __arg="${1:-}"
   local __val="${2:-}"
 
-  if [[ -n "${__val:-}" ]] && [[ ! "${__val:-}" =~ ^- ]]
-  then
+  if [[ -n "${__val:-}" ]] && [[ ! "${__val:-}" =~ ^- ]]; then
     printf "%s\\n" "${__val}"
   else
     _exit_1 printf "%s requires a valid argument.\\n" "${__arg}"
@@ -300,12 +330,26 @@ __get_option_value() {
 # Program Options #############################################################
 
 _red=$'\e[1;31m'
+_gre=$'\e[1;32m'
+_yel=$'\e[1;33m'
 _blu=$'\e[1;34m'
+_pur=$'\e[1;35m'
+_blu_l=$'\e[1;36m'
+
 _dim=$'\e[2;37m'
 _dim_blu=$'\e[2;34m'
 _end=$'\e[0m'
 
 # Parse Options ###############################################################
+
+if [ -f "$_DIR/.env.dist" ]; then
+  # shellcheck disable=SC1091
+  source "$_DIR/.env.dist"
+fi
+if [ -f "$_DIR/.env.local" ]; then
+  # shellcheck disable=SC1091
+  source "$_DIR/.env.local"
+fi
 
 # Initialize program option variables.
 _PRINT_HELP=0
@@ -313,50 +357,46 @@ _USE_DEBUG=0
 _VERBOSE=0
 
 # Initialize additional expected option variables.
-__skip_install=0
-# __tools_qa=""
-
-# CI_REMOTE_FILES="https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci"
+_SKIP_INSTALL=0
+_SKIP_ENV=0
 
 _CMD=()
 
-while ((${#}))
-do
+while ((${#})); do
   __arg="${1:-}"
   __val="${2:-}"
 
   case "${__arg}" in
-    -h|--help)
-      _PRINT_HELP=1
-      ;;
-    -v|--verbose)
-      _VERBOSE=1
-      ;;
-    --debug)
-      _USE_DEBUG=1
-      ;;
-    --debug-fail)
-      _USE_DEBUG=1
-      trap 'echo "Aborting due to errexit on line $LINENO. Exit code: $?" >&2' ERR
-      set -u -e -E -o pipefail
-      ;;
-    --skip-install)
-      __skip_install=1
-      ;;
-    # -qa|--tools-qa)
-    #   __tools_qa="$(__get_option_value "${__arg}" "${__val:-}")"
-    #   shift
-    #   ;;
-    --endopts)
-      # Terminate option parsing.
-      break
-      ;;
-    -*)
-      _exit_1 printf "Unexpected option: %s\\n" "${__arg}"
-      ;;
-    *)
-      _CMD+=("$1")
-      ;;
+  -h | --help)
+    _PRINT_HELP=1
+    ;;
+  -v | --verbose)
+    _VERBOSE=1
+    ;;
+  --debug)
+    _USE_DEBUG=1
+    ;;
+  --debug-fail)
+    _USE_DEBUG=1
+    trap 'echo "Aborting due to errexit on line $LINENO. Exit code: $?" >&2' ERR
+    set -u -e -E -o pipefail
+    ;;
+  -si | --skip-install)
+    _SKIP_INSTALL=1
+    ;;
+  -se | --skip-env)
+    _SKIP_ENV=1
+    ;;
+  --endopts)
+    # Terminate option parsing.
+    break
+    ;;
+  -*)
+    _exit_1 printf "Unexpected option: %s\\n" "${__arg}"
+    ;;
+  *)
+    _CMD+=("$1")
+    ;;
   esac
   shift
 done
