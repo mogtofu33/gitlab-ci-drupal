@@ -77,6 +77,7 @@ build:
 
 security:
   stage: build
+  extends: .artifacts_reports
   needs:
     - job: build
       artifacts: true
