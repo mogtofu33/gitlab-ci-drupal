@@ -111,6 +111,8 @@ phpcs:
         --extensions=${CI_QA_SUFFIX}
         --report-junit=report-${CI_JOB_NAME}/phpcs_junit.xml
         ${CI_DIRS_QA_PHPCS}
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 phpmd:
   stage: qa
@@ -126,6 +128,7 @@ phpmd:
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
+    - !reference [.scripts, fix-report-path]
 
 phpstan:
   stage: qa
@@ -142,6 +145,8 @@ phpstan:
         --configuration ${CI_QA_CONFIG_PHPSTAN}
         --error-format junit
         ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpstan_junit.xml
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 ################################################################################
 # Code linter jobs for Drupal
@@ -163,6 +168,7 @@ lint_php:
         ${CI_DIRS_LINT_PHP} >> report-${CI_JOB_NAME}/parallel-lint.xml
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml || true
+    - !reference [.scripts, fix-report-path]
   # Detect critical error and should not be ignored.
   allow_failure: false
 
@@ -183,6 +189,8 @@ lint_js:
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
         "${CI_DIRS_LINT_JS}"
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 # This is a eslint report for Yaml files.
 lint_yaml:
@@ -201,6 +209,8 @@ lint_yaml:
         --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
         "${CI_DIRS_LINT_YAML}"
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 # Drupal 9 rules used here for stylelint to check css.
 # @see https://www.drupal.org/docs/develop/standards/css
@@ -249,6 +259,7 @@ phpunit_unit:
     - if [ ! -z ${CI_CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
         bash <(curl -s https://codecov.io/bash) -f "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.xml" || true;
       fi
+    - !reference [.scripts, fix-report-path]
   # @see https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
@@ -292,6 +303,7 @@ phpunit_funcjs:
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
   after_script:
+    - !reference [.scripts, fix-report-path]
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
@@ -358,6 +370,8 @@ behat:
         --format junit
         --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
         --verbose
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
