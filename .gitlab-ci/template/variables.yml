@@ -71,12 +71,12 @@
   CI_DIRS_QA_PHPCS: "${CI_WEB_ROOT}/**/custom"
   CI_DIRS_QA_PHPSTAN: "${CI_WEB_ROOT}/**/custom"
   CI_DIRS_QA_PHPMD: "${CI_WEB_ROOT}/modules/custom,${CI_WEB_ROOT}/themes/custom"
-  CI_DIRS_LINT_PHP: "${CI_WEB_ROOT}/**/custom"
   #
   CI_QA_IGNORE: "*/vendor/*,*/bootstrap/*,*/tests/*,*/.gitlab-ci/*,Readme.md,style.css,print.css,*Test.php,RoboFile.php"
   CI_QA_SUFFIX: "php,inc,module,install,test,profile,theme"
   #
   CI_QA_PHPCS_STANDARD: "Drupal,DrupalPractice"
+  # CI_QA_CONFIG_PHPCS: ${CI_PROJECT_DIR}/.phpcs.xml
   #
   CI_QA_CONFIG_PHPSTAN: ${CI_PROJECT_DIR}/phpstan.neon
   CI_QA_CONFIG_PHPMD: ${CI_PROJECT_DIR}/.phpmd.xml

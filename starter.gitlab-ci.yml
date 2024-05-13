@@ -83,7 +83,6 @@ variables:
   # CI_DIRS_QA_PHPCS: "${CI_PROJECT_DIR}"
   # CI_DIRS_QA_PHPSTAN: "${CI_PROJECT_DIR}"
   # CI_DIRS_QA_PHPMD: "${CI_PROJECT_DIR}"
-  # CI_DIRS_LINT_PHP: "${CI_PROJECT_DIR}"
   # # Files to test with EsLint or StyleLint.
   # CI_DIRS_LINT_JS: "${CI_PROJECT_DIR}/js/*.js"
   # CI_DIRS_LINT_YAML: "${CI_PROJECT_DIR}/*.yml"
@@ -138,7 +137,6 @@ variables:
   # CI_SKIP_QA_PHPSTAN: 1
   #
   # CI_SKIP_LINT: 1 # Skip all lint, ignore CI_SKIP_LINT_*.
-  # CI_SKIP_LINT_PHP: 1
   # CI_SKIP_LINT_CSS: 1
   # CI_SKIP_LINT_JS: 1
   # CI_SKIP_LINT_YAML: 1

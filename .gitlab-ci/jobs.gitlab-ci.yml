@@ -144,13 +144,10 @@ phpstan:
     - phpstan analyze
         --no-progress
         --configuration ${CI_QA_CONFIG_PHPSTAN}
-        --error-format gitlab
-        ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.json
+        --error-format junit
+        ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
   after_script:
     - !reference [.scripts, fix-report-path]
-  artifacts:
-    reports:
-      codequality: "report-${CI_JOB_NAME}/${CI_JOB_NAME}.json"
 
 ################################################################################
 # Code linter jobs for Drupal
@@ -166,19 +163,15 @@ lint_js:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_LINT_NODE_PACKAGE} add eslint-formatter-gitlab
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
         --format gitlab
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.json"
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
         "${CI_DIRS_LINT_JS}"
   after_script:
     - !reference [.scripts, fix-report-path]
-  artifacts:
-    reports:
-      codequality: "report-${CI_JOB_NAME}/${CI_JOB_NAME}.json"
 
 # This is a eslint report for Yaml files.
 lint_yaml:
