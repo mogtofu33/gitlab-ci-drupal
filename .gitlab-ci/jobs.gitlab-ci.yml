@@ -19,15 +19,15 @@
 ################################################################################
 
 include:
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/artifacts.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/scripts.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/01_build.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/02_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/03_base_jobs.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_deploy.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/variables.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/artifacts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/scripts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/01_build.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/02_test.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/03_base_jobs.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/04_deploy.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_release.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/04_release.yml'
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
