@@ -27,7 +27,7 @@ include:
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/03_base_jobs.yml'
   - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/04_deploy.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/feature-fix-report-paths/.gitlab-ci/template/04_release.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_release.yml'
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
