@@ -18,7 +18,8 @@
 
   <xsl:template match="file">
     <testcase>
-      <xsl:attribute name="classname">
+      <xsl:attribute name="classname" select="''" />
+      <xsl:attribute name="file">
         <xsl:value-of select="@name" />
       </xsl:attribute>
       <xsl:attribute name="name">
@@ -37,7 +38,6 @@
       <xsl:value-of select="@line" />
       <xsl:text>: </xsl:text>
       <xsl:value-of select="@message" />
-      <xsl:value-of select="substring(@source, '12')" />
     </failure>
   </xsl:template>
 </xsl:stylesheet>

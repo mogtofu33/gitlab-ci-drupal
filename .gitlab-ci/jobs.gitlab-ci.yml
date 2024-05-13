@@ -167,10 +167,11 @@ lint_js:
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
+        --format checkstyle
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml"
         "${CI_DIRS_LINT_JS}"
   after_script:
+    - xsltproc -o report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml
     - !reference [.scripts, fix-report-path]
 
 # This is a eslint report for Yaml files.
@@ -187,10 +188,11 @@ lint_yaml:
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
         --ext .yml
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
+        --format checkstyle
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml"
         "${CI_DIRS_LINT_YAML}"
   after_script:
+    - xsltproc -o report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml
     - !reference [.scripts, fix-report-path]
 
 # Drupal 9 rules used here for stylelint to check css.
