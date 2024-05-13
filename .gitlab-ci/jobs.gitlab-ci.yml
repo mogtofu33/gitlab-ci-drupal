@@ -112,7 +112,8 @@ phpcs:
         --report-junit=report-${CI_JOB_NAME}/phpcs_junit.xml
         ${CI_DIRS_QA_PHPCS}
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/phpcs_junit.xml
 
 phpmd:
@@ -129,7 +130,8 @@ phpmd:
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/phpmd_junit.xml
 phpstan:
   stage: qa
@@ -147,7 +149,8 @@ phpstan:
         --error-format junit
         ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpstan_junit.xml
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/phpstan_junit.xml
 
 ################################################################################
@@ -170,7 +173,8 @@ lint_php:
         ${CI_DIRS_LINT_PHP} >> report-${CI_JOB_NAME}/parallel-lint.xml
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml || true
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/parallel-lint_junit.xml
   # Detect critical error and should not be ignored.
   allow_failure: false
@@ -193,7 +197,8 @@ lint_js:
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
         "${CI_DIRS_LINT_JS}"
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/parallel-lint_junit.xml
 
 # This is a eslint report for Yaml files.
@@ -214,7 +219,8 @@ lint_yaml:
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
         "${CI_DIRS_LINT_YAML}"
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/eslint-yaml_junit.xml
 
 # Drupal 9 rules used here for stylelint to check css.
@@ -235,7 +241,8 @@ lint_css:
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
         "${CI_DIRS_LINT_CSS}"
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/stylelint_junit.xml
 
 ################################################################################
@@ -262,7 +269,8 @@ phpunit_unit:
         --coverage-text
         --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - cat report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
     # [CODECOV] integration, need to set up CI environment variable 'CI_CODECOV_TOKEN' to work.
     # see https://codecov.io
@@ -287,7 +295,8 @@ phpunit_func:
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functional_junit.xml
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
@@ -313,7 +322,8 @@ phpunit_funcjs:
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
@@ -381,7 +391,8 @@ behat:
         --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
         --verbose
   after_script:
-    - !reference [.scripts, fix-report-path]
+    - echo "remove ${CI_PROJECT_DIR}"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.
