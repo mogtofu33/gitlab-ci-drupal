@@ -138,21 +138,21 @@ class Junit implements Report
         $dom->formatOutput = True;
         $dom->encoding = "UTF-8";
         $dom->preserveWhiteSpace = False;
-        +
+
         $testsuites = $dom->createElement("testsuites");
-        $testsuites->setAttribute("name", 'PHP_CodeSniffer '.Config::VERSION);
+        $testsuites->setAttribute("name", 'PHP_CodeSniffer ' . Config::VERSION);
         $testsuites->setAttribute("errors", 0);
         $testsuites->setAttribute("tests", $tests);
         $testsuites->setAttribute("failures", $failures);
-        +
+
         $fragment = $dom->createDocumentFragment();
         // Using XML that is partially formatted in appendXML() results in
         // dom->formatOutput ignoring the fragment during formatting.
         $fragment->appendXML($cachedData);
-        +
+
         $testsuites->appendChild($fragment);
         $dom->appendChild($testsuites);
-        +
+
         // Saving and loading the string forces pretty formatting.
         $tmp = $dom->saveXML();
         $dom->loadXML($tmp);
