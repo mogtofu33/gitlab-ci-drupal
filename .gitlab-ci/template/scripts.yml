@@ -43,3 +43,8 @@
     - mkdir -p ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites/default/files/simpletest
     - chown -R www-data:www-data ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites
     - chmod -R 777 ${BROWSERTEST_OUTPUT_DIRECTORY} ${CI_WEB_ROOT}/sites
+  fix-report-path:
+    - echo "remove ${CI_PROJECT_DIR}---"
+    - sed -i 's@'"$CI_PROJECT_DIR"'@@g' report-${CI_JOB_NAME}/*_junit.xml
+    - cat report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
+    - echo "---Dome!"
