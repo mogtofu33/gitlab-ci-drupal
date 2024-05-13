@@ -105,7 +105,7 @@ phpcs:
       when: never
     - when: on_success
   script:
-    - cp .gitlab-ci/Junit.php ${CI_DOC_ROOT}/vendor/squizlabs/php_codesniffer/src/Reports/Junit.php
+    - cp .gitlab-ci/Junit.php /var/www/.composer/vendor/squizlabs/php_codesniffer/src/Reports/Junit.php
     - phpcs
         --standard=${CI_QA_PHPCS_STANDARD}
         --ignore=${CI_QA_IGNORE}
@@ -167,7 +167,7 @@ lint_js:
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
-        --format gitlab
+        --format junit
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
         "${CI_DIRS_LINT_JS}"
   after_script:
