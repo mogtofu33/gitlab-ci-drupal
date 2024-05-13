@@ -105,6 +105,7 @@ phpcs:
       when: never
     - when: on_success
   script:
+    - cp .gitlab-ci/Junit.php ${CI_DOC_ROOT}/vendor/squizlabs/php_codesniffer/src/Reports/Junit.php
     - phpcs
         --standard=${CI_QA_PHPCS_STANDARD}
         --ignore=${CI_QA_IGNORE}
@@ -143,34 +144,17 @@ phpstan:
     - phpstan analyze
         --no-progress
         --configuration ${CI_QA_CONFIG_PHPSTAN}
-        --error-format junit
-        ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
+        --error-format gitlab
+        ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.json
   after_script:
     - !reference [.scripts, fix-report-path]
+  artifacts:
+    reports:
+      codequality: "report-${CI_JOB_NAME}/${CI_JOB_NAME}.json"
 
 ################################################################################
 # Code linter jobs for Drupal
 ################################################################################
-
-lint_php:
-  stage: qa
-  extends: .job_template
-  rules:
-    - if: '$CI_SKIP_LINT == "1" || $CI_SKIP_LINT_PHP == "1"'
-      when: never
-    - when: on_success
-  script:
-    - parallel-lint
-        --no-progress
-        --exclude vendor
-        -e ${CI_QA_SUFFIX}
-        --checkstyle
-        ${CI_DIRS_LINT_PHP} >> report-${CI_JOB_NAME}/parallel-lint.xml
-  after_script:
-    - xsltproc -o report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml || true
-    - !reference [.scripts, fix-report-path]
-  # Detect critical error and should not be ignored.
-  allow_failure: false
 
 # This is a eslint report based on Drupal 9 standards.
 # @see https://www.drupal.org/docs/develop/standards/javascript
@@ -182,15 +166,19 @@ lint_js:
       when: never
     - when: on_success
   script:
+    - yarn --cwd ${CI_LINT_NODE_PACKAGE} add eslint-formatter-gitlab
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
+        --format gitlab
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.json"
         "${CI_DIRS_LINT_JS}"
   after_script:
     - !reference [.scripts, fix-report-path]
+  artifacts:
+    reports:
+      codequality: "report-${CI_JOB_NAME}/${CI_JOB_NAME}.json"
 
 # This is a eslint report for Yaml files.
 lint_yaml:

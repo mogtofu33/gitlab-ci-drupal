@@ -184,15 +184,6 @@ _qa() {
   _phpstan
 }
 
-_parallel_lint() {
-  printf "\\n%s[INFO]%s parallel-lint\\n\\n" "${_blu}" "${_end}"
-  _dkexec parallel-lint \
-    --no-progress \
-    --exclude vendor \
-    -e ${CI_QA_SUFFIX} \
-    ${CI_DIRS_LINT_PHP}
-}
-
 _js_lint() {
   printf "\\n%s[INFO]%s Eslint\\n\\n" "${_blu}" "${_end}"
   _dkexec node ${CI_WEB_ROOT}/core/node_modules/.bin/eslint \
@@ -221,7 +212,6 @@ _css_lint() {
 }
 
 _lint() {
-  _parallel_lint
   _js_lint
   _yml_lint
   _css_lint

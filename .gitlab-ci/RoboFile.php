@@ -125,6 +125,7 @@ class RoboFile extends Tasks {
   protected $ciFiles = [
     'conf/.env.tpl' => '.gitlab-ci/env.tpl',
     'conf/checkstyle2junit.xslt' => '.gitlab-ci/checkstyle2junit.xslt',
+    'conf/Junit.php' => '.gitlab-ci/Junit.php',
     'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
     'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
     '.eslintignore' => '.eslintignore',
