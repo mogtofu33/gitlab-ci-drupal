@@ -113,6 +113,7 @@ phpcs:
         ${CI_DIRS_QA_PHPCS}
   after_script:
     - !reference [.scripts, fix-report-path]
+    - cat report-${CI_JOB_NAME}/phpcs_junit.xml
 
 phpmd:
   stage: qa
@@ -129,7 +130,7 @@ phpmd:
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
     - !reference [.scripts, fix-report-path]
-
+    - cat report-${CI_JOB_NAME}/phpmd_junit.xml
 phpstan:
   stage: qa
   extends: .job_template
@@ -147,6 +148,7 @@ phpstan:
         ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpstan_junit.xml
   after_script:
     - !reference [.scripts, fix-report-path]
+    - cat report-${CI_JOB_NAME}/phpstan_junit.xml
 
 ################################################################################
 # Code linter jobs for Drupal
@@ -169,6 +171,7 @@ lint_php:
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml || true
     - !reference [.scripts, fix-report-path]
+    - cat report-${CI_JOB_NAME}/parallel-lint_junit.xml
   # Detect critical error and should not be ignored.
   allow_failure: false
 
@@ -191,6 +194,7 @@ lint_js:
         "${CI_DIRS_LINT_JS}"
   after_script:
     - !reference [.scripts, fix-report-path]
+    - cat report-${CI_JOB_NAME}/parallel-lint_junit.xml
 
 # This is a eslint report for Yaml files.
 lint_yaml:
@@ -211,6 +215,7 @@ lint_yaml:
         "${CI_DIRS_LINT_YAML}"
   after_script:
     - !reference [.scripts, fix-report-path]
+    - cat report-${CI_JOB_NAME}/eslint-yaml_junit.xml
 
 # Drupal 9 rules used here for stylelint to check css.
 # @see https://www.drupal.org/docs/develop/standards/css
@@ -229,6 +234,9 @@ lint_css:
         --custom-formatter ${CI_LINT_NODE_PACKAGE}/node_modules/stylelint-gitlabci-formatter
         --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
         "${CI_DIRS_LINT_CSS}"
+  after_script:
+    - !reference [.scripts, fix-report-path]
+    - cat report-${CI_JOB_NAME}/stylelint_junit.xml
 
 ################################################################################
 # Drupal tests.
@@ -254,12 +262,13 @@ phpunit_unit:
         --coverage-text
         --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
   after_script:
+    - !reference [.scripts, fix-report-path]
+    - cat report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
     # [CODECOV] integration, need to set up CI environment variable 'CI_CODECOV_TOKEN' to work.
     # see https://codecov.io
     - if [ ! -z ${CI_CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
         bash <(curl -s https://codecov.io/bash) -f "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage.xml" || true;
       fi
-    - !reference [.scripts, fix-report-path]
   # @see https://docs.gitlab.com/ee/ci/yaml/#coverage
   coverage: '/^\s*Lines:\s*\d+.\d+\%/'
 
@@ -278,6 +287,7 @@ phpunit_func:
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functional_junit.xml
   after_script:
+    - !reference [.scripts, fix-report-path]
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
