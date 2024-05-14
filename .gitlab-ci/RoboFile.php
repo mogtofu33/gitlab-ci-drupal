@@ -519,12 +519,6 @@ class RoboFile extends Tasks {
     $remoteFile = file_get_contents($remoteFilename);
     if ($remoteFile) {
       $this->ciLog('Get remote file: ' . $remoteFilename . " to " . $localFilename);
-      $path = pathinfo($localFilename, PATHINFO_DIRNAME);
-      $this->ciNotice('localFilename: ' . $localFilename);
-      $this->ciNotice('Path: ' . $path);
-      // if (!is_dir($path)) {
-      //   mkdir($path);
-      // }
       \file_put_contents($localFilename, $remoteFile);
     }
     else {

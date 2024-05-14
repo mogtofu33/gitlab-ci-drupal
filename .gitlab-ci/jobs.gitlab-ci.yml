@@ -144,7 +144,7 @@ phpstan:
     - phpstan analyze
         --no-progress
         --configuration ${CI_QA_CONFIG_PHPSTAN}
-        --error-format junit
+        --error-format checkstyle
         ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml .gitlab-ci/phpstan2junit.xslt report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml
@@ -164,12 +164,12 @@ lint_js:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/conf/eslint-formatter-junit-gitlabci install
+    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
-        --format ${CI_PROJECT_DIR}/.gitlab-ci/conf/eslint-formatter-junit-gitlabci
+        --format ${CI_PROJECT_DIR}/.gitlab-ci/eslint-formatter-junit-gitlabci.js
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
         "${CI_DIRS_LINT_JS}"
   after_script:
@@ -184,13 +184,13 @@ lint_yaml:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/conf/eslint-formatter-junit-gitlabci install
+    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT_YAML}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
         --ext .yml
-        --format ${CI_PROJECT_DIR}/.gitlab-ci/conf/eslint-formatter-junit-gitlabci
+        --format ${CI_PROJECT_DIR}/.gitlab-ci/eslint-formatter-junit-gitlabci.js
         --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
         "${CI_DIRS_LINT_YAML}"
   after_script:
