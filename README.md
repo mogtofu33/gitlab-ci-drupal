@@ -66,7 +66,7 @@ For more option and details see the [full documentation](https://mog33.gitlab.io
 ### @TODO
 
 - PHPStan junit report, empty filename https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-project/-/pipelines/1288683412/test_report?job_name=phpstan
-- lint_yaml junit report, empty filename: https://gitlab.com/gitlab-ci-drupal/demo-gitlab-ci-drupal-project/-/pipelines/1288683412/test_report?job_name=lint_yaml
+- Codequality for QA jobs? https://docs.gitlab.com/ee/ci/testing/code_quality.html
 
 ----
 

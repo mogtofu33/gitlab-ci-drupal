@@ -1,0 +1,35 @@
+{
+  "name": "eslint-formatter-junit-gitlabci",
+  "version": "1.0.0",
+  "description": "Output eslint results for Gitlab CI JUnit report.",
+  "main": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "test": "echo 'No tests yet...'"
+  },
+  "keywords": [
+    "eslint",
+    "junit",
+    "formatter",
+    "reporter",
+    "report",
+    "gitlab",
+    "gitlab-ci"
+  ],
+  "author": {
+    "name": "Jean Valverde",
+    "email": "contact@developpeur-drupal.com",
+    "url": "https://developpeur-drupal.com/en"
+  },
+  "license": "GPL-3",
+  "bugs": {
+    "url": "https://gitlab.com/gitlab-ci-drupal"
+  },
+  "homepage": "https://gitlab.com/gitlab-ci-drupal",
+  "dependencies": {
+    "path": "^0.12.7",
+    "xmlbuilder": "^15.1.1"
+  }
+}

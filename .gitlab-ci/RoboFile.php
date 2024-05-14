@@ -128,6 +128,8 @@ class RoboFile extends Tasks {
     'conf/Junit.php' => '.gitlab-ci/Junit.php',
     'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
     'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
+    'conf/eslint-formatter-junit-gitlabci/index.js' => '.gitlab-ci/eslint-formatter-junit-gitlabci/index.js',
+    'conf/eslint-formatter-junit-gitlabci/package.json' => '.gitlab-ci/eslint-formatter-junit-gitlabci/package.json',
     '.eslintignore' => '.eslintignore',
     '.stylelintignore' => '.stylelintignore',
     'phpunit.xml' => 'phpunit.xml',
@@ -517,7 +519,11 @@ class RoboFile extends Tasks {
     $remoteFile = file_get_contents($remoteFilename);
     if ($remoteFile) {
       $this->ciLog('Get remote file: ' . $remoteFilename . " to " . $localFilename);
-      file_put_contents($localFilename, $remoteFile);
+      $path = pathinfo($localFilename, PATHINFO_DIRNAME);
+      if (!is_dir($path)) {
+        mkdir($path);
+      }
+      \file_put_contents($localFilename, $remoteFile);
     }
     else {
       $this->io()->warning('Failed to get remote file: ' . $remoteFilename);
