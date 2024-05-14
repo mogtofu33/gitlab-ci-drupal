@@ -18,26 +18,44 @@
 
   <xsl:template match="file">
     <testcase>
-      <!-- <xsl:attribute name="classname" select="''" /> -->
       <xsl:attribute name="file">
         <xsl:value-of select="@name" />
       </xsl:attribute>
-      <!-- <xsl:attribute name="name">
-        <xsl:value-of select="@name" />
-      </xsl:attribute> -->
+      <xsl:attribute name="classname">
+        <xsl:choose>
+          <xsl:when test="error">
+            <xsl:value-of select="substring-after(error[1]/@source, 'eslint.rules.')" />
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:text>eslint.passed</xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:attribute>
+      <xsl:attribute name="name">
+        <xsl:choose>
+          <xsl:when test="error">
+            <xsl:value-of select="error[1]/@line" />
+            <xsl:text>:</xsl:text>
+            <xsl:value-of select="error[1]/@column" />
+            <xsl:text> = </xsl:text>
+            <xsl:value-of select="error[1]/@message" />
+          </xsl:when>
+        </xsl:choose>
+      </xsl:attribute>
       <xsl:apply-templates select="node()" />
     </testcase>
   </xsl:template>
 
   <xsl:template match="error">
     <failure>
-      <xsl:attribute name="name">
-        <xsl:value-of select="@source" />
+      <xsl:attribute name="type">
+        <xsl:value-of select="@severity" />
       </xsl:attribute>
-      <xsl:text>Line </xsl:text>
       <xsl:value-of select="@line" />
-      <xsl:text>: </xsl:text>
+      <xsl:text>:</xsl:text>
       <xsl:value-of select="@message" />
+      <xsl:text>&amp; </xsl:text>
+      <xsl:value-of select="@source" />
     </failure>
   </xsl:template>
 </xsl:stylesheet>
