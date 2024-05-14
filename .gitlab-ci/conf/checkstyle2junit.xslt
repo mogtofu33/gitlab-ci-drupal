@@ -18,20 +18,20 @@
 
   <xsl:template match="file">
     <testcase>
-      <xsl:attribute name="classname" select="''" />
+      <!-- <xsl:attribute name="classname" select="''" /> -->
       <xsl:attribute name="file">
         <xsl:value-of select="@name" />
       </xsl:attribute>
-      <xsl:attribute name="name">
+      <!-- <xsl:attribute name="name">
         <xsl:value-of select="@name" />
-      </xsl:attribute>
+      </xsl:attribute> -->
       <xsl:apply-templates select="node()" />
     </testcase>
   </xsl:template>
 
   <xsl:template match="error">
     <failure>
-      <xsl:attribute name="type">
+      <xsl:attribute name="name">
         <xsl:value-of select="@source" />
       </xsl:attribute>
       <xsl:text>Line </xsl:text>
