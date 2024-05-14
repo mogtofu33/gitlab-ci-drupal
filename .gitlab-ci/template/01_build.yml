@@ -20,15 +20,15 @@
     paths:
       - vendor
       - node_modules
-      - core/node_modules
-      # - ${CI_DRUPAL_WEB_ROOT}
+      - ${CI_DRUPAL_WEB_ROOT}/core/node_modules
   artifacts:
     expire_in: 1 week
     paths:
       # Build files for next steps and deploy/release.
       - vendor
+      - node_modules
       - ${CI_COMPOSER_BIN}
-      # - ${CI_DRUPAL_WEB_ROOT}
+      - ${CI_DRUPAL_WEB_ROOT}
       - composer.json
       - composer.lock
       # Files from this project.
