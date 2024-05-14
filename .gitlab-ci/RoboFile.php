@@ -128,8 +128,8 @@ class RoboFile extends Tasks {
     '.phpqa.yml' => '.phpqa.yml',
     '.stylelintignore' => '.stylelintignore',
     'conf/.env.tpl' => '.gitlab-ci/env.tpl',
-    'conf/eslint-formatter-junit-gitlabci/index.js' => '.gitlab-ci/conf/eslint-formatter-junit-gitlabci/index.js',
-    'conf/eslint-formatter-junit-gitlabci/package.json' => '.gitlab-ci/conf/eslint-formatter-junit-gitlabci/package.json',
+    'conf/eslint-formatter-junit-gitlabci/index.js' => '.gitlab-ci/eslint-formatter-junit-gitlabci.js',
+    'conf/eslint-formatter-junit-gitlabci/package.json' => '.gitlab-ci/package.json',
     'conf/Junit.php' => '.gitlab-ci/Junit.php',
     'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
     'conf/phpstan2junit.xslt' => '.gitlab-ci/phpstan2junit.xslt',
@@ -520,9 +520,11 @@ class RoboFile extends Tasks {
     if ($remoteFile) {
       $this->ciLog('Get remote file: ' . $remoteFilename . " to " . $localFilename);
       $path = pathinfo($localFilename, PATHINFO_DIRNAME);
-      if (!is_dir($path)) {
-        mkdir($path);
-      }
+      $this->ciNotice('localFilename: ' . $localFilename);
+      $this->ciNotice('Path: ' . $path);
+      // if (!is_dir($path)) {
+      //   mkdir($path);
+      // }
       \file_put_contents($localFilename, $remoteFile);
     }
     else {
