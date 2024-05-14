@@ -123,16 +123,20 @@ class RoboFile extends Tasks {
    *   (.gitlab-ci/).
    */
   protected $ciFiles = [
-    'conf/.env.tpl' => '.gitlab-ci/env.tpl',
-    'conf/checkstyle2junit.xslt' => '.gitlab-ci/checkstyle2junit.xslt',
-    'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
-    'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
     '.eslintignore' => '.eslintignore',
-    '.stylelintignore' => '.stylelintignore',
-    'phpunit.xml' => 'phpunit.xml',
     '.phpmd.xml' => '.phpmd.xml',
     '.phpqa.yml' => '.phpqa.yml',
+    '.stylelintignore' => '.stylelintignore',
+    'conf/.env.tpl' => '.gitlab-ci/env.tpl',
+    'conf/checkstyle2junit.xslt' => '.gitlab-ci/checkstyle2junit.xslt',
+    'conf/eslint-formatter-junit-gitlabci/index.js' => '.gitlab-ci/eslint-formatter-junit-gitlabci.js',
+    'conf/eslint-formatter-junit-gitlabci/package.json' => '.gitlab-ci/package.json',
+    'conf/Junit.php' => '.gitlab-ci/Junit.php',
+    'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
+    'conf/phpstan2junit.xslt' => '.gitlab-ci/phpstan2junit.xslt',
+    'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
     'phpstan.neon' => 'phpstan.neon',
+    'phpunit.xml' => 'phpunit.xml',
   ];
 
   /**
@@ -142,7 +146,7 @@ class RoboFile extends Tasks {
    *   The drupal version used, look at env values for. This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
-  protected $ciDrupalVersion = "10.0";
+  protected $ciDrupalVersion = "10.2";
 
   /**
    * CI_REMOTE_FILES context.

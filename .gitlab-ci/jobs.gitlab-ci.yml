@@ -91,7 +91,7 @@ security:
     - chmod +x php-security-checker
     - mkdir -p report-${CI_JOB_NAME}
   script:
-    - ./php-security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/security_junit.xml
+    - ./php-security-checker --no-dev --format=junit >> report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
 
 ################################################################################
 # Code quality jobs for Drupal
@@ -106,12 +106,16 @@ phpcs:
       when: never
     - when: on_success
   script:
+    # Copy PHP code sniffer edited report format.
+    - cp .gitlab-ci/Junit.php /var/www/.composer/vendor/squizlabs/php_codesniffer/src/Reports/Junit.php
     - phpcs
         --standard=${CI_QA_PHPCS_STANDARD}
         --ignore=${CI_QA_IGNORE}
         --extensions=${CI_QA_SUFFIX}
-        --report-junit=report-${CI_JOB_NAME}/phpcs_junit.xml
+        --report-junit=report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
         ${CI_DIRS_QA_PHPCS}
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 phpmd:
   stage: qa
@@ -126,7 +130,8 @@ phpmd:
         --suffixes ${CI_QA_SUFFIX}
         --reportfile report-${CI_JOB_NAME}/phpmd.xml
   after_script:
-    - xsltproc -o report-${CI_JOB_NAME}/phpmd_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/phpmd.xml
+    - xsltproc -o report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml .gitlab-ci/phpmd2junit.xslt report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml
+    - !reference [.scripts, fix-report-path]
 
 phpstan:
   stage: qa
@@ -141,8 +146,11 @@ phpstan:
     - phpstan analyze
         --no-progress
         --configuration ${CI_QA_CONFIG_PHPSTAN}
-        --error-format junit
-        ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpstan_junit.xml
+        --error-format checkstyle
+        ${CI_DIRS_QA_PHPSTAN} >> ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml
+  after_script:
+    - xsltproc -o report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml .gitlab-ci/phpstan2junit.xslt report-${CI_JOB_NAME}/${CI_JOB_NAME}.xml
+    - !reference [.scripts, fix-report-path]
 
 ################################################################################
 # Code linter jobs for Drupal
@@ -164,6 +172,7 @@ lint_php:
         ${CI_DIRS_LINT_PHP} >> report-${CI_JOB_NAME}/parallel-lint.xml
   after_script:
     - xsltproc -o report-${CI_JOB_NAME}/parallel-lint_junit.xml .gitlab-ci/checkstyle2junit.xslt report-${CI_JOB_NAME}/parallel-lint.xml || true
+    - !reference [.scripts, fix-report-path]
   # Detect critical error and should not be ignored.
   allow_failure: false
 
@@ -177,13 +186,16 @@ lint_js:
       when: never
     - when: on_success
   script:
+    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-js_junit.xml"
+        --format ${CI_PROJECT_DIR}/.gitlab-ci/eslint-formatter-junit-gitlabci.js
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
         "${CI_DIRS_LINT_JS}"
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 # This is a eslint report for Yaml files.
 lint_yaml:
@@ -194,14 +206,17 @@ lint_yaml:
       when: never
     - when: on_success
   script:
+    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT_YAML}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
         --resolve-plugins-relative-to ${CI_LINT_NODE_PACKAGE}
         --ext .yml
-        --format junit
-        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/eslint-yaml_junit.xml"
+        --format ${CI_PROJECT_DIR}/.gitlab-ci/eslint-formatter-junit-gitlabci.js
+        --output-file "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml"
         "${CI_DIRS_LINT_YAML}"
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 # Drupal 9 rules used here for stylelint to check css.
 # @see https://www.drupal.org/docs/develop/standards/css
@@ -218,8 +233,10 @@ lint_css:
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
         --custom-formatter ${CI_LINT_NODE_PACKAGE}/node_modules/stylelint-gitlabci-formatter
-        --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/stylelint_junit.xml
+        --output-file ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
         "${CI_DIRS_LINT_CSS}"
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 ################################################################################
 # Drupal tests.
@@ -243,8 +260,9 @@ phpunit_unit:
         --configuration ${CI_PHPUNIT_CONFIGURATION}
         --coverage-xml ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/coverage-xml
         --coverage-text
-        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-unit-kernel_junit.xml
+        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
   after_script:
+    - !reference [.scripts, fix-report-path]
     # [CODECOV] integration, need to set up CI environment variable 'CI_CODECOV_TOKEN' to work.
     # see https://codecov.io
     - if [ ! -z ${CI_CODECOV_TOKEN} ] && [ -f "report-${CI_JOB_NAME}/coverage.xml" ]; then
@@ -266,8 +284,9 @@ phpunit_func:
         --testsuite "functional"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
-        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functional_junit.xml
+        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
   after_script:
+    - !reference [.scripts, fix-report-path]
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
@@ -291,8 +310,9 @@ phpunit_funcjs:
         --testsuite "functional-javascript"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
-        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/phpunit-functionaljs_junit.xml
+        --log-junit ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/${CI_JOB_NAME}_junit.xml
   after_script:
+    - !reference [.scripts, fix-report-path]
     - mkdir -p "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output"
     - cp ${BROWSERTEST_OUTPUT_DIRECTORY}/browser_output/* "${CI_PROJECT_DIR}/report-${CI_JOB_NAME}/browser_output" || true
 
@@ -359,6 +379,8 @@ behat:
         --format junit
         --out ${CI_PROJECT_DIR}/report-${CI_JOB_NAME}
         --verbose
+  after_script:
+    - !reference [.scripts, fix-report-path]
 
 ################################################################################
 # Code metrics, would probably make sense only for a tag release.

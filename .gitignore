@@ -51,4 +51,5 @@ yarn.lock
 package-lock.json
 package.json
 !/package.json
+!/.gitlab-ci/**/package.json
 reports-*
