@@ -24,10 +24,10 @@
       <xsl:attribute name="classname">
         <xsl:choose>
           <xsl:when test="error">
-            <xsl:value-of select="substring-after(error[1]/@source, 'eslint.rules.')" />
+            <xsl:value-of select="error[1]/@source" />
           </xsl:when>
           <xsl:otherwise>
-            <xsl:text>eslint.passed</xsl:text>
+            <xsl:text>phpstan.passed</xsl:text>
           </xsl:otherwise>
         </xsl:choose>
       </xsl:attribute>
@@ -51,11 +51,15 @@
       <xsl:attribute name="type">
         <xsl:value-of select="@severity" />
       </xsl:attribute>
+      <xsl:text>On line </xsl:text>
       <xsl:value-of select="@line" />
-      <xsl:text>:</xsl:text>
+      <xsl:text>, column </xsl:text>
+      <xsl:value-of select="@column" />
+      <xsl:text>: </xsl:text>
       <xsl:value-of select="@message" />
-      <xsl:text>&amp; </xsl:text>
+      <xsl:text> (</xsl:text>
       <xsl:value-of select="@source" />
+      <xsl:text>)</xsl:text>
     </failure>
   </xsl:template>
 </xsl:stylesheet>

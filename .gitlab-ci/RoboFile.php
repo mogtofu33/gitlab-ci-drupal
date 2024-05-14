@@ -123,19 +123,19 @@ class RoboFile extends Tasks {
    *   (.gitlab-ci/).
    */
   protected $ciFiles = [
-    'conf/.env.tpl' => '.gitlab-ci/env.tpl',
-    'conf/checkstyle2junit.xslt' => '.gitlab-ci/checkstyle2junit.xslt',
-    'conf/Junit.php' => '.gitlab-ci/Junit.php',
-    'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
-    'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
-    'conf/eslint-formatter-junit-gitlabci/index.js' => '.gitlab-ci/eslint-formatter-junit-gitlabci/index.js',
-    'conf/eslint-formatter-junit-gitlabci/package.json' => '.gitlab-ci/eslint-formatter-junit-gitlabci/package.json',
     '.eslintignore' => '.eslintignore',
-    '.stylelintignore' => '.stylelintignore',
-    'phpunit.xml' => 'phpunit.xml',
     '.phpmd.xml' => '.phpmd.xml',
     '.phpqa.yml' => '.phpqa.yml',
+    '.stylelintignore' => '.stylelintignore',
+    'conf/.env.tpl' => '.gitlab-ci/env.tpl',
+    'conf/eslint-formatter-junit-gitlabci/index.js' => '.gitlab-ci/conf/eslint-formatter-junit-gitlabci/index.js',
+    'conf/eslint-formatter-junit-gitlabci/package.json' => '.gitlab-ci/conf/eslint-formatter-junit-gitlabci/package.json',
+    'conf/Junit.php' => '.gitlab-ci/Junit.php',
+    'conf/phpmd2junit.xslt' => '.gitlab-ci/phpmd2junit.xslt',
+    'conf/phpstan2junit.xslt' => '.gitlab-ci/phpstan2junit.xslt',
+    'conf/settings.local.php' => '.gitlab-ci/settings.local.php',
     'phpstan.neon' => 'phpstan.neon',
+    'phpunit.xml' => 'phpunit.xml',
   ];
 
   /**
