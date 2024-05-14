@@ -1,7 +1,8 @@
 {
-  "name": "@dilla-io/semantic-release",
-  "version": "1.0.0",
-  "description": "Dilla helper to publish packages with semantic release.",
+  "name": "@mog33/gitlab-ci-drupal",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Helper to generate changelog.",
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
