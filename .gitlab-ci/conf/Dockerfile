@@ -1,5 +1,5 @@
 # Sample file to create a Docker image including our Drupal codebase.
-FROM drupal:9-apache
+FROM drupal:11-apache
 
 WORKDIR /opt/drupal
 

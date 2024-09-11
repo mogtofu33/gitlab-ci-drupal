@@ -1,5 +1,5 @@
 ################################################################################
-# Gitlab CI integration for Drupal 10+ project or module: tests, code quality,
+# GitLab CI integration for Drupal 11+ project or module: tests, code quality,
 # linting, metrics and deploy samples.
 #
 # @project: https://gitlab.com/mog33/gitlab-ci-drupal
@@ -20,10 +20,10 @@ include:
   # Gitlab source when your project is hosted on Gitlab.com.
   # 'ref' is the branch, should be sync with next variable `CI_REF`.
   - project: 'mog33/gitlab-ci-drupal'
-    ref: 4.x-dev
+    ref: 11.x-dev
     file: '/.gitlab-ci/jobs.gitlab-ci.yml'
   # If hosted on an other Gitlab instance.
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/jobs.gitlab-ci.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/jobs.gitlab-ci.yml'
 
   # Use a Workflow template matching your needs side of `CI_SKIP_*` variables.
   # @see https://docs.gitlab.com/ee/ci/yaml/workflow.html#workflowrules-templates
@@ -37,15 +37,15 @@ include:
 
 variables:
   # Mandatory to get default variables.
-  # @see https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml
+  # @see https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/variables.yml
   extends: .default_variables
 
   # Docker image ref used for ci.
-  CI_REF: "4.x-dev"
+  CI_REF: "11.x-dev"
   # Minor Drupal version to work with.
   # @see https://hub.docker.com/r/mogtofu33/drupal-ci/tags
   CI_DRUPAL_VERSION:
-    value: "10.0"
+    value: "11.0"
     description: The version of Drupal to use for this Pipeline.
   # Relative path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on

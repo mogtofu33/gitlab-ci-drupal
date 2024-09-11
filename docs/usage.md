@@ -2,9 +2,9 @@
 
 Most configuration for this project is done through variables that you can set on your `.gitlab-ci.yml`.
 
-First look in [.gitlab-ci/template/variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml)
+First look in [.gitlab-ci/template/variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/variables.yml)
 and check the variables.
-This is all the variables you can override from global settings on Gitlab CI or
+This is all the variables you can override from global settings on GitLab CI or
 when manually running a pipeline.
 
 See section [Advanced usage](/advanced-usage/) for more details on each relation
@@ -21,11 +21,11 @@ Alternatively, one can pass the ci.skip Git push option if using Git 2.10 or new
 
 ### Skip jobs
 
-You can set variables values on your `.gitlab-ci.yml` or in the Gitlab CI UI
+You can set variables values on your `.gitlab-ci.yml` or in the GitLab CI UI
 under _Settings > CI/CD > Variables_
 
 With variables you can disable some tests without editing any file, available
-skip variables are described in [variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml)
+skip variables are described in [variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/variables.yml)
 
 ### Workflow of jobs
 

@@ -1,7 +1,7 @@
 ### Custom configuration files
 
 You can override any config by copying the file from
-[.gitlab-ci](https://gitlab.com/mog33/gitlab-ci-drupal/-/tree/4.x-dev/.gitlab-ci)
+[.gitlab-ci](https://gitlab.com/mog33/gitlab-ci-drupal/-/tree/11.x-dev/.gitlab-ci)
 folder on your project.
 
 For example if you want to provide your own `phpunit.xml` file, simply add it on your project in a `.gitlab-ci/` folder.
@@ -38,7 +38,7 @@ Some examples of common tasks:
 <?php
 
 // Download a remote file:
-$myFile = 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/README.md';
+$myFile = 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/README.md';
 if ($this->taskExec("curl -fsSL $myFile -o $this->docRoot . '/README.md")->run()->wasSuccessful()) {
   $this->say('File downloaded!');
 }
@@ -116,7 +116,7 @@ tests in Drupal, see
 [Type of tests in Drupal](https://www.drupal.org/docs/8/testing/types-of-tests-in-drupal-8).
 
 The tests configuration is defined in
-[.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/phpunit.xml).
+[.gitlab-ci/phpunit.xml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/phpunit.xml).
 You can set your own specific configuration file with `CI_PHPUNIT_CONFIGURATION` or for a project simply have a
 `web/core/phpunit.xml` file.
 
@@ -304,7 +304,7 @@ For Behat, Selenium is not needed thanks to the
 
 If you need different configuration for Behat, you can look and override variable
 `BEHAT_PARAMS` in
-[.gitlab-ci/template/variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml)
+[.gitlab-ci/template/variables.yml](https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/variables.yml)
 
 ### Release of code to Gitlab and Drupal.org
 
@@ -320,8 +320,8 @@ Drupal release based on semantic-release not yet implemented, wip in `.gitlab-ci
 
 To deploy to an external server, you must implement your own solution.
 
-As per Drupal 9 good practices it is not meant to deploy any database,
-only the codebase.
+As per Drupal good practices it is not meant to deploy any database, only the
+codebase.
 
 This project include a sample assuming you can ssh to a remote host.
 From this starting point, you can include any script to match your deploy
@@ -338,7 +338,7 @@ Could be a starting point if you have a remote ssh access to your environment.
 
 You must fill variables on the deploy job or in Gitlab UI:
 
-- Gitlab CI UI > settings > CI/CD
+- GitLab CI UI > settings > CI/CD
 
 See Gitlab-CI Environments documentation:
 [configuring environments](https://docs.gitlab.com/ee/ci/environments.html#configuring-environments)
@@ -356,7 +356,7 @@ deploy ssh:
   # To make this deploy job manual on the pipeline.
   # @see https://docs.gitlab.com/ee/ci/environments.html#configuring-manual-deployments
   # when: manual
-  # Variables can be set from 'Gitlab CI UI > settings > CI/CD > variables' as
+  # Variables can be set from 'GitLab CI UI > settings > CI/CD > variables' as
   # named below or directly here.
   variables:
     ENV_USER: "${TESTING_USER}"

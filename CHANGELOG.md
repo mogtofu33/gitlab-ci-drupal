@@ -1,4 +1,4 @@
-# Gitlab CI for Drupal Changelog
+# GitLab CI for Drupal Changelog
 
 ## 4.0.0 (2024-01-09)
 

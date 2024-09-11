@@ -7,7 +7,7 @@ set -eE -o functrace
 # environment with docker-compose.
 
 ###############################################################################
-# Local only tests, not included in Gitlab ci and more flexible.
+# Local only tests, not included in GitLab CI and more flexible.
 ###############################################################################
 __get_robofile() {
   if [ ! -f "$_DIR/../../RoboFile.php" ]; then

@@ -1,5 +1,5 @@
 /**
- * Very simple Eslint 8 formatter for Gitlab CI Junit tests.
+ * Very simple Eslint 8 formatter for GitLab CI Junit tests.
  */
 
 "use strict";

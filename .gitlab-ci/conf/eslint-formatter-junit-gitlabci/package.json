@@ -1,7 +1,7 @@
 {
   "name": "eslint-formatter-junit-gitlabci",
   "version": "1.0.0",
-  "description": "Output eslint results for Gitlab CI JUnit report.",
+  "description": "Output eslint results for GitLab CI JUnit report.",
   "main": "index.js",
   "files": [
     "index.js"

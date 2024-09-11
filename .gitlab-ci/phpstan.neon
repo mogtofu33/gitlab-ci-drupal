@@ -2,14 +2,21 @@
 # @see https://phpstan.org/user-guide/baseline
 # includes:
 #     - phpstan-baseline.neon
+
 parameters:
     level: 5
     excludePaths:
         analyseAndScan:
             - *RoboFile.php
             - */tests/*
+            - */tests/fixtures/*.php
             - */Tests/*
             - */node_modules/*
             - */vendor/*
     inferPrivatePropertyTypeFromConstructor: true
     checkMissingIterableValueType: false
+    reportUnmatchedIgnoredErrors: false
+
+  ignoreErrors:
+    # new static() is a best practice in Drupal, so we cannot fix that.
+    - "#^Unsafe usage of new static#"

@@ -146,7 +146,7 @@ class RoboFile extends Tasks {
    *   The drupal version used, look at env values for. This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
-  protected $ciDrupalVersion = "10.2";
+  protected $ciDrupalVersion = "11.0";
 
   /**
    * CI_REMOTE_FILES context.
@@ -271,7 +271,7 @@ class RoboFile extends Tasks {
 
     if (!file_exists($_ciDocRoot . '/' . $this->ciComposerBin . '/drush')) {
       $this->composerRequire($_ciDocRoot)
-          ->dependency('drush/drush', '>10')
+          ->dependency('drush/drush', '>13')
           ->run();
     }
 
@@ -280,14 +280,7 @@ class RoboFile extends Tasks {
       ->dependency('phpspec/prophecy-phpunit', '^2');
 
     if ($CI_SKIP_TEST_BEHAT == "0") {
-      if ($this->ciDrupalVersion == "9.5" || $this->ciDrupalVersion == "9.4") {
-        $task
-          ->dependency('drupal/drupal-extension', '^4.1');
-      }
-      else {
-        $task
-          ->dependency('drupal/drupal-extension', '5.0.x-dev');
-      }
+      $task->dependency('drupal/drupal-extension', '^5.0');
     }
 
     $task
@@ -555,7 +548,7 @@ class RoboFile extends Tasks {
 
     if (!file_exists($bin)) {
       $task = $this->composerRequire()
-        ->dependency('drush/drush', '>10')
+        ->dependency('drush/drush', '>13')
         ->run();
     }
 

@@ -1,5 +1,5 @@
 {
-  "branches": ["4.x-dev"],
+  "branches": ["11.x-dev"],
   "plugins": [
     [
       "@semantic-release/commit-analyzer",
@@ -17,7 +17,7 @@
       "@semantic-release/changelog",
       {
         "changelogFile": "CHANGELOG.md",
-        "changelogTitle": "# Gitlab CI for Drupal Changelog"
+        "changelogTitle": "# GitLab CI for Drupal Changelog"
       }
     ],
     [

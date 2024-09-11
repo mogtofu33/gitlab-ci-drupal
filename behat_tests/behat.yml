@@ -2,7 +2,7 @@
 default:
   suites:
     # Name must have suffix unit, so junit report will be test_junit.xml
-    # Gitlab CI will check for a *_junit.xml file.
+    # GitLab CI will check for a *_junit.xml file.
     test_junit:
       contexts:
         - FeatureContext

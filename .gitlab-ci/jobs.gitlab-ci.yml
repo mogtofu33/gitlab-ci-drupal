@@ -1,5 +1,5 @@
 ################################################################################
-# Gitlab CI integration for Drupal 10+ project or module: tests, code quality,
+# GitLab CI integration for Drupal 11+ project or module: tests, code quality,
 # linting, metrics and deploy samples.
 #
 # @project: https://gitlab.com/mog33/gitlab-ci-drupal
@@ -19,15 +19,15 @@
 ################################################################################
 
 include:
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/variables.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/artifacts.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/scripts.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/01_build.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/02_test.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/03_base_jobs.yml'
-  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_deploy.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/variables.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/artifacts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/scripts.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/01_build.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/02_test.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/03_base_jobs.yml'
+  - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/04_deploy.yml'
   # [WIP] Release to Gitlab / Github / Drupal.org
-  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/4.x-dev/.gitlab-ci/template/04_release.yml'
+  # - remote: 'https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/11.x-dev/.gitlab-ci/template/04_release.yml'
 
 ################################################################################
 # Define your stages, this will be "pipelines" in gitlab.
@@ -176,7 +176,7 @@ lint_php:
   # Detect critical error and should not be ignored.
   allow_failure: false
 
-# This is a eslint report based on Drupal 9 standards.
+# This is a eslint report based on Drupal standards.
 # @see https://www.drupal.org/docs/develop/standards/javascript
 lint_js:
   stage: qa
@@ -218,7 +218,7 @@ lint_yaml:
   after_script:
     - !reference [.scripts, fix-report-path]
 
-# Drupal 9 rules used here for stylelint to check css.
+# Drupal rules used here for stylelint to check css.
 # @see https://www.drupal.org/docs/develop/standards/css
 lint_css:
   stage: qa
