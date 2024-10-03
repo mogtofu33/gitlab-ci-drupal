@@ -5,11 +5,7 @@
 #
 # Project page:
 #   https://gitlab.com/mogtofu33/drupal-ci
-# Usage:
-#   http://dev-drupal.com/en/node/36
 ################################################################################
-version: '3'
-
 services:
   build:
     # Drupal included from official docker image + ci tools. Edit in .env file.
