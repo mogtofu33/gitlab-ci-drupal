@@ -71,7 +71,7 @@ build:
       fi
     # Install Drupal core package.json fro NightwatchJS and core js/css lint.
     - if [ ${CI_TYPE} == "project" ] && [ -f ${CI_WEB_ROOT}/core/package.json ]; then
-        yarn --cwd ${CI_WEB_ROOT}/core install;
+        corepack enable && yarn --cwd ${CI_WEB_ROOT}/core install;
       fi
   allow_failure: false
 
@@ -186,7 +186,7 @@ lint_js:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
+    - corepack enable && yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE}
@@ -206,7 +206,7 @@ lint_yaml:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
+    - corepack enable && yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT_YAML}
         --ignore-path ${CI_CONFIG_ESLINT_IGNORE_YAML}
@@ -228,7 +228,7 @@ lint_css:
       when: never
     - when: on_success
   script:
-    - yarn --cwd ${CI_LINT_NODE_PACKAGE} add stylelint-gitlabci-formatter
+    - corepack enable && yarn --cwd ${CI_LINT_NODE_PACKAGE} add stylelint-gitlabci-formatter
     - node ${CI_LINT_NODE_BIN_DIR}/stylelint
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
@@ -335,13 +335,13 @@ nightwatchjs:
     - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # Update chromedriver as Drupal package.json can be late on chrome version.
     - |
-      yarn --cwd ${CI_WEB_ROOT}/core upgrade \
+      corepack enable && yarn--cwd ${CI_WEB_ROOT}/core upgrade \
       chromedriver@$(curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Prepare variables.
     - envsubst < .gitlab-ci/env.tpl > ${CI_WEB_ROOT}/core/.env
     # Launch Nightwatch tests from core folder.
-    - yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
+    - corepack enable && yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
   artifacts:
     reports:
       junit: "report-${CI_JOB_NAME}/Tests/*.xml"

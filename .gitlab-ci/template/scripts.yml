@@ -14,7 +14,7 @@
       fi
     # Support Yarn registry mirror.
     - if [ ! -z "${CI_YARN_REGISTRY}" ]; then
-        yarn config set registry ${CI_YARN_REGISTRY};
+        corepack enable && yarn config set registry ${CI_YARN_REGISTRY};
       fi
     - echo -e "\e[0Ksection_end:`date +%s`:set_registry\r\e[0K"
   get-robo:
