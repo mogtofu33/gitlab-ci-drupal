@@ -231,7 +231,7 @@ lint_css:
     - when: on_success
   script:
     # - corepack enable && yarn --cwd ${CI_LINT_NODE_PACKAGE} add stylelint-gitlabci-formatter
-    - cd ${CI_LINT_NODE_PACKAGE && npm add stylelint-gitlabci-formatter && cd ${CI_PROJECT_DIR}
+    - cd ${CI_LINT_NODE_PACKAGE} && npm add stylelint-gitlabci-formatter && cd ${CI_PROJECT_DIR}
     - node ${CI_LINT_NODE_BIN_DIR}/stylelint
         --config ${CI_CONFIG_STYLELINT}
         --ignore-path ${CI_CONFIG_STYLELINT_IGNORE}
