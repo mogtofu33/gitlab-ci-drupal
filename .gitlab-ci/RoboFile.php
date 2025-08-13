@@ -524,6 +524,13 @@ class RoboFile extends \Robo\Tasks {
    * Copy phpunit file to web/core folder to be used by phpunit jobs.
    */
   private function ciPreparePhpunit(ConsoleIO $io) {
+    // PHPUnit should be in the image, but just in case.
+    if (!file_exists($_ciDocRoot . '/' . $this->ciComposerBin . '/phpunit')) {
+      $this->composerRequire($_ciDocRoot)
+          ->dependency('phpunit/phpunit', '^10')
+          ->run();
+    }
+
     if (!file_exists($this->ciProjectDir . '/phpunit.xml')) {
       $this->ciNotice($io, 'No phpunit.xml file at the root of the project, using default file.');
       return;
