@@ -257,6 +257,8 @@
   # Enable Docker network bridge to access services.
   # @see https://docs.gitlab.com/runner/configuration/feature-flags.html#available-feature-flags
   FF_NETWORK_PER_BUILD: 1
+  # https://getcomposer.org/doc/03-cli.md#composer-no-interaction
+  COMPOSER_NO_INTERACTION: 1
   #
   # Config files location for inclusion if not present locally (from ./.gitlab-ci/).
   CI_REMOTE_FILES: "https://gitlab.com/mog33/gitlab-ci-drupal/-/raw/${CI_REF}/.gitlab-ci"

@@ -63,7 +63,7 @@ build:
     # Validate the composer.json file, install project.
     - if [ -f composer.json ]; then
         composer validate --no-check-all --no-check-publish -n;
-        composer install -n --prefer-dist;
+        composer install --prefer-dist;
       fi
     # Install dev tools and node modules.
     - if [ ${CI_TYPE} == "project" ] && [ -f composer.json ]; then
