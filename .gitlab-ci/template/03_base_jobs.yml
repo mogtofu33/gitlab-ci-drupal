@@ -17,4 +17,4 @@
   before_script:
     - !reference [.scripts, set-registries]
     - !reference [.scripts, ci-prepare]
-    - yarn --cwd ${CI_LINT_NODE_PACKAGE} install
+    - corepack enable && yarn --cwd ${CI_LINT_NODE_PACKAGE} install
