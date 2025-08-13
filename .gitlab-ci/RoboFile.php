@@ -474,7 +474,7 @@ class RoboFile extends \Robo\Tasks {
       case "profile":
         // If we have a custom build, run it now, see issue:
         // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
-        $this->ciBuild();
+        $this->ciBuild($io);
         $this->ciLog($io, "Symlink code to included Drupal.");
         // Root contain the theme / module, we symlink with project name.
         $this->taskFilesystemStack()
