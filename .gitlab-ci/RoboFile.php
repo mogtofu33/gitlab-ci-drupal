@@ -146,7 +146,7 @@ class RoboFile extends \Robo\Tasks {
    *   The drupal version used, look at env values for. This can be
    *   overridden by specifying a $CI_DRUPAL_VERSION environment variable.
    */
-  protected $ciDrupalVersion = "11.0";
+  protected $ciDrupalVersion = "11.2";
 
   /**
    * CI_REMOTE_FILES context.
@@ -217,7 +217,7 @@ class RoboFile extends \Robo\Tasks {
     $this->ciPrepareFolders($io);
     // After symlink, move local phpunit.xml file to drupal web/core folder.
     if (FALSE !== strpos($job, 'phpunit')) {
-      $this->ciPreparePhpunit();
+      $this->ciPreparePhpunit($io);
     }
   }
 
@@ -304,7 +304,7 @@ class RoboFile extends \Robo\Tasks {
    */
   private function drupalPrepareDump(ConsoleIO $io, $dump) {
 
-    $this->ciNotice("Installing Drupal with dump file $dump...");
+    $this->ciNotice($io, "Installing Drupal with dump file $dump...");
 
     $this->drupalCopySettingsLocal();
 
@@ -496,7 +496,7 @@ class RoboFile extends \Robo\Tasks {
 
     foreach ($this->ciFiles as $srcFilename => $destFilename) {
       if (file_exists($destFilename)) {
-        $this->ciNotice('Use local file: ' . $destFilename);
+        $this->ciNotice($io, 'Use local file: ' . $destFilename);
         continue;
       }
       $this->ciGetRemoteFile($io, $this->ciRemoteFiles . $srcFilename, $destFilename);
@@ -523,9 +523,9 @@ class RoboFile extends \Robo\Tasks {
   /**
    * Copy phpunit file to web/core folder to be used by phpunit jobs.
    */
-  private function ciPreparePhpunit() {
+  private function ciPreparePhpunit(ConsoleIO $io) {
     if (!file_exists($this->ciProjectDir . '/phpunit.xml')) {
-      $this->ciNotice('No phpunit.xml file at the root of the project, using default file.');
+      $this->ciNotice($io, 'No phpunit.xml file at the root of the project, using default file.');
       return;
     }
     $this->taskFilesystemStack()
