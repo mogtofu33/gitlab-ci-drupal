@@ -32,7 +32,7 @@
   #     when: manual
   before script:
     - apk --no-cache add git openssh-client
-    - corepack enable && yarn add semantic-release @semantic-release/git @semantic-release/changelog
+    - yarn add semantic-release @semantic-release/git @semantic-release/changelog
   script:
     - npx semantic-release --branches next -r $GIT_REPOSITORY
   variables:

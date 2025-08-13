@@ -39,7 +39,7 @@ _build() {
       _dkexec_bash "composer validate --no-check-all --no-check-publish -n"
       _dkexec_bash "composer install -n --prefer-dist"
       _dkexec_bash "robo drupal:require-dev $CI_SKIP_TEST_BEHAT"
-      _dkexec_bash "corepack enable && yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core install"
+      _dkexec_bash "yarn --cwd ${CI_DRUPAL_WEB_ROOT}/core install"
     fi
   fi
 
@@ -273,7 +273,7 @@ _nightwatch() {
   else
     _version=$(curl -s "http://${_host}:${CI_SERVICE_CHROMEDRIVER_PORT}/status" | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
     debug "Upgrade Chromedriver@${_version}"
-    docker exec -it -w "${CI_WEB_ROOT}/core" ci-drupal bash -c "corepack enable && yarn -s upgrade chromedriver@${_version}"
+    docker exec -it -w "${CI_WEB_ROOT}/core" ci-drupal bash -c "yarn -s upgrade chromedriver@${_version}"
   fi
 
   if ! eval "_exist_file ${CI_WEB_ROOT}/core/.env.tpl"; then
@@ -290,7 +290,7 @@ _nightwatch() {
   debug "Run test for ${CI_NIGHTWATCH_TESTS}"
 
   debug "yarn test:nightwatch ${CI_NIGHTWATCH_TESTS}"
-  docker exec -it -w "${CI_WEB_ROOT}/core" ci-drupal bash -c "corepack enable && yarn test:nightwatch ${CI_NIGHTWATCH_TESTS}"
+  docker exec -it -w "${CI_WEB_ROOT}/core" ci-drupal bash -c "yarn test:nightwatch ${CI_NIGHTWATCH_TESTS}"
 }
 _nw() {
   _nightwatch

@@ -186,7 +186,7 @@ lint_js:
       when: never
     - when: on_success
   script:
-    # - corepack enable && yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
+    # - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - cd ${CI_PROJECT_DIR}/.gitlab-ci/ && npm install && cd ${CI_PROJECT_DIR}
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT}
@@ -207,7 +207,7 @@ lint_yaml:
       when: never
     - when: on_success
   script:
-    # - corepack enable && yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
+    # - yarn --cwd ${CI_PROJECT_DIR}/.gitlab-ci/ install
     - cd ${CI_PROJECT_DIR}/.gitlab-ci/ && npm install && cd ${CI_PROJECT_DIR}
     - node ${CI_LINT_NODE_BIN_DIR}/eslint
         --config ${CI_CONFIG_ESLINT_YAML}
@@ -230,7 +230,7 @@ lint_css:
       when: never
     - when: on_success
   script:
-    # - corepack enable && yarn --cwd ${CI_LINT_NODE_PACKAGE} add stylelint-gitlabci-formatter
+    # - yarn --cwd ${CI_LINT_NODE_PACKAGE} add stylelint-gitlabci-formatter
     - cd ${CI_LINT_NODE_PACKAGE} && npm add stylelint-gitlabci-formatter && cd ${CI_PROJECT_DIR}
     - node ${CI_LINT_NODE_BIN_DIR}/stylelint
         --config ${CI_CONFIG_STYLELINT}
@@ -283,7 +283,7 @@ phpunit_func:
     - when: on_success
   script:
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${CI_DOC_ROOT}/${CI_COMPOSER_BIN}/phpunit
+    - sudo -E -u www-data XDEBUG_MODE=off ${CI_DOC_ROOT}/${CI_COMPOSER_BIN}/phpunit
         --testsuite "functional"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
@@ -309,7 +309,7 @@ phpunit_funcjs:
     # Check Chromedriver.
     - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # For functional tests the user need to be the web server user.
-    - sudo -E -u www-data ${CI_DOC_ROOT}/${CI_COMPOSER_BIN}/phpunit
+    - sudo -E -u www-data XDEBUG_MODE=off ${CI_DOC_ROOT}/${CI_COMPOSER_BIN}/phpunit
         --testsuite "functional-javascript"
         $([[ -z "${CI_PHPUNIT_GROUP}" ]] && echo "" || echo "--group ${CI_PHPUNIT_GROUP}")
         --configuration ${CI_PHPUNIT_CONFIGURATION}
@@ -338,13 +338,13 @@ nightwatchjs:
     - curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.'
     # Update chromedriver as Drupal package.json can be late on chrome version.
     - |
-      corepack enable && yarn--cwd ${CI_WEB_ROOT}/core upgrade \
+      yarn --cwd ${CI_WEB_ROOT}/core upgrade \
       chromedriver@$(curl -s http://chromedriver:${CI_SERVICE_CHROMEDRIVER_PORT}/status | jq '.value.build.version' | tr -d '"' | cut -d. -f1)
     - echo -e "\e[0Ksection_end:`date +%s`:nightwatch_install\r\e[0K"
     # Prepare variables.
     - envsubst < .gitlab-ci/env.tpl > ${CI_WEB_ROOT}/core/.env
     # Launch Nightwatch tests from core folder.
-    # - corepack enable && yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
+    # - yarn --cwd ${CI_WEB_ROOT}/core test:nightwatch ${CI_NIGHTWATCH_TESTS}
     - cd ${${CI_WEB_ROOT}/core && npm run test:nightwatch ${CI_NIGHTWATCH_TESTS}
   artifacts:
     reports:
