@@ -1,15 +1,35 @@
 # Generate and include a baseline file relative to this file.
 # @see https://phpstan.org/user-guide/baseline
 # includes:
-#     - phpstan-baseline.neon
+#   - phpstan-baseline.neon
+#   - phar://phpstan.phar/conf/bleedingEdge.neon
+
 parameters:
-    level: 5
-    excludePaths:
-        analyseAndScan:
-            - *RoboFile.php
-            - */tests/*
-            - */Tests/*
-            - */node_modules/*
-            - */vendor/*
-    inferPrivatePropertyTypeFromConstructor: true
-    checkMissingIterableValueType: false
+  level: 5
+
+  excludePaths:
+    analyseAndScan:
+      - *RoboFile.php
+      - */tests/*
+      - */tests/fixtures/*.php
+      - */Tests/*
+      - */node_modules/*
+      - */vendor/*
+
+  fileExtensions:
+    - php
+    - module
+    - inc
+    - install
+    - theme
+    - profile
+
+  treatPhpDocTypesAsCertain: false
+  inferPrivatePropertyTypeFromConstructor: true
+  reportUnmatchedIgnoredErrors: false
+
+  ignoreErrors:
+    - identifier: missingType.generics
+    - identifier: missingType.iterableValue
+    # new static() is a best practice in Drupal, so we cannot fix that.
+    - "#^Unsafe usage of new static#"
