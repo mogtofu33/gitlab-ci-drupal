@@ -12,14 +12,14 @@
  * phpcs:ignoreFile
  */
 
-use Robo\Tasks;
+use Robo\Symfony\ConsoleIO;
 
 /**
  * Robofile with tasks for CI.
  *
  * @codeCoverageIgnore
  */
-class RoboFile extends Tasks {
+class RoboFile extends \Robo\Tasks {
 
   /**
    * Verbosity of some parts of this code.
@@ -194,15 +194,15 @@ class RoboFile extends Tasks {
    * @param string $name
    *   (optional) The filename to execute from ./.gitlab-ci, default 'build'.
    */
-  public function ciBuild($name = 'build') {
+  public function ciBuild(ConsoleIO $io, $name = 'build') {
     $filename = $this->ciProjectDir . '/.gitlab-ci/' . $name . '.php';
     if (file_exists($filename)) {
-      $this->ciLog('Build extra script detected: ' . $filename);
+      $this->ciLog($io, 'Build extra script detected: ' . $filename);
       include_once $filename;
-      $this->ciLog('Build extra script executed.');
+      $this->ciLog($io, 'Build extra script executed.');
     }
     else {
-      $this->ciLog('No extra script found: ' . $filename);
+      $this->ciLog($io, 'No extra script found: ' . $filename);
     }
   }
 
@@ -212,9 +212,9 @@ class RoboFile extends Tasks {
    * @param string $job
    *   CI job name.
    */
-  public function ciPrepare($job = '') {
-    $this->ciGetConfigFiles();
-    $this->ciPrepareFolders();
+  public function ciPrepare(ConsoleIO $io, $job = '') {
+    $this->ciGetConfigFiles($io);
+    $this->ciPrepareFolders($io);
     // After symlink, move local phpunit.xml file to drupal web/core folder.
     if (FALSE !== strpos($job, 'phpunit')) {
       $this->ciPreparePhpunit();
@@ -229,7 +229,7 @@ class RoboFile extends Tasks {
    * @param ?string $dump
    *   (optional) Dump file if profile is 'dump'.
    */
-  public function drupalInstall($profile = 'minimal', $dump = NULL) {
+  public function drupalInstall(ConsoleIO $io, $profile = 'minimal', $dump = NULL) {
     // Ensure permissions.
     $dir = $this->ciWebRoot . '/sites/default/files';
     $this->taskFilesystemStack()
@@ -240,13 +240,13 @@ class RoboFile extends Tasks {
       ->run();
 
     if ($dump) {
-      if ($filename = $this->drupalPrepareDump($dump)) {
-        $this->drupalImportDump($filename);
+      if ($filename = $this->drupalPrepareDump($io, $dump)) {
+        $this->drupalImportDump($io, $filename);
       }
     }
     else {
-      $this->ciLog("Install Drupal profile $profile with Drush.");
-      $this->drupalSetup($profile);
+      $this->ciLog($io, "Install Drupal profile $profile with Drush.");
+      $this->drupalSetup($io, $profile);
     }
 
     $this->drupalCheck();
@@ -258,7 +258,7 @@ class RoboFile extends Tasks {
    * @param string $CI_SKIP_TEST_BEHAT
    *   (optional) Skip behat flag to check if we install behat dependency.
    */
-  public function drupalRequireDev($CI_SKIP_TEST_BEHAT = "1") {
+  public function drupalRequireDev(ConsoleIO $io, $CI_SKIP_TEST_BEHAT = "1") {
     if (!file_exists($this->ciProjectDir . '/composer.json') && 'project' === $this->ciType) {
       $this->io()->error("Missing composer.json file at the root of this project.");
       return;
@@ -302,7 +302,7 @@ class RoboFile extends Tasks {
    * @return string|null
    *  Local extracted filename to use for dump.
    */
-  private function drupalPrepareDump($dump) {
+  private function drupalPrepareDump(ConsoleIO $io, $dump) {
 
     $this->ciNotice("Installing Drupal with dump file $dump...");
 
@@ -340,7 +340,7 @@ class RoboFile extends Tasks {
       return NULL;
     }
 
-    $this->ciLog("Extract dump $filename");
+    $this->ciLog($io, "Extract dump $filename");
     $this->_exec($exec);
 
     return $infos['dirname'] . '/' . $infos['filename'];
@@ -370,8 +370,8 @@ class RoboFile extends Tasks {
    * @param string $filename
    *   Local path to filename dump.
    */
-  private function drupalImportDump($filename) {
-    $this->ciLog("Import dump $filename with $this->ciDbDriver");
+  private function drupalImportDump(ConsoleIO $io, $filename) {
+    $this->ciLog($io, "Import dump $filename with $this->ciDbDriver");
 
     switch ($this->ciDbDriver) {
       case 'mysql':
@@ -429,8 +429,8 @@ class RoboFile extends Tasks {
    * @param string $profile
    *   (Optional) The profile to install, default to minimal.
    */
-  private function drupalSetup($profile = 'minimal') {
-    $this->ciLog("Setup Drupal with $profile...");
+  private function drupalSetup(ConsoleIO $io, $profile = 'minimal') {
+    $this->ciLog($io, "Setup Drupal with $profile...");
 
     if ($profile == 'existing-config') {
       $task = $this->ciDrush()
@@ -455,14 +455,14 @@ class RoboFile extends Tasks {
   /**
    * Mirror our module/theme in the Drupal or the project.
    */
-  private function ciPrepareFolders() {
+  private function ciPrepareFolders(ConsoleIO $io) {
 
-    $this->ciLog("Prepare folders for type: $this->ciType");
+    $this->ciLog($io, "Prepare folders for type: $this->ciType");
 
     // Handle CI Type value.
     switch ($this->ciType) {
       case "project":
-        $this->ciLog("Project include Drupal, symlink to replace included Drupal.");
+        $this->ciLog($io, "Project include Drupal, symlink to replace included Drupal.");
         $this->taskFilesystemStack()
           ->remove($this->ciDocRoot)
           ->symlink($this->ciProjectDir, $this->ciDocRoot)
@@ -475,7 +475,7 @@ class RoboFile extends Tasks {
         // If we have a custom build, run it now, see issue:
         // https://gitlab.com/mog33/gitlab-ci-drupal/-/issues/32
         $this->ciBuild();
-        $this->ciLog("Symlink code to included Drupal.");
+        $this->ciLog($io, "Symlink code to included Drupal.");
         // Root contain the theme / module, we symlink with project name.
         $this->taskFilesystemStack()
           ->symlink(
@@ -489,8 +489,8 @@ class RoboFile extends Tasks {
   /**
    * Get local or remote config files for the CI project.
    */
-  private function ciGetConfigFiles() {
-    $this->ciLog("Prepare config files for CI");
+  private function ciGetConfigFiles(ConsoleIO $io) {
+    $this->ciLog($io, "Prepare config files for CI");
 
     $this->_mkdir($this->ciProjectDir . '/.gitlab-ci/');
 
@@ -499,7 +499,7 @@ class RoboFile extends Tasks {
         $this->ciNotice('Use local file: ' . $destFilename);
         continue;
       }
-      $this->ciGetRemoteFile($this->ciRemoteFiles . $srcFilename, $destFilename);
+      $this->ciGetRemoteFile($io, $this->ciRemoteFiles . $srcFilename, $destFilename);
     }
   }
 
@@ -509,10 +509,10 @@ class RoboFile extends Tasks {
    * @param string $remoteFilename
    * @param string $localFilename
    */
-  private function ciGetRemoteFile(string $remoteFilename, string $localFilename) {
+  private function ciGetRemoteFile(ConsoleIO $io, string $remoteFilename, string $localFilename) {
     $remoteFile = file_get_contents($remoteFilename);
     if ($remoteFile) {
-      $this->ciLog('Get remote file: ' . $remoteFilename . " to " . $localFilename);
+      $this->ciLog($io, 'Get remote file: ' . $remoteFilename . " to " . $localFilename);
       file_put_contents($localFilename, $remoteFile);
     }
     else {
@@ -569,9 +569,9 @@ class RoboFile extends Tasks {
    * @param string $message
    *   Message to log.
    */
-  private function ciLog($message) {
+  private function ciLog(ConsoleIO $io, $message) {
     if ($this->ciVerbose) {
-      $this->say("[log] $message");
+      $io->say("[log] $message");
     }
   }
 
@@ -581,8 +581,8 @@ class RoboFile extends Tasks {
    * @param string $message
    *   Message to log.
    */
-  private function ciNotice($message) {
-    $this->say("[notice] $message");
+  private function ciNotice(ConsoleIO $io, $message) {
+    $io->say("[notice] $message");
   }
 
 }
