@@ -35,7 +35,7 @@ and [GitLab CI Yaml](https://docs.gitlab.com/ee/ci/yaml)
 
 Drupal core | GitLab CI for Drupal
 ---|---
-Drupal ^10+ | 4.x-dev
+Drupal ^10+ | 10.x-dev
 Drupal ^11 | 11.x-dev
 
 ### Quick setup for a Drupal module / theme

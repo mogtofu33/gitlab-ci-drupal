@@ -41,11 +41,12 @@ variables:
   extends: .default_variables
 
   # Docker image ref used for ci.
-  CI_REF: "11.x-dev"
+  # @see https://gitlab.com/gitlab-ci-drupal/drupal-ci-images/-/tags
+  CI_REF: "11.0.0"
   # Minor Drupal version to work with.
   # @see https://hub.docker.com/r/mogtofu33/drupal-ci/tags
   CI_DRUPAL_VERSION:
-    value: "11.2"
+    value: "11.3"
     description: The version of Drupal to use for this Pipeline.
   # Relative path to the Drupal web root.
   # For a project based on Drupal this is 'web'. Can be 'docroot' or 'html' on
